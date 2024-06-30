@@ -27,7 +27,7 @@ struct Tx<N, Params> {
     z3: BigNum<N, Params>
 }
 impl<N, Params> Tx<N, Params> {
-    fn new() -> Self {
+    unconstrained fn new() -> Self {
         Tx {
             lambda_numerator: BigNum::new(),
             lambda_denominator: BigNum::new(),
@@ -45,7 +45,7 @@ struct AffineTranscript<N, Params> {
 }
 
 impl<N, Params> PointTable<N, Params> {
-    fn new(P: CurveJ<N, Params>) -> Self where Params: BigNumParamsTrait<N> {
+    unconstrained fn new(P: CurveJ<N, Params>) -> Self where Params: BigNumParamsTrait<N> {
         let mut result = PointTable { x: [[0; N]; 16], y: [[0; N]; 16], z: [[0; N]; 16], transcript: [Tx::new(); 8] };
 
         let op = P.dbl();
@@ -73,7 +73,7 @@ impl<N, Params> PointTable<N, Params> {
         result
     }
 
-    fn get(self, idx: u8) -> CurveJ<N, Params> where Params: BigNumParamsTrait<N> {
+    unconstrained fn get(self, idx: u8) -> CurveJ<N, Params> where Params: BigNumParamsTrait<N> {
         let x: BigNum<N, Params> = BigNum { limbs: self.x[idx] };
         let y: BigNum<N, Params> = BigNum { limbs: self.y[idx] };
         let z: BigNum<N, Params> = BigNum { limbs: self.z[idx] };
@@ -81,8 +81,8 @@ impl<N, Params> PointTable<N, Params> {
     }
 }
 
-impl<N, Params> std::cmp::Eq for CurveJ<N, Params> where Params: BigNumParamsTrait<N> {
-    fn eq(self, other: Self) -> bool {
+impl<N, Params> CurveJ<N, Params> {
+    fn eq(self, other: Self) -> bool where Params: BigNumParamsTrait<N> {
         // x = X/ZZ
         // y = Y/ZZZ
 
@@ -97,18 +97,16 @@ impl<N, Params> std::cmp::Eq for CurveJ<N, Params> where Params: BigNumParamsTra
         let x_rhs = other.x.__mulmod(z1z1);
         let y_lhs = self.y.__mulmod(z2z2z2);
         let y_rhs = other.y.__mulmod(z1z1z1);
-        (x_lhs == x_rhs) & (y_lhs == y_rhs)
+        (x_lhs.limbs == x_rhs.limbs) & (y_lhs.limbs == y_rhs.limbs)
     }
-}
-impl<N, Params> CurveJ<N, Params> {
-    fn new() -> Self {
+    unconstrained fn new() -> Self {
         CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new() }
     }
 
-    fn neg(self) -> Self where Params: BigNumParamsTrait<N> {
-        CurveJ { x: self.x, y: self.x.__negate(), z: self.z }
+    unconstrained fn neg(self) -> Self where Params: BigNumParamsTrait<N> {
+        CurveJ { x: self.x, y: self.y.__negate(), z: self.z }
     }
-    fn add(
+    unconstrained fn add(
         self,
         p2: CurveJ<N, Params>
     ) -> (CurveJ<N, Params>, Tx<N, Params>) where Params: BigNumParamsTrait<N> {
@@ -140,7 +138,7 @@ impl<N, Params> CurveJ<N, Params> {
         )
     }
 
-    fn dbl(self) -> (Self, Tx<N, Params>) where Params: BigNumParamsTrait<N> {
+    unconstrained fn dbl(self) -> (Self, Tx<N, Params>) where Params: BigNumParamsTrait<N> {
         // TODO: once we have linear expressions as unconstrained fns, replace this with something that has no addmods, submods
         let X1 = self.x;
         let Y1 = self.y;
@@ -153,7 +151,9 @@ impl<N, Params> CurveJ<N, Params> {
         D = D.__addmod(D);
         let E = A.__addmod(A).__addmod(A);
         let F = E.__mulmod(E);
-        let X3 = F.__submod(D.__addmod(D));
+        let D2 = D.__addmod(D);
+        let X3 = F.__submod(D2);
+        X3.validate_in_field();
         let mut C8 = C.__addmod(C);
         C8 = C8.__addmod(C8);
         C8 = C8.__addmod(C8);
@@ -177,6 +177,7 @@ impl<N, Params> CurveJ<N, Params> {
         let mut accumulator = T.get(scalar.base4_slices[0]);
 
         for i in 1..NScalarSlices {
+            println(f"i = {i}");
             for _ in 0..4 {
                 let op = accumulator.dbl();
                 accumulator = op.0;
@@ -201,24 +202,26 @@ impl<N, Params> CurveJ<N, Params> {
             inverses = inverses.push_back(transcript[i].lambda_denominator);
             inverses = inverses.push_back(transcript[i].z3);
         }
+        println(f"inverting");
 
         batch_invert(&mut inverses);
 
         let mut affine_transcript: [AffineTranscript<N, Params>] = &[];
         for i in 0..(9 + (NScalarSlices - 1) * 5) {
-            let lambda = transcript[i].lambda_numerator * inverses[2 * i];
+            println(f"j = {i}");
+            let lambda = transcript[i].lambda_numerator.__mulmod(inverses[2 * i]);
             let z_inv = inverses[2 * i + 1];
             let zz = z_inv.__mulmod(z_inv);
             let zzz = zz.__mulmod(z_inv);
-            let x3 = transcript[i].x3 * zz;
-            let y3 = transcript[i].y3 * zzz;
+            let x3 = transcript[i].x3.__mulmod(zz);
+            let y3 = transcript[i].y3.__mulmod(zzz);
             affine_transcript = affine_transcript.push_back(AffineTranscript{ lambda, x3, y3 });
         }
         (accumulator, affine_transcript)
     }
 }
 
-fn batch_invert<N, Params>(x: &mut [BigNum<N, Params>]) where Params: BigNumParamsTrait<N> {
+unconstrained fn batch_invert<N, Params>(x: &mut [BigNum<N, Params>]) where Params: BigNumParamsTrait<N> {
     let mut accumulator: BigNum<N, Params> = BigNum::one();
 
     let mut temporaries: [BigNum<N, Params>] = &[];

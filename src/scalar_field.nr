@@ -39,6 +39,7 @@ unconstrained fn get_wnaf_slices<N>(x: Field) -> ([u8; N], bool) {
 unconstrained fn get_wnaf_slices_1<N, BitOffset>(x: Field, BitOffset: u8) -> ([u8; N], bool) {
 
     let mut result: [u8; N] = [0; N];
+    println(f"INPUT = {x}");
     let mut nibbles = x.to_le_radix(16, N);
 
     let skew: bool = nibbles[0] & 1 == 0;
@@ -56,9 +57,10 @@ unconstrained fn get_wnaf_slices_1<N, BitOffset>(x: Field, BitOffset: u8) -> ([u
             result[N - i] -= 8;
         }
     }
+    let ff = nibbles[N - 1];
+    println(f"FINAL NIBBLE = {ff}");
     (result, skew)
 }
-
 
 unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
     let mut result: Field = 0;
@@ -82,7 +84,7 @@ unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
 
 unconstrained fn get_modulus_slices() -> (Field, Field) {
     let bytes = std::field::modulus_be_bytes();
-    let num_bytes = std::field::modulus_num_bits() / 8;
+    let num_bytes = (std::field::modulus_num_bits() / 8) + ((std::field::modulus_num_bits() % 8 != 0) as u64);
     let mut lo: Field = 0;
     let mut hi: Field = 0;
     for i in 0..(num_bytes / 2) {
@@ -101,6 +103,7 @@ unconstrained fn get_modulus_slices() -> (Field, Field) {
 unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
     lhs_lo.lt(rhs_lo + 1)
 }
+
 impl<N> std::convert::From<Field> for ScalarField<N> {
 
 
@@ -126,8 +129,8 @@ impl<N> std::convert::From<Field> for ScalarField<N> {
         else
         {
             // TODO: if num bits = 64, validate in sum of the bits is smaller than the Field modulus
-            let mut lo: Field = slices[(N/2)] as Field;
-            let mut hi: Field = slices[0] as Field;
+            let mut lo: Field = slices[(N/2)] as Field * 2 - 15;
+            let mut hi: Field = slices[0] as Field * 2 - 15;
             let mut borrow_shift = 1;
             for i in 1..(N/2) {
                 borrow_shift *= 16;
@@ -142,9 +145,16 @@ impl<N> std::convert::From<Field> for ScalarField<N> {
                 lo *= 16;
                 lo += (slices[N-1] as Field) * 2 - 15;
             }
+// 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff
+                                // 0x2833e84879b9709143e1f593f0000001
+                                // 0x8833e84879b9709143e1f593efffffff
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
             let (plo, phi) = get_modulus_slices();
+            println(f"plo phi = {plo} {phi}");
+            println(f"lo hi = {lo} {hi}");
+            let ff = slices[0];
+            println(f"first slice = {ff}");
             let borrow = get_borrow_flag(plo, lo) as Field;
             let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
             let rhi = phi - hi - borrow;

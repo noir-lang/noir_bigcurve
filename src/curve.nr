@@ -20,23 +20,24 @@ use crate::curve_jac::AffineTranscript;
 //     fn one() -> ();
 // }
 
-struct BigCurve<N, Params> {
+struct BigCurve<let N: u32, Params> {
     x: BigNum<N, Params>,
     y: BigNum<N, Params>
 }
 
-struct PointTable<N, Params> {
+struct PointTable<let N: u32, Params> {
     x: [[Field; N]; 16],
     y: [[Field; N]; 16],
 }
 
-impl<N, Params> PointTable<N, Params> {
+impl<let N: u32, Params> PointTable<N, Params> {
     fn new_with_hint(
         P: BigCurve<N, Params>,
-        transcript: [AffineTranscript<N, Params>; 9]
+        transcript: [AffineTranscript<N, Params>; 8]
     ) -> Self where Params: BigNumParamsTrait<N> {
         let mut result = PointTable { x: [[0; N]; 16], y: [[0; N]; 16] };
 
+        println(f"point table tx = {transcript}");
         let D2 = P.double_with_hint(transcript[0]);
 
         result.x[8] = P.x.limbs;
@@ -46,7 +47,7 @@ impl<N, Params> PointTable<N, Params> {
 
         let mut A = P;
         for i in 1..8 {
-            A = D2.add_with_hint(A, transcript[i + 1]);
+            A = D2.add_with_hint(A, transcript[i]);
             result.x[8 + i] = A.x.limbs;
             result.y[8 + i] = A.y.limbs;
             result.x[7 - i] = A.x.limbs;
@@ -62,7 +63,7 @@ impl<N, Params> PointTable<N, Params> {
     }
 }
 
-impl<N, Params> BigCurve<N, Params> {
+impl<let N: u32, Params> BigCurve<N, Params> {
 
     fn neg(self) -> Self where Params: BigNumParamsTrait<N> {
         BigCurve { x: self.x, y: BigNum::new() - self.y }
@@ -79,6 +80,12 @@ impl<N, Params> BigCurve<N, Params> {
         let lambda: BigNum<N, Params> = transcript.lambda;
         let x3: BigNum<N, Params> = transcript.x3;
         let y3: BigNum<N, Params> = transcript.y3;
+
+        x3.validate_in_range();
+        y3.validate_in_range();
+        lambda.validate_in_range();
+
+        x1.assert_is_not_equal(x2);
         BigNum::evaluate_quadratic_expression(
             [[BNExpressionInput::new(lambda, false), BNExpressionInput::new(BigNum::new(), false)]],
             [[BNExpressionInput::new(x2, false), BNExpressionInput::new(x1, true)]],
@@ -104,29 +111,33 @@ impl<N, Params> BigCurve<N, Params> {
         BigCurve { x: x3, y: y3 }
     }
 
-    fn mul_with_hint<NScalarSlices, NTranscriptSlices>(
+    fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32>(
         self,
         scalar: ScalarField<NScalarSlices>,
         transcript: [AffineTranscript<N, Params>; NTranscriptSlices]
     ) -> Self where Params: BigNumParamsTrait<N> {
-        let table_transcript: [AffineTranscript<N, Params>; 9] = [
-            transcript[0], transcript[1], transcript[2], transcript[3], transcript[4], transcript[5], transcript[6], transcript[7], transcript[8]
+        let table_transcript: [AffineTranscript<N, Params>; 8] = [
+            transcript[0], transcript[1], transcript[2], transcript[3], transcript[4], transcript[5], transcript[6], transcript[7]
         ];
+        println(f"NUM SCALAR SLICES = {NScalarSlices}, NUM TRANSCRIPT SLICES = {NTranscriptSlices}");
+        assert(NScalarSlices == 64);
 
         let T: PointTable<N, Params> = PointTable::new_with_hint(self, table_transcript);
 
         let mut accumulator = T.get(scalar.base4_slices[0]);
         for i in 1..NScalarSlices {
+            println(f"I = {i}");
+            accumulator = accumulator.double_with_hint(transcript[3 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[4 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[5 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[6 + 5 * i]);
-            accumulator = accumulator.double_with_hint(transcript[7 + 5 * i]);
-
-            accumulator = accumulator.add_with_hint(T.get(scalar.base4_slices[i]), transcript[8 + 5 * i]);
+            let slice = scalar.base4_slices[i];
+            println(f"ADD SCALAR = {slice}");
+            accumulator = accumulator.add_with_hint(T.get(scalar.base4_slices[i]), transcript[7 + 5 * i]);
         }
 
         if (scalar.skew) {
-            accumulator = accumulator.add_with_hint(self.neg(), transcript[4 + 5 * NScalarSlices]);
+            accumulator = accumulator.add_with_hint(self.neg(), transcript[3 + 5 * NScalarSlices]);
         }
 
         accumulator
@@ -142,7 +153,10 @@ impl<N, Params> BigCurve<N, Params> {
         let x3: BigNum<N, Params> = transcript.x3;
         let y3: BigNum<N, Params> = transcript.y3;
 
-        // lambda * 2y - 3x^2 = 0
+        x3.validate_in_range();
+        y3.validate_in_range();
+        lambda.validate_in_range();
+        // 3x^2 - 2 y1 * lambda = 0
         BigNum::evaluate_quadratic_expression(
             [
             [
@@ -154,7 +168,7 @@ impl<N, Params> BigCurve<N, Params> {
         ],
             [
             [
-                BNExpressionInput::new(x1, true), BNExpressionInput::new(BigNum::new(), false), BNExpressionInput::new(BigNum::new(), false)
+                BNExpressionInput::new(x1, false), BNExpressionInput::new(BigNum::new(), false), BNExpressionInput::new(BigNum::new(), false)
             ],
             [
                 BNExpressionInput::new(lambda, true), BNExpressionInput::new(BigNum::new(), false), BNExpressionInput::new(BigNum::new(), false)

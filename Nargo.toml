@@ -5,4 +5,4 @@ authors = [""]
 compiler_version = ">=0.31.0"
 
 [dependencies]
-bignum = {path = "../bignum"}
+bignum = {path = "../noir-bignum"}

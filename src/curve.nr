@@ -220,23 +220,7 @@ impl<BigNum> BigCurve<BigNum> where BigNum: BigNumTrait {
             [[x1], [lambda]],
             [[false], [true]],
             [],
-            [] //     [
-        //     [
-        //         BNExpressionInput::new(x1, false), BNExpressionInput::new(x1, false), BNExpressionInput::new(x1, false)
-        //     ],
-        //     [
-        //         BNExpressionInput::new(y1, false), BNExpressionInput::new(y1, false), BNExpressionInput::new(BigNum::new(), false)
-        //     ]
-        // ],
-        //     [
-        //     [
-        //         BNExpressionInput::new(x1, false), BNExpressionInput::new(BigNum::new(), false), BNExpressionInput::new(BigNum::new(), false)
-        //     ],
-        //     [
-        //         BNExpressionInput::new(lambda, true), BNExpressionInput::new(BigNum::new(), false), BNExpressionInput::new(BigNum::new(), false)
-        //     ]
-        // ],
-        //     []
+            []
         );
 
         // validate the provided value of `x3` is correct

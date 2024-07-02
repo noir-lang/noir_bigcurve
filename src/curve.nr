@@ -279,7 +279,7 @@ impl<BigNum> BigCurve<BigNum> where BigNum: BigNumTrait {
         );
 
         // Init the accumulator from the most significant scalar slice
-        let mut accumulator = self;
+        let mut accumulator = T.get(scalar.base4_slices[0]);
 
         // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
         for i in 1..NScalarSlices {
@@ -287,14 +287,14 @@ impl<BigNum> BigCurve<BigNum> where BigNum: BigNumTrait {
             accumulator = accumulator.double_with_hint(transcript[4 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[5 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[6 + 5 * i]);
-            //     accumulator = accumulator.incomplete_add_with_hint(T.get(scalar.base4_slices[i]), transcript[7 + 5 * i]);
+            accumulator = accumulator.incomplete_add_with_hint(T.get(scalar.base4_slices[i]), transcript[7 + 5 * i]);
         }
 
         // windowed non-adjacent form can only represent odd scalar values.
         // if value is even, the result will be off by one and we need to subtract the input point
-        // if (scalar.skew) {
-        //     accumulator = accumulator.incomplete_subtract_with_hint(self.neg(), transcript[3 + 5 * NScalarSlices]);
-        // }
+        if (scalar.skew) {
+            accumulator = accumulator.incomplete_subtract_with_hint(self.neg(), transcript[3 + 5 * NScalarSlices]);
+        }
 
         accumulator
     }

@@ -1,9 +1,5 @@
-use dep::bignum::ArrayX;
 use dep::bignum::BigNum;
-use dep::bignum::BigNumParamsTrait;
-// use dep::bignum::BigNumParams;
 use dep::bignum::BigNumTrait;
-use dep::bignum::U60Repr;
 use crate::scalar_field::ScalarField;
 
 /**

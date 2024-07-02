@@ -1,7 +1,4 @@
-use dep::bignum::ArrayX;
 use dep::bignum::BigNum;
-use dep::bignum::BigNumParamsTrait;
-use dep::bignum::U60Repr;
 
 mod scalar_field;
 mod curve;

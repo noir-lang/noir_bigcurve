@@ -1,1 +1,0 @@
-[noir_bigcurve] Running 1 test function

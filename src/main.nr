@@ -68,6 +68,14 @@ unconstrained fn foo(P: CurveJ<Fq>, scalar: ScalarField<64>, Q: CurveJ<Fq>, K: C
     Q.eq(s.0)
 }
 
+unconstrained fn msm(P: CurveJ<Fq>, scalar: ScalarField<64>, Q: CurveJ<Fq>, K: CurveJ<Fq>) -> bool {
+    let s = (CurveJ::msm([P], [scalar]));
+    let ff = s.0;
+    println(f"let transcript: AffineTranscript<N, Params> = {ff}");
+    assert(s.0.eq(K.neg()));
+    Q.eq(s.0)
+}
+
 unconstrained fn get_transcript(P: CurveJ<Fq>, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 324] {
     let res = P.mul(scalar);
     let transcript = res.1;
@@ -97,6 +105,26 @@ fn test_mul() {
     assert(result.y.eq(expected.y));
 }
 
+#[test]
+fn test_msm() {
+    let two = BigNum::one().__addmod(BigNum::one());
+    let One: BigCurve<Fq> = BigCurve { x: BigNum::one(), y: two };
+    let Two: BigCurve<Fq> = BigCurve {
+        x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
+        y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
+    };
+
+    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+
+    let transcript = test_data::get_msm_transcript();
+    let result = BigCurve::msm_with_hint([One, Two.neg()], [scalar6, scalar2], transcript);
+    let expected = Two.neg();
+    assert(result == expected);
+}
+
 // MUL RESULT = CurveJ { x: BigNum { limbs: [0xa47823fd000eda1bbfc18418eb3d99, 0x0ca4f07e34bbe4f5b1033127aa8d86, 0x04c1] }, 
 // y: BigNum { limbs: [0x11528374493623ffae4630c74901df, 0x4db72e5c95274f7137872f19e6baa8, 0x068a] }, 
 // z: BigNum { limbs: [0xae338287d1de4127e865f3f095cf8a, 0x109f23b240924ec0446d8f7aacbe49, 0x2448] } }
@@ -113,6 +141,36 @@ fn test_mul_jac() {
     let expected = P.incomplete_add(P.dbl().0.neg()).0;
     let result = foo(P, scalar, expected, P);
     assert(result == true);
+}
+
+unconstrained fn foobar(P: [CurveJ<Fq>; 2], S: [ScalarField<64>; 2]) -> CurveJ<Fq> {
+    let result = CurveJ::msm(P, S);
+    result.0
+}
+
+unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
+    let two = BigNum::one().__addmod(BigNum::one());
+    let One: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let Two: CurveJ<Fq> = CurveJ {
+        x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
+        y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
+        z: BigNum::one()
+    };
+    let result = CurveJ::msm([One, Two.neg()], scalars);
+    let transcript = result.1;
+    println(f"pub fn get_transcript() -> [AffineTranscript<BigNum<3, BNParams>>; 324] {transcript}");
+    let expected = Two.neg();
+    assert(result.0 == expected);
+}
+
+#[test]
+fn test_msm_jac() {
+    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+
+    test_msm_jac_impl([scalar6, scalar2]);
 }
 
 #[test]

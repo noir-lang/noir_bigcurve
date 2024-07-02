@@ -108,6 +108,14 @@ struct PointTable<BigNum> {
 }
 
 impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
+    fn empty() -> Self {
+        PointTable {
+            x: [BigNum::new(); 16],
+            y: [BigNum::new(); 16],
+            z: [BigNum::new(); 16],
+            transcript: [JTranscript::new(); 8]
+        }
+    }
     /**
      * @brief make a new PointTable from an input point
      * @description we use "windowed non-adjacent form" representation 
@@ -331,6 +339,57 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
             accumulator = op.0;
         } else {
             transcript = transcript.push_back(JTranscript::new());
+        }
+
+        let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
+
+        (accumulator, affine_transcript)
+    }
+
+    /**
+     * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
+     **/
+    unconstrained fn msm<let Size: u32, let NScalarSlices: u32>(
+        points: [Self; Size],
+        scalars: [ScalarField<NScalarSlices>; Size]
+    ) -> (Self, [AffineTranscript<BigNum>]) {
+        let mut transcript: [JTranscript<BigNum>] = &[];
+        let mut tables: [PointTable<BigNum>; Size] = [PointTable::empty(); Size];
+
+        for i in 0..Size {
+            tables[i] = PointTable::new(points[i]);
+            for j in 0..8 {
+                transcript = transcript.push_back(tables[i].transcript[j]);
+            }
+        }
+
+        let mut accumulator = tables[0].get(scalars[0].base4_slices[0]);
+        for i in 1..Size {
+            let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0]));
+            transcript = transcript.push_back(op.1);
+            accumulator = op.0;
+        }
+        for i in 1..NScalarSlices {
+            for _ in 0..4 {
+                let op = accumulator.dbl();
+                accumulator = op.0;
+                transcript = transcript.push_back(op.1);
+            }
+            for j in 0..Size {
+                let op = accumulator.incomplete_add(tables[j].get(scalars[j].base4_slices[i]));
+                transcript = transcript.push_back(op.1);
+                accumulator = op.0;
+            }
+        }
+
+        for i in 0..Size {
+            if scalars[i].skew {
+                let op = accumulator.incomplete_add(points[i].neg());
+                transcript = transcript.push_back(op.1);
+                accumulator = op.0;
+            } else {
+                transcript = transcript.push_back(JTranscript::new());
+            }
         }
 
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);

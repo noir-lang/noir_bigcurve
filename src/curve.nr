@@ -28,6 +28,9 @@ struct PointTable<BigNum> {
 }
 
 impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
+    fn empty() -> Self {
+        PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
+    }
     /**
      * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
      * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
@@ -68,7 +71,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
  **/
 impl<BigNum> std::cmp::Eq for BigCurve<BigNum> where BigNum: BigNumTrait {
     fn eq(self, other: Self) -> bool {
-        std::cmp::Eq::eq(self.x, other.x) & std::cmp::Eq::eq(self.y, other.y)
+        self.x.eq(other.x) & self.y.eq(other.y)
     }
 }
 
@@ -274,6 +277,57 @@ impl<BigNum> BigCurve<BigNum> where BigNum: BigNumTrait {
             accumulator = accumulator.incomplete_subtract_with_hint(self.neg(), transcript[3 + 5 * NScalarSlices]);
         }
 
+        accumulator
+    }
+
+    /**
+     * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
+     **/
+    fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
+        points: [Self; Size],
+        scalars: [ScalarField<NScalarSlices>; Size],
+        transcript: [AffineTranscript<BigNum>; NTranscriptSlices]
+    ) -> Self {
+        // Compute a 4-bit lookup table of multiples of P
+        let mut tables: [PointTable<BigNum>; Size] = [PointTable::empty(); Size];
+        for i in 0..Size {
+            let mut table_transcript: [AffineTranscript<BigNum>; 8] = [AffineTranscript::new(); 8];
+            for j in 0..8 {
+                table_transcript[j] = transcript[i * 8 + j];
+            }
+            tables[i] = PointTable::new_with_hint(points[i], table_transcript);
+        }
+
+        // Init the accumulator from the most significant scalar slice
+        let mut accumulator = tables[0].get(scalars[0].base4_slices[0]);
+        for i in 1..Size {
+            accumulator = accumulator.incomplete_add_with_hint(
+                tables[i].get(scalars[i].base4_slices[0]),
+                transcript[8 * Size + i - 1]
+            );
+        }
+
+        // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
+        for i in 1..NScalarSlices {
+            accumulator = accumulator.double_with_hint(transcript[9 * Size + (4 + Size) * (i - 1) - 1]);
+            accumulator = accumulator.double_with_hint(transcript[9 * Size + (4 + Size) * (i - 1)]);
+            accumulator = accumulator.double_with_hint(transcript[9 * Size + (4 + Size) * (i - 1) + 1]);
+            accumulator = accumulator.double_with_hint(transcript[9 * Size + (4 + Size) * (i - 1) + 2]);
+
+            for j in 0..Size {
+                accumulator = accumulator.incomplete_add_with_hint(tables[j].get(scalars[j].base4_slices[i]), transcript[9 * Size + (4 + Size) * (i - 1) + 3 + j]);
+            }
+        }
+
+        // 9 * Size + (4 + Size) * (NScalarSlices - 1) - 1
+        // 9 + 5 * NScalarSlices - 6
+        // windowed non-adjacent form can only represent odd scalar values.
+        // if value is even, the result will be off by one and we need to subtract the input point
+        for i in 0..Size {
+            if (scalars[i].skew) {
+                accumulator = accumulator.incomplete_subtract_with_hint(points[i].neg(), transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) - 1 + i]);
+            }
+        }
         accumulator
     }
 }

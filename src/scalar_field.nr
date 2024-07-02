@@ -23,7 +23,7 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut nibbles = x.to_le_radix(16, N);
 
     let skew: bool = nibbles[0] & 1 == 0;
-    nibbles[0] += skew as u8;
+    nibbles[0] = nibbles[0] as u8 + (skew as u8);
     result[N-1] = (nibbles[0] + 15) / 2;
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
@@ -105,7 +105,6 @@ unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
 }
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
-
 
 
     /**

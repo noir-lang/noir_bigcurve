@@ -1,6 +1,7 @@
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
 use crate::scalar_field::ScalarField;
+use crate::curve::CurveParamsTrait;
 
 /**
  * @brief CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
@@ -21,7 +22,7 @@ use crate::scalar_field::ScalarField;
  *              i.e. we compute 1 modular inverse instead of ~256 or 320 depending on the elliptic curve.
  *              Yes, this is an extremely complex solution to a simple problem. Such is life. Inverses are expensive to generate witnesses for.
  **/
-struct CurveJ<BigNum> {
+struct CurveJ<BigNum, CurveParams> {
     x: BigNum,
     y: BigNum,
     z: BigNum,
@@ -124,7 +125,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
      * [0, P, ..., 15P] requires 14 group operations.
      * group operations are expensive!
      **/
-    unconstrained fn new(P: CurveJ<BigNum>) -> Self {
+    unconstrained fn new<CurveParams>(P: CurveJ<BigNum, CurveParams>) -> Self where CurveParams: CurveParamsTrait<BigNum> {
         let mut result = PointTable {
             x: [BigNum::new(); 16],
             y: [BigNum::new(); 16],
@@ -159,7 +160,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
     /**
      * @brief get a value out of the lookup table
      **/
-    unconstrained fn get(self, idx: u8) -> CurveJ<BigNum> {
+    unconstrained fn get<CurveParams>(self, idx: u8) -> CurveJ<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx] }
     }
 }
@@ -168,7 +169,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
  * @brief are two Jacobian points equal?
  * @description only really used in tests for now.
  **/
-impl<BigNum> std::cmp::Eq for CurveJ<BigNum> where BigNum: BigNumTrait {
+impl<BigNum, CurveParams> std::cmp::Eq for CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
     fn eq(self, other: Self) -> bool {
         // if x == y then (X1 / Z1 * Z1 = X2 / Z2 * Z2)
         //            and (Y1 / Z1 * Z1 * Z1 = Y2 / Z2 * Z2 * Z2)
@@ -191,7 +192,7 @@ impl<BigNum> std::cmp::Eq for CurveJ<BigNum> where BigNum: BigNumTrait {
     }
 }
 
-impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
+impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
     /**
      * @brief negate a point
      **/
@@ -211,7 +212,7 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
      * @note This method minimizes the number of calls to `compute_quadratic_expression`,
      * which is NOT the same as minimizing the number of multiplications.
      **/
-    unconstrained fn incomplete_add(self, p2: CurveJ<BigNum>) -> (CurveJ<BigNum>, JTranscript<BigNum>) {
+    unconstrained fn incomplete_add(self, p2: Self) -> (Self, JTranscript<BigNum>) {
         // TODO: once we have linear expressions as unconstrained fns, replace this with something that has no addmods, submods
         let X1 = self.x;
         let X2 = p2.x;
@@ -311,6 +312,21 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
         )
     }
 
+    fn offset_generator() -> Self {
+        let result = CurveParams::offset_generator();
+        Self { x: result[0], y: result[1], z: BigNum::one() }
+    }
+
+    fn offset_generator_final() -> Self {
+        let result = CurveParams::offset_generator_final();
+        Self { x: result[0], y: result[1], z: BigNum::one() }
+    }
+
+    fn one() -> Self {
+        let result = CurveParams::one();
+        Self { x: result[0], y: result[1], z: BigNum::one() }
+    }
+
     /**
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
@@ -321,7 +337,10 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
             transcript = transcript.push_back(T.transcript[i]);
         }
 
-        let mut accumulator = T.get(scalar.base4_slices[0]);
+        let mut accumulator: Self = CurveJ::offset_generator();
+        let op = accumulator.incomplete_add(T.get(scalar.base4_slices[0]));
+        transcript = transcript.push_back(op.1);
+        accumulator = op.0;
         for i in 1..NScalarSlices {
             for _ in 0..4 {
                 let op = accumulator.dbl();
@@ -341,6 +360,9 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
             transcript = transcript.push_back(JTranscript::new());
         }
 
+        let op = accumulator.incomplete_add(CurveJ::offset_generator_final().neg());
+        transcript = transcript.push_back(op.1);
+        accumulator = op.0;
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)
@@ -363,13 +385,19 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
             }
         }
 
-        let mut accumulator = tables[0].get(scalars[0].base4_slices[0]);
+        let mut accumulator: Self = CurveJ::offset_generator();
+        let op = accumulator.incomplete_add(tables[0].get(scalars[0].base4_slices[0]));
+        transcript = transcript.push_back(op.1);
+        accumulator = op.0;
+
         for i in 1..Size {
+            println(f"SizeIt = {i}");
             let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0]));
             transcript = transcript.push_back(op.1);
             accumulator = op.0;
         }
         for i in 1..NScalarSlices {
+            println(f"ScalarSliceIt = {i}");
             for _ in 0..4 {
                 let op = accumulator.dbl();
                 accumulator = op.0;
@@ -391,7 +419,10 @@ impl<BigNum> CurveJ<BigNum> where BigNum: BigNumTrait {
                 transcript = transcript.push_back(JTranscript::new());
             }
         }
-
+        let op = accumulator.incomplete_add(CurveJ::offset_generator_final().neg());
+        transcript = transcript.push_back(op.1);
+        accumulator = op.0;
+        println(f"Making Transcript");
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)

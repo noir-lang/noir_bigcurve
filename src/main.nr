@@ -6,6 +6,8 @@ mod curve_jac;
 mod test_data;
 
 use crate::curve::BigCurve;
+use crate::curve::CurveParamsTrait;
+
 use crate::curve_jac::JTranscript;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
@@ -15,6 +17,33 @@ use dep::bignum::fields::bn254Fq::BNParams as BNParams;
 
 type Fq = BigNum<3, BNParams>;
 
+struct BN254Params {
+}
+
+impl CurveParamsTrait<BigNum<3, BNParams>> for BN254Params  {
+    fn one() -> [BigNum<3, BNParams>; 2] {
+        let mut one: Fq = BigNum::new();
+        one.limbs[0] = 1;
+        let mut two = one;
+        two.limbs[0] = 2;
+        [one, two]
+    }
+
+    fn offset_generator() -> [BigNum<3, BNParams>; 2] {
+        [
+            BigNum { limbs: [0xf30f376a22bd3695abf4dcdfed66c6, 0x80d7bbcaebb13bbabfc30184f59912, 0x0cfb] },
+            BigNum { limbs: [0xe53572d644c1e06f80ab52ef02fa2f, 0xa40d9e20debde026e47f8bfc4d3c41, 0x07f6] }
+        ]
+    }
+
+    fn offset_generator_final() -> [BigNum<3, BNParams>; 2] {
+        [
+            BigNum { limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1] },
+            BigNum { limbs: [0x6e4553aa3ae998fcd27ca8a17188ef, 0xb3193f7f0a731913174831ca905feb, 0x21ff] }
+        ]
+    }
+}
+
 fn main(x: Field) {
     //   let two = BigNum::one().__addmod(BigNum::one());
     let mut foo: [Field; 12] = [0; 12];
@@ -22,8 +51,8 @@ fn main(x: Field) {
     for i in 1..12 {
         foo[i] = foo[i-1]* x;
     }
-    let P: BigCurve<Fq> = BigCurve { x: BigNum { limbs: [foo[0], foo[1], foo[2]] }, y: BigNum { limbs: [foo[3], foo[4], foo[5]] } };
-    let Q: BigCurve<Fq> = BigCurve { x: BigNum { limbs: [foo[6], foo[7], foo[8]] }, y: BigNum { limbs: [foo[9], foo[10], foo[11]] } };
+    let P: BigCurve<Fq, BN254Params> = BigCurve { x: BigNum { limbs: [foo[0], foo[1], foo[2]] }, y: BigNum { limbs: [foo[3], foo[4], foo[5]] } };
+    let Q: BigCurve<Fq, BN254Params> = BigCurve { x: BigNum { limbs: [foo[6], foo[7], foo[8]] }, y: BigNum { limbs: [foo[9], foo[10], foo[11]] } };
 
     let scalar: ScalarField<64> = ScalarField::from(x); // p - 2 ? 
     let transcript = get_transcript(CurveJ { x: P.x, y: P.y, z: BigNum::one() }, scalar);
@@ -40,7 +69,7 @@ fn main(x: Field) {
     // println(f"{A}");
     let result = P.mul_with_hint(scalar, transcript);
     // -2
-    let mut expected: BigCurve<Fq> = BigCurve {
+    let mut expected: BigCurve<Fq, BN254Params> = BigCurve {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
     };
@@ -51,7 +80,7 @@ fn main(x: Field) {
     let transcript2 = get_transcript(CurveJ { x: Q.x, y: Q.y, z: BigNum::one() }, scalar);
     let result = Q.mul_with_hint(scalar2, transcript2);
     // -2
-    let mut expected: BigCurve<Fq> = BigCurve {
+    let mut expected: BigCurve<Fq, BN254Params> = BigCurve {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
     };
@@ -60,7 +89,12 @@ fn main(x: Field) {
     assert(result.y.eq(expected.y));
 }
 
-unconstrained fn foo(P: CurveJ<Fq>, scalar: ScalarField<64>, Q: CurveJ<Fq>, K: CurveJ<Fq>) -> bool {
+unconstrained fn foo(
+    P: CurveJ<Fq, BN254Params>,
+    scalar: ScalarField<64>,
+    Q: CurveJ<Fq, BN254Params>,
+    K: CurveJ<Fq, BN254Params>
+) -> bool {
     let s = (P.mul(scalar));
     let ff = s.0;
     println(f"let transcript: AffineTranscript<N, Params> = {ff}");
@@ -68,15 +102,21 @@ unconstrained fn foo(P: CurveJ<Fq>, scalar: ScalarField<64>, Q: CurveJ<Fq>, K: C
     Q.eq(s.0)
 }
 
-unconstrained fn msm(P: CurveJ<Fq>, scalar: ScalarField<64>, Q: CurveJ<Fq>, K: CurveJ<Fq>) -> bool {
-    let s = (CurveJ::msm([P], [scalar]));
-    let ff = s.0;
+unconstrained fn get_msm_transcript(
+    P: CurveJ<Fq, BN254Params>,
+    Q: CurveJ<Fq, BN254Params>,
+    scalar1: ScalarField<64>,
+    scalar2: ScalarField<64>
+) -> [AffineTranscript<Fq>; 399] {
+    let s = (CurveJ::msm([P, Q], [scalar1, scalar2]));
+    let ff = s.1;
     println(f"let transcript: AffineTranscript<N, Params> = {ff}");
-    assert(s.0.eq(K.neg()));
-    Q.eq(s.0)
+    ff.as_array()
+    //  assert(s.0.eq(K.neg()));
+    //  Q.eq(s.0)
 }
 
-unconstrained fn get_transcript(P: CurveJ<Fq>, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 324] {
+unconstrained fn get_transcript(P: CurveJ<Fq, BN254Params>, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
     let res = P.mul(scalar);
     let transcript = res.1;
     println(f"let transcript: AffineTranscript<N, Params> = {transcript}");
@@ -88,15 +128,17 @@ unconstrained fn get_transcript(P: CurveJ<Fq>, scalar: ScalarField<64>) -> [Affi
 #[test]
 fn test_mul() {
     let two = BigNum::one().__addmod(BigNum::one());
-    let P: BigCurve<Fq> = BigCurve { x: BigNum::one(), y: two };
+    let P: BigCurve<Fq, BN254Params> = BigCurve { x: BigNum::one(), y: two };
 
     let scalar: ScalarField<64> = ScalarField::from(0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff); // p - 2
-    let transcript = test_data::get_transcript();
+
+    let transcript = get_transcript(CurveJ { x: P.x, y: P.y, z: BigNum::one() }, scalar);
+    //  let transcript = test_data::get_transcript();
 
     let result = P.mul_with_hint(scalar, transcript);
 
     // -2
-    let mut expected: BigCurve<Fq> = BigCurve {
+    let mut expected: BigCurve<Fq, BN254Params> = BigCurve {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
     };
@@ -108,8 +150,8 @@ fn test_mul() {
 #[test]
 fn test_msm() {
     let two = BigNum::one().__addmod(BigNum::one());
-    let One: BigCurve<Fq> = BigCurve { x: BigNum::one(), y: two };
-    let Two: BigCurve<Fq> = BigCurve {
+    let One: BigCurve<Fq, BN254Params> = BigCurve { x: BigNum::one(), y: two };
+    let Two: BigCurve<Fq, BN254Params> = BigCurve {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
     };
@@ -119,7 +161,13 @@ fn test_msm() {
     let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
     let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
 
-    let transcript = test_data::get_msm_transcript();
+    let transcript = get_msm_transcript(
+        CurveJ { x: One.x, y: One.y, z: BigNum::new() },
+        CurveJ { x: Two.x, y: Two.y, z: BigNum::new() },
+        scalar6,
+        scalar2
+    );
+    println(f"ARGH");
     let result = BigCurve::msm_with_hint([One, Two.neg()], [scalar6, scalar2], transcript);
     let expected = Two.neg();
     assert(result == expected);
@@ -134,7 +182,7 @@ fn test_msm() {
 fn test_mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
     let two = BigNum::one().__addmod(BigNum::one());
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 
@@ -143,15 +191,31 @@ fn test_mul_jac() {
     assert(result == true);
 }
 
-unconstrained fn foobar(P: [CurveJ<Fq>; 2], S: [ScalarField<64>; 2]) -> CurveJ<Fq> {
+// #[test]
+// fn test_mul_jac() {
+//     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
+//     let two = BigNum::one().__addmod(BigNum::one());
+//     let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+
+//     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
+
+//     let expected = P.incomplete_add(P.dbl().0.neg()).0;
+//     let result = foo(P, scalar, expected, P);
+//     assert(result == true);
+// }
+
+unconstrained fn foobar(
+    P: [CurveJ<Fq, BN254Params>; 2],
+    S: [ScalarField<64>; 2]
+) -> CurveJ<Fq, BN254Params> {
     let result = CurveJ::msm(P, S);
     result.0
 }
 
 unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     let two = BigNum::one().__addmod(BigNum::one());
-    let One: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
-    let Two: CurveJ<Fq> = CurveJ {
+    let One: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let Two: CurveJ<Fq, BN254Params> = CurveJ {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
         z: BigNum::one()
@@ -177,7 +241,7 @@ fn test_msm_jac() {
 fn test_add_dbl() {
     let two = BigNum::one().__addmod(BigNum::one());
 
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
     let lhs = ((P.dbl().0).dbl()).0;
     let rhs = P.dbl().0.incomplete_add(P).0.incomplete_add(P).0;
     assert(lhs == rhs);
@@ -187,7 +251,7 @@ fn test_add_dbl() {
 fn test_transcript() {
     let two = BigNum::one().__addmod(BigNum::one());
 
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     let P2 = P.dbl();
 
@@ -226,11 +290,11 @@ fn test_transcript() {
 fn test_double_with_hint() {
     let two = BigNum::one().__addmod(BigNum::one());
 
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     let P2 = P.dbl();
 
-    let P_affine: BigCurve<Fq> = BigCurve { x: P.x, y: P.y };
+    let P_affine: BigCurve<Fq, BN254Params> = BigCurve { x: P.x, y: P.y };
 
     let Z_inverse = P2.1.z3.__invmod();
 
@@ -255,10 +319,10 @@ fn test_double_with_hint() {
 fn test_incomplete_add_with_hint() {
     let two = BigNum::one().__addmod(BigNum::one());
 
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     // Q = 2P
-    let Q: CurveJ<Fq> = CurveJ {
+    let Q: CurveJ<Fq, BN254Params> = CurveJ {
         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
         z: BigNum::one()
@@ -266,8 +330,8 @@ fn test_incomplete_add_with_hint() {
 
     let R = P.incomplete_add(Q);
 
-    let P_affine: BigCurve<Fq> = BigCurve { x: P.x, y: P.y };
-    let Q_affine: BigCurve<Fq> = BigCurve { x: Q.x, y: Q.y };
+    let P_affine: BigCurve<Fq, BN254Params> = BigCurve { x: P.x, y: P.y };
+    let Q_affine: BigCurve<Fq, BN254Params> = BigCurve { x: Q.x, y: Q.y };
 
     let Z_inverse = R.1.z3.__invmod();
 
@@ -288,7 +352,7 @@ fn test_incomplete_add_with_hint() {
     assert(P2_affine.y.eq(y3));
     let two = BigNum::one().__addmod(BigNum::one());
 
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     let lhs = P.dbl().0.dbl().0;
     let rhs = P.dbl().0.incomplete_add(P).0.incomplete_add(P).0;
@@ -312,7 +376,7 @@ unconstrained fn invert_temp(x: [Fq; 8]) -> [Fq; 8] {
 #[test]
 fn test_make_table() {
     let two = BigNum::one().__addmod(BigNum::one());
-    let P: CurveJ<Fq> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
+    let P: CurveJ<Fq, BN254Params> = CurveJ { x: BigNum::one(), y: two, z: BigNum::one() };
 
     let mut transcript: [curve_jac::JTranscript<Fq>] = &[];
     let T: curve_jac::PointTable<Fq> = curve_jac::PointTable::new(P);
@@ -345,7 +409,37 @@ fn test_make_table() {
         affine_transcript[i] = AffineTranscript{ lambda, x3, y3 };
     }
 
-    let P_affine: BigCurve<Fq> = BigCurve { x: P.x, y: P.y };
+    let P_affine: BigCurve<Fq, BN254Params> = BigCurve { x: P.x, y: P.y };
 
     let affine_point_table: curve::PointTable<Fq> = curve::PointTable::new_with_hint(P_affine, affine_transcript);
+}
+
+#[test]
+fn test_ScalarField_BigNum_conversion() {
+    let expected: Fq = BigNum::__derive_from_seed([1, 2, 3, 4]);
+    println(f"EXPECTED = {expected}");
+    let scalar: ScalarField<64> = ScalarField::from_bignum(expected);
+    let result: Fq = scalar.into_bignum();
+    assert(result.limbs == expected.limbs);
+}
+
+#[test]
+fn test_mul_foo() {
+    let InitGenerator = BigCurve {
+        x: BigNum { limbs: [0xf30f376a22bd3695abf4dcdfed66c6, 0x80d7bbcaebb13bbabfc30184f59912, 0x0cfb] },
+        y: BigNum { limbs: [0xe53572d644c1e06f80ab52ef02fa2f, 0xa40d9e20debde026e47f8bfc4d3c41, 0x07f6] }
+    };
+
+    let IJ: CurveJ<Fq, BN254Params> = CurveJ { x: InitGenerator.x, y: InitGenerator.y, z: BigNum::one() };
+
+    let scalar: ScalarField<64> = ScalarField::from(0x1000000000000000000000000000000000000000000000000000000000000000); // 2^252
+    let foo: Field = ScalarField::into(scalar); // scalar.into();
+    assert(foo == 0x1000000000000000000000000000000000000000000000000000000000000000);
+    let transcript = get_transcript(IJ, scalar);
+    // let transcript = test_data::get_transcript();
+
+    let result: BigCurve<Fq, BN254Params> = InitGenerator.mul_with_hint(scalar, transcript);
+
+    println(f"RESULT EQUALS {result}");
+    // -2
 }

@@ -69,34 +69,6 @@ unconstrained fn get_wnaf_slices2<let N: u32, let M: u32>(x: [Field; M]) -> ([u8
     (result, skew)
 }
 
-// RESULT = BigNum { limbs: [0x08cfbb935b4f6da7389c0bc03e9a3f, 0x7a11c370b86a75d4ce30a39b8b5d5f, 0x2bbf] }
-// EXPECTED = BigNum { limbs: [0x08cfbb935b4f6da7389c0bc03e9a40, 0x7a11c370b86a75d4ce30a39b8b5d5e, 0x2bbe] }
-unconstrained fn get_wnaf_slices_1<let N: u32, BitOffset>(x: Field, BitOffset: u8) -> ([u8; N], bool) {
-
-    let mut result: [u8; N] = [0; N];
-    println(f"INPUT = {x}");
-    let mut nibbles = x.to_le_radix(16, N);
-
-    let skew: bool = nibbles[0] & 1 == 0;
-    nibbles[0] += skew as u8;
-    let mask: u8 = (1 as u8 << BitOffset as u8) - 1;
-    let slice = nibbles[0] & mask;
-    result[N-1] = (slice + 15) / 2;
-    for i in 1..N {
-        let mut nibble: u8 = nibbles[i];
-        let slice = (nibble & mask) << (4 - BitOffset);
-        let prev_slice = nibbles[i-1] >> BitOffset;
-        result[N-1 - i] = ((slice + prev_slice) + 15) / 2;
-        if (nibble & 1 == 0) {
-            result[N-1 - i] += 1;
-            result[N - i] -= 8;
-        }
-    }
-    let ff = nibbles[N - 1];
-    println(f"FINAL NIBBLE = {ff}");
-    (result, skew)
-}
-
 unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
     let mut result: Field = 0;
 
@@ -108,14 +80,6 @@ unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
     result
 }
 
-// #[test]
-// fn test_wnaf() {
-
-//     let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-//     let (t0, t1) = get_wnaf_slices(result);
-//     let expected = from_wnaf_slices(t0, t1);
-//     assert(result == expected);
-// }
 
 unconstrained fn get_modulus_slices() -> (Field, Field) {
     let bytes = std::field::modulus_be_bytes();

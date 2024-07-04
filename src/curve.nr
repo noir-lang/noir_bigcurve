@@ -2,6 +2,7 @@ use dep::bignum::BigNum;
 
 use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
+use crate::curve_jac::AffineLinearExpressionTranscript;
 use crate::curve_jac::CurveJ;
 use dep::bignum::BigNumTrait;
 
@@ -549,12 +550,6 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             accumulator = accumulator.incomplete_subtract_with_hint(input, transcript[4 + 5 * NScalarSlices]);
         }
 
-        println(f"ACCUMULATOR LAST = {accumulator}");
-        let xx: Self = BigCurve::offset_generator_final().neg();
-        let y: Self = BigCurve::offset_generator_final();
-        println(f"OFFSET GENERATOR LAST (inverted) = {xx}");
-        println(f"OFFSET GENERATOR LAST (not inve) = {y}");
-
         accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[5 + 5 * NScalarSlices]);
         accumulator
     }
@@ -565,7 +560,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
     /**
      * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
      **/
-    fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
+    fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
         mut points: [Self; Size],
         mut scalars: [ScalarField<NScalarSlices>; Size],
         transcript: [AffineTranscript<BigNum>; NTranscriptSlices]
@@ -622,11 +617,101 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         // if value is even, the result will be off by one and we need to subtract the input point
         for i in 0..Size {
             if (scalars[i].skew) {
-                accumulator = accumulator.incomplete_subtract_with_hint(points[i].neg(), transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) + i]);
+                accumulator = accumulator.incomplete_subtract_with_hint(points[i], transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) + i]);
             }
         }
 
+        accumulator
+    }
+
+    fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
+        mut points: [Self; Size],
+        mut scalars: [ScalarField<NScalarSlices>; Size],
+        transcript: [AffineTranscript<BigNum>; NTranscriptSlices]
+    ) -> Self {
+        let mut accumulator = BigCurve::msm_with_hint_internal(points, scalars, transcript);
         accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[10 * Size + (4 + Size) * (NScalarSlices - 1)]);
+        accumulator
+    }
+
+    unconstrained fn get_mul_transcript<let NScalarSlices: u64>(
+        P: Self,
+        scalar: ScalarField<NScalarSlices>
+    ) -> [AffineTranscript<BigNum, CurveParams>; 326] {
+        CurveJ::from(P).mul(scalar).1.as_array()
+    }
+
+    // Expensive witness generation! Avoid if possible 
+    fn mul<let NScalarSlices: u64>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+        let transcript: [AffineTranscript<BigNum, CurveParams>; 326] = BigCurve::get_mul_transcript(self, scalar);
+
+        self.mul_with_hint(scalar, transcript)
+    }
+
+    fn evaluate_linear_expression<let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>(
+        mut mul_points: [Self; NMuls],
+        mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+        add_points: [Self; NAdds]
+    ) -> Self {
+        let affine_transcript: AffineLinearExpressionTranscript<BigNum, CurveParams, NScalarSlices, NMuls, NAdds> = CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
+
+        let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
+        let mut  _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
+        for i in 0..NMuls {
+            _inputs[i] = BigCurve::conditional_select(BigCurve::one(), mul_points[i], mul_points[i].is_infinity);
+            _scalars[i] = ScalarField::conditional_select(ScalarField::zero(), mul_scalars[i], mul_points[i].is_infinity);
+        }
+        let msm_points = _inputs;
+        let scalars = _scalars;
+
+        let mut tables: [PointTable<BigNum>; NMuls] = [PointTable::empty(); NMuls];
+        for i in 0..NMuls {
+            tables[i] = PointTable::new_with_hint(msm_points[i], affine_transcript.table_transcript[i]);
+        }
+
+        // Init the accumulator from the most significant scalar slice
+        let mut accumulator: Self = BigCurve::offset_generator();
+        let mut accumulator = accumulator.incomplete_add_with_hint(
+            tables[0].get(scalars[0].base4_slices[0]),
+            affine_transcript.msm_add_transcript[0][0]
+        );
+
+        for i in 1..NMuls {
+            accumulator = accumulator.incomplete_add_with_hint(
+                tables[i].get(scalars[i].base4_slices[0]),
+                affine_transcript.msm_add_transcript[0][i]
+            );
+        }
+
+        // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
+        for i in 1..NScalarSlices {
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][0]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][1]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][2]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][3]);
+
+            for j in 0..NMuls {
+                accumulator = accumulator.incomplete_add_with_hint(tables[j].get(scalars[j].base4_slices[i]), affine_transcript.msm_add_transcript[i][j]);
+            }
+        }
+
+        // 9 * Size + (4 + Size) * (NScalarSlices - 1) - 1
+        // 9 + 5 * NScalarSlices - 6
+        // windowed non-adjacent form can only represent odd scalar values.
+        // if value is even, the result will be off by one and we need to subtract the input point
+        for i in 0..NMuls {
+            if (scalars[i].skew) {
+                accumulator = accumulator.incomplete_subtract_with_hint(msm_points[i], affine_transcript.skew_transcript[i]);
+            }
+        }
+
+        for i in 0..NAdds {
+            let res = accumulator.incomplete_subtract_with_hint(add_points[i], affine_transcript.add_transcript[i]);
+            accumulator = BigCurve::conditional_select(accumulator, res, add_points[i].is_infinity);
+        }
+
+        accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), affine_transcript.offset_generator_transcript);
+
         accumulator
     }
 }

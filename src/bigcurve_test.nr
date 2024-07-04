@@ -1,17 +1,14 @@
 use dep::bignum::BigNum;
 
-mod scalar_field;
-mod curve;
-mod curve_jac;
-mod test_data;
+use crate::BigCurve;
+use crate::CurveParamsTrait;
 
-use crate::curve::BigCurve;
-use crate::curve::CurveParamsTrait;
-
+use crate::curve_jac;
 use crate::curve_jac::JTranscript;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
+use crate::PointTable;
 
 use dep::bignum::fields::bn254Fq::BNParams as BNParams;
 
@@ -498,7 +495,7 @@ unconstrained fn compute_inverses(x: [Fq; 8]) -> [Fq; 8] {
 fn test_make_table() {
     let P: BN254J = CurveJ::one();
 
-    let mut transcript: [curve_jac::JTranscript<Fq>] = &[];
+    let mut transcript: [JTranscript<Fq>] = &[];
     let T: curve_jac::PointTable<Fq> = curve_jac::PointTable::new(P);
     for i in 0..8 {
         transcript = transcript.push_back(T.transcript[i]);
@@ -527,7 +524,7 @@ fn test_make_table() {
 
     let P_affine: BN254 = BigCurve::one();
 
-    let affine_point_table: curve::PointTable<Fq> = curve::PointTable::new_with_hint(P_affine, affine_transcript);
+    let affine_point_table: PointTable<Fq> = PointTable::new_with_hint(P_affine, affine_transcript);
 }
 
 #[test]

@@ -1,3 +1,8 @@
+mod scalar_field;
+mod curve_jac;
+mod test_data;
+mod bigcurve_test;
+
 use dep::bignum::BigNum;
 
 use crate::scalar_field::ScalarField;

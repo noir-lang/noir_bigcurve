@@ -1,8 +1,8 @@
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
 use crate::scalar_field::ScalarField;
-use crate::curve::CurveParamsTrait;
-use crate::curve::BigCurve;
+use crate::CurveParamsTrait;
+use crate::BigCurve;
 /**
  * @brief CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
  *        representation in Jacobian form is X, Y, Z

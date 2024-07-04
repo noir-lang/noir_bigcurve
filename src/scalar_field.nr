@@ -225,7 +225,21 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 
 impl<let N: u32> ScalarField<N> {
 
+    fn zero() -> Self {
+        let mut result: Self = ScalarField{ base4_slices: [0; N], skew: true };
+        
+        result.base4_slices[N-1] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
+        result
+    }
 
+    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
+        let mut result = rhs;
+        if (predicate)
+        {
+            result = lhs;
+        }
+        result
+    }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
     fn from_bignum<let NumLimbs: u64, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> {

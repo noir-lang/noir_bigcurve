@@ -107,6 +107,14 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         Self { x: result[0], y: result[1], is_infinity: false }
     }
 
+    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
+        let x = BigNum::conditional_select(lhs.x, rhs.x, predicate);
+        let y = BigNum::conditional_select(lhs.y, rhs.y, predicate);
+        let is_infinity = ((lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
+            + rhs.is_infinity as Field) as bool;
+        BigCurve { x, y, is_infinity }
+    }
+
     fn validate_on_curve(self) {
         // if is point at infinity, we're on the curve.
         // In this case just sub in a valid point for the x/y coordinates we are about to test
@@ -278,7 +286,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         y_out = BigNum::conditional_select(other.y, y_out, output_is_rhs);
         y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
 
-        let conditional_select = |a: bool, b: bool, predicate: bool| ((b as Field - a as Field) * predicate as Field + a as Field) as bool;
+        let conditional_select = |a: bool, b: bool, predicate: bool| ((a as Field - b as Field) * predicate as Field + b as Field) as bool;
 
         let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
@@ -384,12 +392,17 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         y_out = BigNum::conditional_select(other.y.neg(), y_out, output_is_rhs);
         y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
 
-        let conditional_select = |a: bool, b: bool, predicate: bool| ((b as Field - a as Field) * predicate as Field + a as Field) as bool;
+        let conditional_select = |a: bool, b: bool, predicate: bool| ((a as Field - b as Field) * predicate as Field + b as Field) as bool;
 
         let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
+        println(f"INFINITY PREDICATE = {infinity_predicate}");
+        println(f"output_is_lhs = {output_is_lhs}");
+        println(f"output_is_rhs = {output_is_rhs}");
+
+        println(f"INFINITY OUT = {infinity_out}");
 
         let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result
@@ -507,8 +520,11 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         transcript: [AffineTranscript<BigNum>; NTranscriptSlices]
     ) -> Self {
         // Compute a 4-bit lookup table of multiples of P
+        let input: Self = BigCurve::conditional_select(BigCurve::one(), self, self.is_infinity);
+        let scalar: ScalarField<NScalarSlices> = ScalarField::conditional_select(ScalarField::zero(), scalar, self.is_infinity);
+
         let T: PointTable<BigNum> = PointTable::new_with_hint(
-            self,
+            input,
             [
             transcript[0], transcript[1], transcript[2], transcript[3], transcript[4], transcript[5], transcript[6], transcript[7]
         ]
@@ -530,8 +546,14 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         // windowed non-adjacent form can only represent odd scalar values.
         // if value is even, the result will be off by one and we need to subtract the input point
         if (scalar.skew) {
-            accumulator = accumulator.incomplete_subtract_with_hint(self, transcript[4 + 5 * NScalarSlices]);
+            accumulator = accumulator.incomplete_subtract_with_hint(input, transcript[4 + 5 * NScalarSlices]);
         }
+
+        println(f"ACCUMULATOR LAST = {accumulator}");
+        let xx: Self = BigCurve::offset_generator_final().neg();
+        let y: Self = BigCurve::offset_generator_final();
+        println(f"OFFSET GENERATOR LAST (inverted) = {xx}");
+        println(f"OFFSET GENERATOR LAST (not inve) = {y}");
 
         accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[5 + 5 * NScalarSlices]);
         accumulator
@@ -544,11 +566,21 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
      * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
      **/
     fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
-        points: [Self; Size],
-        scalars: [ScalarField<NScalarSlices>; Size],
+        mut points: [Self; Size],
+        mut scalars: [ScalarField<NScalarSlices>; Size],
         transcript: [AffineTranscript<BigNum>; NTranscriptSlices]
     ) -> Self {
         // Compute a 4-bit lookup table of multiples of P
+
+        let mut _inputs: [Self; Size] = [BigCurve::one(); Size];
+        let mut  _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::new(); Size];
+        for i in 0..Size {
+            _inputs[i] = BigCurve::conditional_select(BigCurve::one(), points[i], points[i].is_infinity);
+            _scalars[i] = ScalarField::conditional_select(ScalarField::zero(), scalars[i], points[i].is_infinity);
+        }
+        points = _inputs;
+        scalars = _scalars;
+
         let mut tables: [PointTable<BigNum>; Size] = [PointTable::empty(); Size];
         for i in 0..Size {
             let mut table_transcript: [AffineTranscript<BigNum>; 8] = [AffineTranscript::new(); 8];
@@ -628,6 +660,8 @@ impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where 
  **/
 impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams> where BigNum: BigNumTrait {
     fn eq(self, other: Self) -> bool {
-        self.x.eq(other.x) & self.y.eq(other.y)
+        let coords_equal = self.x.eq(other.x) & self.y.eq(other.y) & !self.is_infinity & !other.is_infinity;
+        let infinity = self.is_infinity & other.is_infinity;
+        coords_equal | infinity
     }
 }

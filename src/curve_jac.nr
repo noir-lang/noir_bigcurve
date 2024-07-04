@@ -447,12 +447,24 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         Self { x: result[0], y: result[1], z: BigNum::one(), is_infinity: false }
     }
 
+    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
+        let mut result = rhs;
+        if (predicate) {
+            result = lhs;
+        }
+        result
+    }
+
     /**
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
     unconstrained fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> (Self, [AffineTranscript<BigNum>]) {
         let mut transcript: [JTranscript<BigNum>] = &[];
-        let T = PointTable::new(self);
+
+        let input: Self = CurveJ::conditional_select(CurveJ::one(), self, self.is_infinity);
+        let scalar: ScalarField<NScalarSlices> = ScalarField::conditional_select(ScalarField::zero(), scalar, self.is_infinity);
+
+        let T = PointTable::new(input);
         for i in 0..8 {
             transcript = transcript.push_back(T.transcript[i]);
         }
@@ -473,7 +485,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         }
 
         if scalar.skew {
-            let op = accumulator.incomplete_add(self.neg());
+            let op = accumulator.incomplete_add(input.neg());
             transcript = transcript.push_back(op.1);
             accumulator = op.0;
         } else {
@@ -483,6 +495,8 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         let op = accumulator.sub(CurveJ::offset_generator_final());
         transcript = transcript.push_back(op.1);
         accumulator = op.0;
+
+        println(f"FINAL ACCUMULATOR = {accumulator}");
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)
@@ -492,11 +506,20 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
     unconstrained fn msm<let Size: u32, let NScalarSlices: u32>(
-        points: [Self; Size],
-        scalars: [ScalarField<NScalarSlices>; Size]
+        mut points: [Self; Size],
+        mut scalars: [ScalarField<NScalarSlices>; Size]
     ) -> (Self, [AffineTranscript<BigNum>]) {
         let mut transcript: [JTranscript<BigNum>] = &[];
         let mut tables: [PointTable<BigNum>; Size] = [PointTable::empty(); Size];
+
+        let mut _inputs: [Self; Size] = [CurveJ::new(); Size];
+        let mut  _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::new(); Size];
+        for i in 0..Size {
+            _inputs[i] = CurveJ::conditional_select(CurveJ::one(), points[i], points[i].is_infinity);
+            _scalars[i] = ScalarField::conditional_select(ScalarField::zero(), scalars[i], points[i].is_infinity);
+        }
+        points = _inputs;
+        scalars = _scalars;
 
         for i in 0..Size {
             tables[i] = PointTable::new(points[i]);

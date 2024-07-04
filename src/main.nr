@@ -150,6 +150,59 @@ fn test_mul() {
 }
 
 #[test]
+fn test_offset_foo() {
+    let P = BigCurve {
+        x: BigNum { limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1] },
+        y: BigNum { limbs: [0x6e4553aa3ae998fcd27ca8a17188ef, 0xb3193f7f0a731913174831ca905feb, 0x21ff] },
+        is_infinity: false
+    };
+    let Q_inv = BigCurve {
+        x: BigNum { limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1] },
+        y: BigNum { limbs: [0x13253dbe36e0f43f4e0f6e370b7458, 0x9b59a1b295b69f3d2e6e4fb6c7fdac, 0x0e64] },
+        is_infinity: false
+    };
+    let Q= BigCurve {
+        x: BigNum { limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1] },
+        y: BigNum { limbs: [0x6e4553aa3ae998fcd27ca8a17188ef, 0xb3193f7f0a731913174831ca905feb, 0x21ff] },
+        is_infinity: false
+    };
+
+    let R: BN254 = P.sub(Q);
+    println(f"R = {R}");
+    assert(R.is_infinity == true);
+}
+
+#[test]
+fn test_mul_by_0() {
+    let P: BN254 = BigCurve::one();
+
+    let scalar: ScalarField<64> = ScalarField::from(0); // p - 2
+
+    let foo: Field = ScalarField::into(scalar);
+    assert(foo == 0);
+    let transcript = get_transcript(CurveJ::from(P), scalar);
+
+    let result = P.mul_with_hint(scalar, transcript);
+    println(f"RESULT = {result}");
+    // -2
+    assert(result.is_infinity == true);
+}
+
+#[test]
+fn test_mul_a_point_at_infinity() {
+    let P: BN254 = BigCurve::point_at_infinity();
+
+    let scalar: ScalarField<64> = ScalarField::from(0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff); // p - 2
+
+    let transcript = get_transcript(CurveJ::from(P), scalar);
+
+    let result = P.mul_with_hint(scalar, transcript);
+    println(f"RESULT = {result}");
+    // -2
+    assert(result.is_infinity == true);
+}
+
+#[test]
 fn test_msm() {
     let One: BN254 = BigCurve::one();
     let Two: BN254 = BigCurve {

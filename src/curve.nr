@@ -2,6 +2,7 @@ use dep::bignum::BigNum;
 
 use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
+use crate::curve_jac::CurveJ;
 use dep::bignum::BigNumTrait;
 
 /**
@@ -9,14 +10,18 @@ use dep::bignum::BigNumTrait;
  **/
 struct BigCurve<BigNum, CurveParams> {
     x: BigNum,
-    y: BigNum
+    y: BigNum,
+    is_infinity: bool,
 }
 
 trait CurveParamsTrait<BigNum> where BigNum: BigNumTrait {
     fn offset_generator() -> [BigNum; 2];
     fn offset_generator_final() -> [BigNum; 2];
     fn one() -> [BigNum; 2];
+    fn b() -> BigNum;
+    fn a() -> BigNum;
 }
+
 /**
  * @brief A lookup table we use when performing scalar multiplications.
  * @description We slice scalar multiplier into 4 bit chunks represented
@@ -36,6 +41,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
     fn empty() -> Self {
         PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
     }
+
     /**
      * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
      * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
@@ -70,16 +76,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
      * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
      **/
     fn get<CurveParams>(self, idx: u8) -> BigCurve<BigNum, CurveParams> {
-        BigCurve { x: self.x[idx], y: self.y[idx] }
-    }
-}
-
-/**
- * @brief are two Affine points equal?
- **/
-impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams> where BigNum: BigNumTrait {
-    fn eq(self, other: Self) -> bool {
-        self.x.eq(other.x) & self.y.eq(other.y)
+        BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
     }
 }
 
@@ -88,8 +85,48 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
     * @brief negate a point
     **/
     fn neg(self) -> Self {
-        BigCurve { x: self.x, y: self.y.neg() }
+        BigCurve { x: self.x, y: self.y.neg(), is_infinity: self.is_infinity }
     }
+
+    fn point_at_infinity() -> Self {
+        BigCurve { x: BigNum::new(), y: BigNum::new(), is_infinity: true }
+    }
+
+    fn offset_generator() -> Self {
+        let result = CurveParams::offset_generator();
+        Self { x: result[0], y: result[1], is_infinity: false }
+    }
+
+    fn offset_generator_final() -> Self {
+        let result = CurveParams::offset_generator_final();
+        Self { x: result[0], y: result[1], is_infinity: false }
+    }
+
+    fn one() -> Self {
+        let result = CurveParams::one();
+        Self { x: result[0], y: result[1], is_infinity: false }
+    }
+
+    fn validate_on_curve(self) {
+        // if is point at infinity, we're on the curve.
+        // In this case just sub in a valid point for the x/y coordinates we are about to test
+        let one: Self = BigCurve::one();
+        let x: BigNum = BigNum::conditional_select(one.x, self.x, self.is_infinity);
+        let y: BigNum = BigNum::conditional_select(one.y, self.y, self.is_infinity);
+        let xx = x.mul(x); // hmm?
+        //  xxx - yy + ax + b = 0
+        // (xx + a) * x - y*y + b = 0
+        // validate the provided value of `y3` is correct
+        BigNum::evaluate_quadratic_expression(
+            [[xx, CurveParams::a()], [y, BigNum::new()]],
+            [[false, false], [false, false]],
+            [[x], [y]],
+            [[false], [true]],
+            [CurveParams::b()],
+            [false]
+        );
+    }
+
     /**
      * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
      * @description Only uses incomplete formulae.
@@ -101,7 +138,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
      * The expensive operation in BigNum is the modular reduction.
      * e.g. (a * b + c * d = e mod p) is not much more expensive than (a * b = c mod p)
      **/
-    fn incomplete_add_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self where {
+    fn incomplete_add_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self {
         let x1: BigNum = self.x;
         let y1: BigNum = self.y;
         let x2: BigNum = other.x;
@@ -148,14 +185,14 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             [false, false]
         );
 
-        BigCurve { x: x3, y: y3 }
+        BigCurve { x: x3, y: y3, is_infinity: false }
     }
 
-    fn add_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self where {
-        let x1: BigNum = self.x;
-        let y1: BigNum = self.y;
-        let x2: BigNum = other.x;
-        let y2: BigNum = other.y;
+    fn add_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self {
+        let mut x1: BigNum = self.x;
+        let mut y1: BigNum = self.y;
+        let mut x2: BigNum = other.x;
+        let mut y2: BigNum = other.y;
         let lambda: BigNum = transcript.lambda;
         let x3: BigNum = transcript.x3;
         let y3: BigNum = transcript.y3;
@@ -165,33 +202,200 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         y3.validate_in_range();
         lambda.validate_in_range();
 
-        // no incomplete Weierstrass shenanigans here
-        x1.assert_is_not_equal(x2);
-
-        // lambda * 2y - 3xx = 0
-        // or
-        // lambda * (x2 - x1) - (y2 - y1) = 0
-
+        // TODO: we can probably optimize this boolean flag jenga mess
         let x_equal_predicate = x2.eq(x1);
         let y_equal_predicate = y2.eq(y1);
-        let double_predicate = x_equal_predicate & y_equal_predicate;
-        let infinity_predicate = x_equal_predicate & !y_equal_predicate;
-        let add_predicate = !double_predicate & !infinity_predicate;
+        let double_predicate = x_equal_predicate | (self.is_infinity | other.is_infinity); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
+        let infinity_predicate = (x_equal_predicate & !y_equal_predicate) | (self.is_infinity & other.is_infinity);
+        let evaluate_group_operation_predicate: bool = !infinity_predicate & !self.is_infinity & !other.is_infinity;
 
-        let mut result: Self = BigCurve { x: BigNum::new(), y: BigNum::new() };
-        if (double_predicate) {
-            result = self.double_with_hint(transcript);
-        }
-        if (add_predicate) {
-            result = self.incomplete_add_with_hint(other, transcript);
-        }
-        if (infinity_predicate) {
-            // set point at infinity
-        }
+        // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
+        // set input operands to 0!
+        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+
+        // lambda * 2y - 3x * x = 0
+        // or
+        // lambda * (x2 - x1) - (y2 - y1) = 0
+        let product_1_rhs_t0 = BigNum::conditional_select(y1, x2, double_predicate);
+        let product_1_rhs_t1 = BigNum::conditional_select(y1, x1.neg(), double_predicate);
+        let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
+        let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
+        let product_2_rhs_t1 = BigNum::conditional_select(x1, y1.neg(), double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+
+        // validate the provided value of `lambda` is correct
+        // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
+        // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
+        let mut a_term = BigNum::conditional_select(
+            CurveParams::a(),
+            BigNum::new(),
+            x_equal_predicate & !y_equal_predicate & !self.is_infinity & !other.is_infinity
+        );
+
+        BigNum::evaluate_quadratic_expression(
+            [[lambda], [product_2_lhs_t0]],
+            [[false], [false]],
+            [
+            [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()], [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2]
+        ],
+            [[false, false, false], [true, true, true]],
+            [a_term],
+            [true]
+        );
+
+        // x3 = lambda * lambda - x2 - x1
+        // if double, then x2 = x1 so we good
+        BigNum::evaluate_quadratic_expression(
+            [[lambda]],
+            [[false]],
+            [[lambda]],
+            [[false]],
+            [x3, x2, x1],
+            [true, true, true]
+        );
+
+        // y3 = lambda * (x1 - x3) - y1
+        BigNum::evaluate_quadratic_expression(
+            [[lambda]],
+            [[false]],
+            [[x3, x1]],
+            [[false, true]],
+            [y3, y1],
+            [false, false]
+        );
+
+        let output_is_lhs = other.is_infinity & !self.is_infinity;
+        let output_is_rhs = self.is_infinity & !other.is_infinity;
+        let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
+        x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
+        x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
+        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
+        y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
+        y_out = BigNum::conditional_select(other.y, y_out, output_is_rhs);
+        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+
+        let conditional_select = |a: bool, b: bool, predicate: bool| ((b as Field - a as Field) * predicate as Field + a as Field) as bool;
+
+        let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
+        infinity_out = conditional_select(true, infinity_out, infinity_predicate);
+        infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
+        infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
+
+        println(f"output is lhs = {output_is_lhs}, output is rhs = {output_is_rhs}");
+        println(f"rhs x vs out x = {x_out}, output is rhs = {x2}");
+        println(f"infinity out = {infinity_out}");
+
+        let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result
     }
 
-    fn incomplete_subtract_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self where {
+    fn sub_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self {
+        let mut x1: BigNum = self.x;
+        let mut y1: BigNum = self.y;
+        let mut x2: BigNum = other.x;
+        let mut y2: BigNum = other.y;
+        let lambda: BigNum = transcript.lambda;
+        let x3: BigNum = transcript.x3;
+        let y3: BigNum = transcript.y3;
+
+        // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed BigNum objects!
+        x3.validate_in_range();
+        y3.validate_in_range();
+        lambda.validate_in_range();
+
+        let x_equal_predicate = x2.eq(x1);
+        let y_equal_predicate = y2.eq(y1) == false;
+        let double_predicate = x_equal_predicate | (self.is_infinity | other.is_infinity); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
+        let infinity_predicate = (x_equal_predicate & !y_equal_predicate) | (self.is_infinity & other.is_infinity);
+        let evaluate_group_operation_predicate: bool = !infinity_predicate & !self.is_infinity & !other.is_infinity;
+
+        // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
+        // set input operands to 0!
+        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+
+        // lambda * 2y - 3x*x = 0
+        // 3 x * x - lambda * 2y
+        // lambda * (x2 - x1) - (y2 - y1) = 0
+        // y1 - (y2.neg()) - lambda * (x1 - x2) = 0
+        // y1 + y2 - lambda * (x1 - x2) = 0
+        // 3 * x * x - lambda * 2 * y 
+        let product_1_rhs_t0 = BigNum::conditional_select(y1, x2.neg(), double_predicate);
+        let product_1_rhs_t1 = BigNum::conditional_select(y1, x1, double_predicate);
+        let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
+        let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
+        let product_2_rhs_t1 = BigNum::conditional_select(x1, y1, double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+
+        // validate the provided value of `lambda` is correct
+        // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0
+        // if add:    -lambda * (x1 - x2) + 1 * (y2 + y1) = 0 => lambda * (x2 - x1) - (-y2 - y1) = 0
+        let mut a_term = BigNum::conditional_select(
+            CurveParams::a(),
+            BigNum::new(),
+            x_equal_predicate & !y_equal_predicate & !self.is_infinity & !other.is_infinity
+        );
+        BigNum::evaluate_quadratic_expression(
+            [[lambda], [product_2_lhs_t0]],
+            [[true], [false]],
+            [
+            [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()], [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2]
+        ],
+            [[false, false, false], [false, false, false]],
+            [a_term],
+            [false]
+        );
+
+        // x3 = lambda * lambda - x2 - x1
+        // if double, then x2 = x1 so we good
+        BigNum::evaluate_quadratic_expression(
+            [[lambda]],
+            [[false]],
+            [[lambda]],
+            [[false]],
+            [x3, x2, x1],
+            [true, true, true]
+        );
+
+        // y3 = lambda * (x1 - x3) - y1
+        BigNum::evaluate_quadratic_expression(
+            [[lambda]],
+            [[false]],
+            [[x3, x1]],
+            [[false, true]],
+            [y3, y1],
+            [false, false]
+        );
+
+        let output_is_lhs = other.is_infinity & !self.is_infinity;
+        let output_is_rhs = self.is_infinity & !other.is_infinity;
+        let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
+        x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
+        x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
+        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
+        y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
+        y_out = BigNum::conditional_select(other.y.neg(), y_out, output_is_rhs);
+        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+
+        let conditional_select = |a: bool, b: bool, predicate: bool| ((b as Field - a as Field) * predicate as Field + a as Field) as bool;
+
+        let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
+        infinity_out = conditional_select(true, infinity_out, infinity_predicate);
+        infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
+        infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
+
+        let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
+        result
+    }
+
+    fn incomplete_subtract_with_hint(self, other: Self, transcript: AffineTranscript<BigNum>) -> Self {
         let x1: BigNum = self.x;
         let y1: BigNum = self.y;
         let x2: BigNum = other.x;
@@ -238,7 +442,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             [false, false]
         );
 
-        BigCurve { x: x3, y: y3 }
+        BigCurve { x: x3, y: y3, is_infinity: false }
     }
 
     /**
@@ -253,19 +457,22 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         let x3: BigNum = transcript.x3;
         let y3: BigNum = transcript.y3;
 
+        // TODO: HANDLE CURVES WHERE A != 0
         // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed BigNum objects!
         x3.validate_in_range();
         y3.validate_in_range();
         lambda.validate_in_range();
 
+        // -lambda * 2y + 3*x*x + a = 0
         // validate the provided value of `lambda` is correct
+        // n.b. if CurveParams::a() == 0, its inclusion shouldn't cost extra constraints...I thnk
         BigNum::evaluate_quadratic_expression(
             [[x1, x1, x1], [y1, y1, BigNum::new()]],
             [[false, false, false], [false, false, false]],
             [[x1], [lambda]],
             [[false], [true]],
-            [],
-            []
+            [CurveParams::a()],
+            [false]
         );
 
         // validate the provided value of `x3` is correct
@@ -288,23 +495,9 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             [false, false]
         );
 
-        BigCurve { x: x3, y: y3 }
+        BigCurve { x: x3, y: y3, is_infinity: false }
     }
 
-    fn offset_generator() -> Self {
-        let result = CurveParams::offset_generator();
-        Self { x: result[0], y: result[1] }
-    }
-
-    fn offset_generator_final() -> Self {
-        let result = CurveParams::offset_generator_final();
-        Self { x: result[0], y: result[1] }
-    }
-
-    fn one() -> Self {
-        let result = CurveParams::one();
-        Self { x: result[0], y: result[1] }
-    }
     /**
      * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
      **/
@@ -340,7 +533,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             accumulator = accumulator.incomplete_subtract_with_hint(self, transcript[4 + 5 * NScalarSlices]);
         }
 
-        accumulator = accumulator.incomplete_subtract_with_hint(BigCurve::offset_generator_final(), transcript[5 + 5 * NScalarSlices]);
+        accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[5 + 5 * NScalarSlices]);
         accumulator
     }
 
@@ -401,7 +594,40 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             }
         }
 
-        accumulator = accumulator.incomplete_subtract_with_hint(BigCurve::offset_generator_final(), transcript[10 * Size + (4 + Size) * (NScalarSlices - 1)]);
+        accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[10 * Size + (4 + Size) * (NScalarSlices - 1)]);
         accumulator
+    }
+}
+
+impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait {
+    // Expensive witness generation! Avoid if possible 
+    fn add(self, other: Self) -> Self {
+        let lhsJ = CurveJ::from(self);
+        let rhsJ = CurveJ:: from(other);
+
+        let transcript = AffineTranscript::from_j(lhsJ.add(rhsJ).1);
+
+        self.add_with_hint(other, transcript)
+    }
+}
+
+impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait {
+    // Expensive witness generation! Avoid if possible 
+    fn sub(self, other: Self) -> Self {
+        let lhsJ = CurveJ::from(self);
+        let rhsJ = CurveJ:: from(other);
+
+        let transcript = AffineTranscript::from_j(lhsJ.sub(rhsJ).1);
+
+        self.sub_with_hint(other, transcript)
+    }
+}
+
+/**
+ * @brief are two Affine points equal?
+ **/
+impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams> where BigNum: BigNumTrait {
+    fn eq(self, other: Self) -> bool {
+        self.x.eq(other.x) & self.y.eq(other.y)
     }
 }

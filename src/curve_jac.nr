@@ -2,7 +2,7 @@ use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
 use crate::scalar_field::ScalarField;
 use crate::curve::CurveParamsTrait;
-
+use crate::curve::BigCurve;
 /**
  * @brief CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
  *        representation in Jacobian form is X, Y, Z
@@ -26,6 +26,7 @@ struct CurveJ<BigNum, CurveParams> {
     x: BigNum,
     y: BigNum,
     z: BigNum,
+    is_infinity: bool
 }
 
 /**
@@ -67,6 +68,11 @@ impl<BigNum> AffineTranscript<BigNum> where BigNum: BigNumTrait {
     fn new() -> Self {
         AffineTranscript { lambda: BigNum::new(), x3: BigNum::new(), y3: BigNum::new() }
     }
+
+    unconstrained fn from_j(j_tx: JTranscript<BigNum>) -> Self {
+        AffineTranscript::from_jacobian_transcript([j_tx].as_slice())[0]
+    }
+
     unconstrained fn from_jacobian_transcript(j_tx: [JTranscript<BigNum>]) -> [AffineTranscript<BigNum>] {
         let mut result: [AffineTranscript<BigNum>] = &[];
 
@@ -161,7 +167,16 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
      * @brief get a value out of the lookup table
      **/
     unconstrained fn get<CurveParams>(self, idx: u8) -> CurveJ<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum> {
-        CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx] }
+        CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
+    }
+}
+
+/**
+ * @brief construct from BigCurve
+ **/
+impl<BigNum, CurveParams> std::convert::From<BigCurve<BigNum, CurveParams>> for CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
+    fn from(affine_point: BigCurve<BigNum, CurveParams>) -> Self {
+        CurveJ{ x: affine_point.x, y: affine_point.y, z: BigNum::one(), is_infinity: affine_point.is_infinity }
     }
 }
 
@@ -188,7 +203,14 @@ impl<BigNum, CurveParams> std::cmp::Eq for CurveJ<BigNum, CurveParams> where Big
         let x_rhs = other.x.__mulmod(z1z1);
         let y_lhs = self.y.__mulmod(z2z2z2);
         let y_rhs = other.y.__mulmod(z1z1z1);
-        x_lhs.eq(x_rhs) & y_lhs.eq(y_rhs)
+        let lhs_infinity = self.is_infinity;
+        let rhs_infinity = other.is_infinity;
+        let both_not_infinity = !(lhs_infinity & rhs_infinity);
+        let both_infinity = !both_not_infinity;
+
+        let mut points_equal = (x_lhs.eq(x_rhs) & y_lhs.eq(y_rhs)) & both_not_infinity;
+        points_equal = points_equal | both_infinity;
+        points_equal
     }
 }
 
@@ -197,11 +219,101 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
      * @brief negate a point
      **/
     fn neg(self) -> Self {
-        CurveJ { x: self.x, y: self.y.__negate(), z: self.z }
+        CurveJ { x: self.x, y: self.y.__negate(), z: self.z, is_infinity: self.is_infinity }
     }
 
     unconstrained fn new() -> Self {
-        CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new() }
+        CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new(), is_infinity: false }
+    }
+
+    unconstrained fn point_at_infinity() -> Self {
+        CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new(), is_infinity: true }
+    }
+
+    unconstrained fn sub(self, p2: Self) -> (Self, JTranscript<BigNum>) {
+        self.add(p2.neg())
+    }
+    unconstrained fn add(self, p2: Self) -> (Self, JTranscript<BigNum>) {
+        // TODO: once we have linear expressions as unconstrained fns, replace this with something that has no addmods, submods
+        let X1 = self.x;
+        let X2 = p2.x;
+        let Y1 = self.y;
+        let Y2 = p2.y;
+        let Z1 = self.z;
+        let Z2 = p2.z;
+        let Z2Z2 = Z2.__mulmod(Z2);
+        let Z1Z1 = Z1.__mulmod(Z1);
+        let Z2Z2Z2 = Z2Z2.__mulmod(Z2);
+        let Z1Z1Z1 = Z1Z1.__mulmod(Z1);
+        let U1 = X1.__mulmod(Z2Z2);
+        let U2 = X2.__mulmod(Z1Z1);
+        let S1 = Y1.__mulmod(Z2Z2Z2);
+        let S2 = Y2.__mulmod(Z1Z1Z1);
+        let R = S2.__submod(S1);
+
+        // x1*z2*z2 == x2*z1*z1 => U2 == U2
+        let x_equal_predicate = U2.eq(U1);
+        let y_equal_predicate = S2.eq(S1);
+        let lhs_infinity = self.is_infinity;
+        let rhs_infinity = p2.is_infinity;
+        let double_predicate = x_equal_predicate & y_equal_predicate & !lhs_infinity & !rhs_infinity;
+        let add_predicate = !x_equal_predicate & !lhs_infinity & !rhs_infinity;
+        let infinity_predicate = (x_equal_predicate & !y_equal_predicate) | (lhs_infinity & rhs_infinity);
+        println(f"infinity predicate = {infinity_predicate}");
+        println(f"double predicate = {double_predicate}");
+        println(f"add predicate = {add_predicate}");
+        println(f"lhs infinity = {lhs_infinity}");
+        println(f"rhs infinity = {rhs_infinity}");
+        let mut result: (Self, JTranscript<BigNum>) = (CurveJ::new(), JTranscript::new());
+        if (double_predicate) {
+            result = self.dbl();
+        } else if (add_predicate) {
+            result = self.incomplete_add(p2);
+        } else if (infinity_predicate) {
+            result = (CurveJ::point_at_infinity(), JTranscript::new() );
+        } else if (lhs_infinity & !rhs_infinity) {
+            result = (p2, JTranscript::new());
+        } else if (rhs_infinity & !lhs_infinity) {
+            result = (self, JTranscript::new());
+        }
+        result
+        // let (_, PP): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression([[U2, U1]], [[false, true]], [[U2, U1]], [[false, true]], [], []);
+        // let (_, X3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
+        //     [[BigNum::new(), PP], [R, BigNum::new()]],
+        //     [[false, true], [false, false]],
+        //     [[U1, U2], [R, BigNum::new()]],
+        //     [[false, false], [false, false]],
+        //     [],
+        //     []
+        // );
+        // let (_, U1S2_minus_U2S1): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
+        //     [[U1], [U2]],
+        //     [[false], [true]],
+        //     [[S2], [S1]],
+        //     [[false], [false]],
+        //     [],
+        //     []
+        // );
+        // let (_, Y3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
+        //     [[PP], [X3]],
+        //     [[false], [false]],
+        //     [[U1S2_minus_U2S1], [R]],
+        //     [[false], [true]],
+        //     [],
+        //     []
+        // );
+        // let Z1Z2 = Z1.__mulmod(Z2);
+        // let (_, Z3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
+        //     [[Z1Z2, BigNum::new()]],
+        //     [[false, false]],
+        //     [[U2, U1]],
+        //     [[false, true]],
+        //     [],
+        //     []
+        // );
+        // (
+        //     CurveJ { x: X3, y: Y3, z: Z3, is_infinity: false }, JTranscript { lambda_numerator: R, x3: X3, y3: Y3, z3: Z3 }
+        // )
     }
 
     /**
@@ -267,7 +379,9 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
             []
         );
 
-        (CurveJ { x: X3, y: Y3, z: Z3 }, JTranscript { lambda_numerator: R, x3: X3, y3: Y3, z3: Z3 })
+        (
+            CurveJ { x: X3, y: Y3, z: Z3, is_infinity: false }, JTranscript { lambda_numerator: R, x3: X3, y3: Y3, z3: Z3 }
+        )
     }
 
     /**
@@ -290,7 +404,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
             []
         );
         let (_, D): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression([[X1, X1]], [[false, false]], [[YY_mul_2]], [[false]], [], []);
-        let (_, X3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
+        let mut (_, X3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
             [[XX_mul_3]],
             [[false]],
             [[XX_mul_3]],
@@ -306,25 +420,31 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
             [],
             []
         );
+        // TODO: tidy this up and make more efficient?!
+        if (CurveParams::a().get_limb(0) != 0) {
+            let ZZ = Z1.mul(Z1);
+            let AZZZZ = ZZ.mul(ZZ).mul(CurveParams::a());
+            X3 = X3.add(AZZZZ);
+        }
         let (_, Z3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression([[Y1]], [[false]], [[Z1, Z1]], [[false, false]], [], []);
         (
-            CurveJ { x: X3, y: Y3, z: Z3 }, JTranscript { lambda_numerator: XX_mul_3, x3: X3, y3: Y3, z3: Z3 }
+            CurveJ { x: X3, y: Y3, z: Z3, is_infinity: false }, JTranscript { lambda_numerator: XX_mul_3, x3: X3, y3: Y3, z3: Z3 }
         )
     }
 
     fn offset_generator() -> Self {
         let result = CurveParams::offset_generator();
-        Self { x: result[0], y: result[1], z: BigNum::one() }
+        Self { x: result[0], y: result[1], z: BigNum::one(), is_infinity: false }
     }
 
     fn offset_generator_final() -> Self {
         let result = CurveParams::offset_generator_final();
-        Self { x: result[0], y: result[1], z: BigNum::one() }
+        Self { x: result[0], y: result[1], z: BigNum::one(), is_infinity: false }
     }
 
     fn one() -> Self {
         let result = CurveParams::one();
-        Self { x: result[0], y: result[1], z: BigNum::one() }
+        Self { x: result[0], y: result[1], z: BigNum::one(), is_infinity: false }
     }
 
     /**
@@ -360,7 +480,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
             transcript = transcript.push_back(JTranscript::new());
         }
 
-        let op = accumulator.incomplete_add(CurveJ::offset_generator_final().neg());
+        let op = accumulator.sub(CurveJ::offset_generator_final());
         transcript = transcript.push_back(op.1);
         accumulator = op.0;
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
@@ -419,7 +539,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
                 transcript = transcript.push_back(JTranscript::new());
             }
         }
-        let op = accumulator.incomplete_add(CurveJ::offset_generator_final().neg());
+        let op = accumulator.sub(CurveJ::offset_generator_final());
         transcript = transcript.push_back(op.1);
         accumulator = op.0;
         println(f"Making Transcript");

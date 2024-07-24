@@ -1,6 +1,8 @@
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
+use dep::bignum::RuntimeBigNumTrait;
 use dep::bignum::BigNumParamsTrait;
+use dep::bignum::runtime_bignum::BigNumParamsTrait as RuntimeBigNumParamsTrait;
 
 /**
  * @brief ScalarField represents a scalar multiplier as a sequence of 4-bit slices
@@ -37,8 +39,6 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
             result[N - i] -= 8;
         }
     }
-    let ff = nibbles[N - 1];
-    println(f"FINAL NIBBLE = {ff}");
 
     (result, skew)
 }
@@ -148,21 +148,15 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
             let (plo, phi) = get_modulus_slices();
-            println(f"plo phi = {plo} {phi}");
-            println(f"lo hi = {lo} {hi}");
-            let ff = slices[0];
-            println(f"first slice = {ff}");
             let borrow = get_borrow_flag(plo, lo) as Field;
             let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
             let rhi = phi - hi - borrow;
             let offset = (N & 1 == 1) as u32;
             let hibits = (N / 2) * 4;
             let lobits = hibits + offset * 4 + 1; // 1 extra bit to account for borrow
-            println(f"rlo {rlo}");
-            println(f"lobits = {lobits}");
             // 0x013833e84879b9709143e1f593f0000000
-         //   rlo.assert_max_bit_size(lobits as u32);
-         //  rhi.assert_max_bit_size(hibits as u32);
+            rlo.assert_max_bit_size(lobits as u32);
+            rhi.assert_max_bit_size(hibits as u32);
         }
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size(4);
@@ -206,7 +200,7 @@ impl<let N: u32> ScalarField<N> {
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<let NumLimbs: u64, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> {
+    fn from_bignum<let NumLimbs: u64, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs>  {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = get_wnaf_slices2(x.limbs);
 
@@ -214,34 +208,33 @@ impl<let N: u32> ScalarField<N> {
         Self{ base4_slices: slices, skew }
     }
 
-    fn into_bignum<let NumLimbs: u64, Params>(self) -> BigNum<NumLimbs, Params> where Params: BigNumParamsTrait<NumLimbs> {
+   fn into_bignum<BigNum>(self) -> BigNum where BigNum: BigNumTrait {
         let mut result = BigNum::new();
         let mut count: u64 = 0;
         {
             let mut acc = 0;
-                let mut last_bits: u64 = Params::modulus_bits() % 120;
+                let mut last_bits: u64 = result.modulus_bits() % 120;
                 if (last_bits == 0) { last_bits = 120; }
                 let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
-                for j in 0..last_nibbles {
-                    let nib = self.base4_slices[count] as Field;
+                for _ in 0..last_nibbles {
                     acc = acc * 16;
                     acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
                     count = count + 1;
                 }
-            result.set_limb(NumLimbs - 1, acc);
+            result.set_limb(result.num_limbs() - 1, acc);
         }
-        for i in 1..NumLimbs {
+        for i in 1..result.num_limbs() {
             let mut acc: Field = 0;
-            for j in 0..30 {
+            for _ in 0..30 {
                 acc = acc * 16;
                 acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
                 count = count + 1;
             }
             if acc.lt(0x1000000000000000000000000000000) == false {
                 acc += 0x1000000000000000000000000000000;
-                result.set_limb(NumLimbs - i, result.get_limb(NumLimbs - i) - 1);
+                result.set_limb(result.num_limbs() - i, result.get_limb(result.num_limbs() - i) - 1);
             }
-            result.set_limb(NumLimbs - 1 - i, acc);
+            result.set_limb(result.num_limbs() - 1 - i, acc);
         }
         result.set_limb(0, result.get_limb(0) - self.skew as Field);
         result

@@ -299,10 +299,6 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
 
-        println(f"output is lhs = {output_is_lhs}, output is rhs = {output_is_rhs}");
-        println(f"rhs x vs out x = {x_out}, output is rhs = {x2}");
-        println(f"infinity out = {infinity_out}");
-
         let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result
     }
@@ -404,11 +400,6 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
-        println(f"INFINITY PREDICATE = {infinity_predicate}");
-        println(f"output_is_lhs = {output_is_lhs}");
-        println(f"output_is_rhs = {output_is_rhs}");
-
-        println(f"INFINITY OUT = {infinity_out}");
 
         let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result

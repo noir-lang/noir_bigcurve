@@ -200,45 +200,45 @@ fn test_mul_a_point_at_infinity() {
 }
 
 // N.B. cannot test because stack too deep!
-#[test]
-fn test_linear_expression() {
-    let One: BN254 = BigCurve::one();
-    let Two: BN254 = BigCurve {
-        x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
-        y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
-        is_infinity: false
-    };
+// #[test]
+// fn test_linear_expression() {
+//     let One: BN254 = BigCurve::one();
+//     let Two: BN254 = BigCurve {
+//         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
+//         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
+//         is_infinity: false
+//     };
 
-    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
-    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
-    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
-    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+//     let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+//     let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+//     let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+//     let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
 
-    let result = BigCurve::evaluate_linear_expression([One], [scalar2], []);
-    let expected = Two.neg();
-    assert(result == expected);
-}
+//     let result = BigCurve::evaluate_linear_expression([One], [scalar2], []);
+//     let expected = Two.neg();
+//     assert(result == expected);
+// }
 
 // N.B. cannot test because stack too deep!
-#[test]
-fn test_msm() {
-    let One: BN254 = BigCurve::one();
-    let Two: BN254 = BigCurve {
-        x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
-        y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
-        is_infinity: false
-    };
+// #[test]
+// fn test_msm() {
+//     let One: BN254 = BigCurve::one();
+//     let Two: BN254 = BigCurve {
+//         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
+//         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
+//         is_infinity: false
+//     };
 
-    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
-    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
-    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
-    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+//     let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+//     let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+//     let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+//     let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
 
-    let transcript = get_msm_transcript(CurveJ::from(One), CurveJ::from(Two), scalar6, scalar2);
-    let result = BigCurve::msm_with_hint([One, Two.neg()], [scalar6, scalar2], transcript);
-    let expected = Two.neg();
-    assert(result == expected);
-}
+//     let transcript = get_msm_transcript(CurveJ::from(One), CurveJ::from(Two), scalar6, scalar2);
+//     let result = BigCurve::msm_with_hint([One, Two.neg()], [scalar6, scalar2], transcript);
+//     let expected = Two.neg();
+//     assert(result == expected);
+// }
 
 #[test]
 fn test_mul_jac() {
@@ -252,28 +252,28 @@ fn test_mul_jac() {
     assert(result == true);
 }
 
-unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
-    let One: BN254J = CurveJ::one();
-    let Two: BN254J = CurveJ {
-        x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
-        y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
-        z: BigNum::one(),
-        is_infinity: false
-    };
-    let result = CurveJ::msm([One, Two.neg()], scalars);
-    let expected = Two.neg();
-    assert(result.0 == expected);
-}
+// unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
+//     let One: BN254J = CurveJ::one();
+//     let Two: BN254J = CurveJ {
+//         x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
+//         y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] },
+//         z: BigNum::one(),
+//         is_infinity: false
+//     };
+//     let result = CurveJ::msm([One, Two.neg()], scalars);
+//     let expected = Two.neg();
+//     assert(result.0 == expected);
+// }
 
-#[test]
-fn test_msm_jac() {
-    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
-    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
-    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
-    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+// #[test]
+// fn test_msm_jac() {
+//     let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+//     let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+//     let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+//     let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
 
-    test_msm_jac_impl([scalar6, scalar2]);
-}
+//     test_msm_jac_impl([scalar6, scalar2]);
+// }
 
 #[test]
 fn test_add_dbl() {

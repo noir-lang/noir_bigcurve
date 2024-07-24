@@ -92,7 +92,7 @@ impl<BigNum> AffineTranscript<BigNum> where BigNum: BigNumTrait {
         }
 
         // tadaa
-        BigNum::__batch_invert(&mut inverses);
+        let inverses: [BigNum] = BigNum::__batch_invert_slice(inverses);
 
         for i in 0..j_tx.len() {
             let z_inv = inverses[i];
@@ -243,6 +243,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
     unconstrained fn sub(self, p2: Self) -> (Self, JTranscript<BigNum>) {
         self.add(p2.neg())
     }
+
     unconstrained fn add(self, p2: Self) -> (Self, JTranscript<BigNum>) {
         // TODO: once we have linear expressions as unconstrained fns, replace this with something that has no addmods, submods
         let X1 = self.x;
@@ -259,7 +260,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         let U2 = X2.__mulmod(Z1Z1);
         let S1 = Y1.__mulmod(Z2Z2Z2);
         let S2 = Y2.__mulmod(Z1Z1Z1);
-        let R = S2.__submod(S1);
+        // let R = S2.__submod(S1);
 
         // x1*z2*z2 == x2*z1*z1 => U2 == U2
         let x_equal_predicate = U2.eq(U1);
@@ -269,11 +270,6 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         let double_predicate = x_equal_predicate & y_equal_predicate & !lhs_infinity & !rhs_infinity;
         let add_predicate = !x_equal_predicate & !lhs_infinity & !rhs_infinity;
         let infinity_predicate = (x_equal_predicate & !y_equal_predicate) | (lhs_infinity & rhs_infinity);
-        println(f"infinity predicate = {infinity_predicate}");
-        println(f"double predicate = {double_predicate}");
-        println(f"add predicate = {add_predicate}");
-        println(f"lhs infinity = {lhs_infinity}");
-        println(f"rhs infinity = {rhs_infinity}");
         let mut result: (Self, JTranscript<BigNum>) = (CurveJ::new(), JTranscript::new());
         if (double_predicate) {
             result = self.dbl();
@@ -506,7 +502,6 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         transcript = transcript.push_back(op.1);
         accumulator = op.0;
 
-        println(f"FINAL ACCUMULATOR = {accumulator}");
         let affine_transcript: [AffineTranscript<BigNum>] = AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)
@@ -544,13 +539,11 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         accumulator = op.0;
 
         for i in 1..Size {
-            println(f"SizeIt = {i}");
             let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0]));
             transcript = transcript.push_back(op.1);
             accumulator = op.0;
         }
         for i in 1..NScalarSlices {
-            println(f"ScalarSliceIt = {i}");
             for _ in 0..4 {
                 let op = accumulator.dbl();
                 accumulator = op.0;
@@ -644,13 +637,11 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         accumulator = op.0;
 
         for i in 1..NMuls {
-            println(f"SizeIt = {i}");
             let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0]));
             jacobian_transcript.msm_add_transcript[0][i] = op.1;
             accumulator = op.0;
         }
         for i in 1..NScalarSlices {
-            println(f"ScalarSliceIt = {i}");
             for j in 0..4 {
                 let op = accumulator.dbl();
                 accumulator = op.0;
@@ -706,29 +697,6 @@ struct AffineLinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: 
     offset_generator_transcript: AffineTranscript<BigNum, CurveParams>
 }
 
-// unconstrained fn from_jacobian_transcript(j_tx: [JTranscript<BigNum>]) -> [AffineTranscript<BigNum>] {
-//     let mut result: [AffineTranscript<BigNum>] = &[];
-
-//     let mut inverses: [BigNum] = &[];
-//     for i in 0..j_tx.len() {
-//         inverses = inverses.push_back(j_tx[i].z3);
-//     }
-
-//     // tadaa
-//     BigNum::__batch_invert(&mut inverses);
-
-//     for i in 0..j_tx.len() {
-//         let z_inv = inverses[i];
-//         let zz = z_inv.__mulmod(z_inv);
-//         let zzz = zz.__mulmod(z_inv);
-//         let lambda = j_tx[i].lambda_numerator.__mulmod(z_inv);
-//         let x3 = j_tx[i].x3.__mulmod(zz);
-//         let y3 = j_tx[i].y3.__mulmod(zzz);
-//         result = result.push_back(AffineTranscript { lambda, x3, y3 });
-//     }
-//     result
-// }
-
 impl<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>  AffineLinearExpressionTranscript<BigNum, CurveParams,NScalarSlices,NMuls,NAdds> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
 
     unconstrained fn from_jtranscript(jtranscript: LinearExpressionTranscript<BigNum, CurveParams,  NScalarSlices,  NMuls,  NAdds>) -> Self {
@@ -760,7 +728,7 @@ impl<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64
         }
         inverses = inverses.push_back(jtranscript.offset_generator_transcript.z3);
 
-        BigNum::__batch_invert(&mut inverses);
+        let inverses: [BigNum] = BigNum::__batch_invert_slice(inverses);
 
         let mut result: AffineLinearExpressionTranscript<BigNum, CurveParams,NScalarSlices,NMuls,NAdds> = AffineLinearExpressionTranscript {
             table_transcript: [[AffineTranscript::new(); 8]; NMuls],

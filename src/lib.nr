@@ -630,7 +630,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    unconstrained fn get_mul_transcript<let NScalarSlices: u64>(
+    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(
         P: Self,
         scalar: ScalarField<NScalarSlices>
     ) -> [AffineTranscript<BigNum, CurveParams>; 326] {
@@ -638,13 +638,13 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
     }
 
     // Expensive witness generation! Avoid if possible 
-    fn mul<let NScalarSlices: u64>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
         let transcript: [AffineTranscript<BigNum, CurveParams>; 326] = BigCurve::get_mul_transcript(self, scalar);
 
         self.mul_with_hint(scalar, transcript)
     }
 
-    fn evaluate_linear_expression<let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>(
+    fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mut mul_points: [Self; NMuls],
         mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]

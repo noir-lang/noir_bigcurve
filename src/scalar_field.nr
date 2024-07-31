@@ -200,7 +200,7 @@ impl<let N: u32> ScalarField<N> {
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<let NumLimbs: u64, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs>  {
+    fn from_bignum<let NumLimbs: u32, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs>  {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = get_wnaf_slices2(x.limbs);
 

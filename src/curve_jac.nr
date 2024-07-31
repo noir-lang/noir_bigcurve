@@ -589,7 +589,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
         (accumulator, affine_transcript)
     }
 
-    unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>(
+    unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [BigCurve<BigNum, CurveParams>; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [BigCurve<BigNum, CurveParams>; NAdds]
@@ -679,7 +679,7 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
     }
 }
 
-struct LinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>{
+struct LinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>{
     table_transcript: [[JTranscript<BigNum, CurveParams>; 8]; NMuls],
     msm_double_transcript: [[JTranscript<BigNum, CurveParams>; 4]; NScalarSlices],
     msm_add_transcript: [[JTranscript<BigNum, CurveParams>; NMuls]; NScalarSlices],
@@ -688,7 +688,7 @@ struct LinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: u64, l
     offset_generator_transcript: JTranscript<BigNum, CurveParams>
 }
 
-struct AffineLinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>{
+struct AffineLinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>{
     table_transcript: [[AffineTranscript<BigNum, CurveParams>; 8]; NMuls],
     msm_double_transcript: [[AffineTranscript<BigNum, CurveParams>; 4]; NScalarSlices],
     msm_add_transcript: [[AffineTranscript<BigNum, CurveParams>; NMuls]; NScalarSlices],
@@ -697,7 +697,7 @@ struct AffineLinearExpressionTranscript<BigNum, CurveParams, let NScalarSlices: 
     offset_generator_transcript: AffineTranscript<BigNum, CurveParams>
 }
 
-impl<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>  AffineLinearExpressionTranscript<BigNum, CurveParams,NScalarSlices,NMuls,NAdds> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
+impl<BigNum, CurveParams, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>  AffineLinearExpressionTranscript<BigNum, CurveParams,NScalarSlices,NMuls,NAdds> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {
 
     unconstrained fn from_jtranscript(jtranscript: LinearExpressionTranscript<BigNum, CurveParams,  NScalarSlices,  NMuls,  NAdds>) -> Self {
         let mut inverses: [BigNum] = &[];
@@ -776,7 +776,7 @@ impl<BigNum, CurveParams, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64
         result
     }
 }
-impl<BigNum, CurveParams, let NBits: u64, let NScalarSlices: u64, let NMuls: u64, let NAdds: u64> LinearExpressionTranscript<BigNum, CurveParams, NBits,  NScalarSlices,  NMuls,  NAdds> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {}
+impl<BigNum, CurveParams, let NBits: u32, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32> LinearExpressionTranscript<BigNum, CurveParams, NBits,  NScalarSlices,  NMuls,  NAdds> where BigNum: BigNumTrait, CurveParams: CurveParamsTrait<BigNum> {}
 
 // TODO: this should probably be in bignum
 unconstrained pub fn batch_invert<BigNum>(x: &mut [BigNum]) where BigNum: BigNumTrait {

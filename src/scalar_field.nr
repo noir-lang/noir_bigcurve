@@ -213,7 +213,7 @@ impl<let N: u32> ScalarField<N> {
         let mut count: u64 = 0;
         {
             let mut acc = 0;
-                let mut last_bits: u64 = result.modulus_bits() % 120;
+                let mut last_bits = (result.modulus_bits() % 120) as u64;
                 if (last_bits == 0) { last_bits = 120; }
                 let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
                 for _ in 0..last_nibbles {
@@ -232,7 +232,7 @@ impl<let N: u32> ScalarField<N> {
             }
             if acc.lt(0x1000000000000000000000000000000) == false {
                 acc += 0x1000000000000000000000000000000;
-                result.set_limb(result.num_limbs() - i, result.get_limb(result.num_limbs() - i) - 1);
+                result.set_limb(result.num_limbs() - i, result.get_limb((result.num_limbs() - i) as u64) - 1);
             }
             result.set_limb(result.num_limbs() - 1 - i, acc);
         }

@@ -11,6 +11,10 @@ use crate::curve_jac::AffineLinearExpressionTranscript;
 use crate::curve_jac::CurveJ;
 use dep::bignum::BigNumTrait;
 
+fn main() {
+    bigcurve_test::test_mul()
+}
+
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
@@ -299,6 +303,10 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
 
+        println(f"output is lhs = {output_is_lhs}, output is rhs = {output_is_rhs}");
+        println(f"rhs x vs out x = {x_out}, output is rhs = {x2}");
+        println(f"infinity out = {infinity_out}");
+
         let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result
     }
@@ -400,6 +408,11 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
+        println(f"INFINITY PREDICATE = {infinity_predicate}");
+        println(f"output_is_lhs = {output_is_lhs}");
+        println(f"output_is_rhs = {output_is_rhs}");
+
+        println(f"INFINITY OUT = {infinity_out}");
 
         let result: Self = BigCurve { x: x_out, y: y_out, is_infinity: infinity_out };
         result
@@ -630,26 +643,26 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(
+    unconstrained fn get_mul_transcript<let NScalarSlices: u64>(
         P: Self,
         scalar: ScalarField<NScalarSlices>
-    ) -> [AffineTranscript<BigNum>; 326] {
+    ) -> [AffineTranscript<BigNum, CurveParams>; 326] {
         CurveJ::from(P).mul(scalar).1.as_array()
     }
 
     // Expensive witness generation! Avoid if possible 
-    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
-        let transcript: [AffineTranscript<BigNum>; 326] = BigCurve::get_mul_transcript(self, scalar);
+    fn mul<let NScalarSlices: u64>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+        let transcript: [AffineTranscript<BigNum, CurveParams>; 326] = BigCurve::get_mul_transcript(self, scalar);
 
         self.mul_with_hint(scalar, transcript)
     }
 
-    fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    fn evaluate_linear_expression<let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>(
         mut mul_points: [Self; NMuls],
         mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]
     ) -> Self {
-        let affine_transcript: AffineLinearExpressionTranscript<BigNum, NScalarSlices, NMuls, NAdds> = CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
+        let affine_transcript: AffineLinearExpressionTranscript<BigNum, CurveParams, NScalarSlices, NMuls, NAdds> = CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
 
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
         let mut  _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];

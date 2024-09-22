@@ -1,8 +1,9 @@
 [package]
 name = "noir_bigcurve"
-type = "lib"
+type = "bin"
 authors = [""]
 compiler_version = ">=0.32.0"
 
 [dependencies]
 bignum = {tag = "v0.3.1", git = "https://github.com/noir-lang/noir-bignum"}
+# bignum = {path = "../noir-bignum"}

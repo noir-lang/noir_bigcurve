@@ -1,7 +1,7 @@
 mod scalar_field;
 mod curve_jac;
+mod curves;
 mod test_data;
-mod bigcurve_test;
 
 use dep::bignum::BigNum;
 
@@ -12,7 +12,22 @@ use crate::curve_jac::CurveJ;
 use dep::bignum::BigNumTrait;
 
 fn main() {
-    bigcurve_test::test_mul()
+    // To measure bls12_381, temporarily
+    // let mut P: curves::bls12_381::BLS12_381_Point = BigCurve::one();
+
+    // let scalar_fr: curves::bls12_381::Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+
+    // let scalar: ScalarField<64> = ScalarField::from_bignum(scalar_fr); // r - 2
+
+    // for i in 0..1 {
+    //     let transcript = curves::bls12_381::__get_mul_transcript(CurveJ::from(P), scalar);
+
+    //     P = P.mul_with_hint(scalar, transcript);
+    // }
+        
+    curves::bls12_381::test_mul()
+    // curves::bn254::test_mul()
+
 }
 
 /**
@@ -643,26 +658,26 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    unconstrained fn get_mul_transcript<let NScalarSlices: u64>(
+    unconstrained fn __get_mul_transcript<let NScalarSlices: u32>(
         P: Self,
         scalar: ScalarField<NScalarSlices>
-    ) -> [AffineTranscript<BigNum, CurveParams>; 326] {
-        CurveJ::from(P).mul(scalar).1.as_array()
+    ) -> [AffineTranscript<BigNum>; 326] {
+        CurveJ::from(P).__mul(scalar).1.as_array()
     }
 
     // Expensive witness generation! Avoid if possible 
-    fn mul<let NScalarSlices: u64>(self, scalar: ScalarField<NScalarSlices>) -> Self {
-        let transcript: [AffineTranscript<BigNum, CurveParams>; 326] = BigCurve::get_mul_transcript(self, scalar);
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+        let transcript: [AffineTranscript<BigNum>; 326] = BigCurve::__get_mul_transcript(self, scalar);
 
         self.mul_with_hint(scalar, transcript)
     }
 
-    fn evaluate_linear_expression<let NScalarSlices: u64, let NMuls: u64, let NAdds: u64>(
+    fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mut mul_points: [Self; NMuls],
         mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]
     ) -> Self {
-        let affine_transcript: AffineLinearExpressionTranscript<BigNum, CurveParams, NScalarSlices, NMuls, NAdds> = CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
+        let affine_transcript: AffineLinearExpressionTranscript<BigNum, NScalarSlices, NMuls, NAdds> = CurveJ::__compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
 
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
         let mut  _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
@@ -731,7 +746,7 @@ impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where 
         let lhsJ = CurveJ::from(self);
         let rhsJ = CurveJ:: from(other);
 
-        let transcript = AffineTranscript::from_j(lhsJ.add(rhsJ).1);
+        let transcript = AffineTranscript::__from_j(lhsJ.__add(rhsJ).1);
 
         self.add_with_hint(other, transcript)
     }
@@ -741,9 +756,9 @@ impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where 
     // Expensive witness generation! Avoid if possible 
     fn sub(self, other: Self) -> Self {
         let lhsJ = CurveJ::from(self);
-        let rhsJ = CurveJ:: from(other);
+        let rhsJ = CurveJ::from(other);
 
-        let transcript = AffineTranscript::from_j(lhsJ.sub(rhsJ).1);
+        let transcript = AffineTranscript::__from_j(lhsJ.__sub(rhsJ).1);
 
         self.sub_with_hint(other, transcript)
     }

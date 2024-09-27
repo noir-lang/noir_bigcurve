@@ -2,7 +2,7 @@
 name = "noir_bigcurve"
 type = "lib"
 authors = [""]
-compiler_version = ">=0.32.0"
+compiler_version = ">=0.34.0"
 
 [dependencies]
 bignum = {tag = "v0.3.4", git = "https://github.com/noir-lang/noir-bignum"}

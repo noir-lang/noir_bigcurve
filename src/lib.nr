@@ -294,7 +294,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
         let conditional_select = |a: bool, b: bool, predicate: bool| ((a as Field - b as Field) * predicate as Field + b as Field) as bool;
 
-        let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
+        let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
@@ -396,7 +396,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
         let conditional_select = |a: bool, b: bool, predicate: bool| ((a as Field - b as Field) * predicate as Field + b as Field) as bool;
 
-        let mut infinity_out = conditional_select(true, false, evaluate_group_operation_predicate);
+        let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
         infinity_out = conditional_select(true, infinity_out, infinity_predicate);
         infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
         infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
@@ -630,10 +630,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(
-        P: Self,
-        scalar: ScalarField<NScalarSlices>
-    ) -> [AffineTranscript<BigNum>; 326] {
+    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(P: Self, scalar: ScalarField<NScalarSlices>) -> [AffineTranscript<BigNum>; 326] {
         CurveJ::from(P).mul(scalar).1.as_array()
     }
 

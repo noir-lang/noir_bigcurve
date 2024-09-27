@@ -320,9 +320,8 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         let x_equal_predicate = x2.eq(x1);
         let y_equal_predicate = y2.eq(y1) == false;
         let double_predicate = x_equal_predicate | (self.is_infinity | other.is_infinity); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
-        let infinity_predicate = (x_equal_predicate & !y_equal_predicate) | (self.is_infinity & other.is_infinity);
+        let infinity_predicate: bool = (x_equal_predicate & !y_equal_predicate) | (self.is_infinity & other.is_infinity);
         let evaluate_group_operation_predicate: bool = !infinity_predicate & !self.is_infinity & !other.is_infinity;
-
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
         x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
@@ -636,7 +635,9 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
     // Expensive witness generation! Avoid if possible 
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
-        let transcript: [AffineTranscript<BigNum>; 326] = BigCurve::get_mul_transcript(self, scalar);
+        let transcript: [AffineTranscript<BigNum>; 326] = unsafe {
+            BigCurve::get_mul_transcript(self, scalar)
+        };
 
         self.mul_with_hint(scalar, transcript)
     }
@@ -646,7 +647,9 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]
     ) -> Self {
-        let affine_transcript: AffineLinearExpressionTranscript<BigNum, NScalarSlices, NMuls, NAdds> = CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points);
+        let affine_transcript: AffineLinearExpressionTranscript<BigNum, NScalarSlices, NMuls, NAdds> = unsafe {
+            CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points)
+        };
 
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
         let mut  _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
@@ -678,10 +681,10 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
         // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
         for i in 1..NScalarSlices {
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][0]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][1]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][2]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i][3]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][0]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][1]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][2]);
+            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][3]);
 
             for j in 0..NMuls {
                 accumulator = accumulator.incomplete_add_with_hint(tables[j].get(scalars[j].base4_slices[i]), affine_transcript.msm_add_transcript[i][j]);
@@ -713,9 +716,11 @@ impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where 
     // Expensive witness generation! Avoid if possible 
     fn add(self, other: Self) -> Self {
         let lhsJ = CurveJ::from(self);
-        let rhsJ = CurveJ:: from(other);
+        let rhsJ = CurveJ::from(other);
 
-        let transcript = AffineTranscript::from_j(lhsJ.add(rhsJ).1);
+        let transcript = unsafe {
+            AffineTranscript::from_j(lhsJ.add(rhsJ).1)
+        };
 
         self.add_with_hint(other, transcript)
     }
@@ -725,9 +730,11 @@ impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where 
     // Expensive witness generation! Avoid if possible 
     fn sub(self, other: Self) -> Self {
         let lhsJ = CurveJ::from(self);
-        let rhsJ = CurveJ:: from(other);
+        let rhsJ = CurveJ::from(other);
 
-        let transcript = AffineTranscript::from_j(lhsJ.sub(rhsJ).1);
+        let transcript = unsafe {
+            AffineTranscript::from_j(lhsJ.sub(rhsJ).1)
+        };
 
         self.sub_with_hint(other, transcript)
     }

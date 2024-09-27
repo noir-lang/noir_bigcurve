@@ -1,6 +1,5 @@
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
-use dep::bignum::RuntimeBigNumTrait;
 use dep::bignum::BigNumParamsTrait;
 use dep::bignum::runtime_bignum::BigNumParamsTrait as RuntimeBigNumParamsTrait;
 
@@ -25,7 +24,7 @@ struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix(16, N);
+    let mut nibbles = x.to_le_radix::<N>(16);
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] as u8 + (skew as u8);
@@ -46,7 +45,7 @@ unconstrained fn get_wnaf_slices2<let N: u32, let M: u32>(x: [Field; M]) -> ([u8
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; M] = [[0; 30]; M];
     for i in 0..M {
-        nibbles[i] = x[i].to_le_radix(16, 30).as_array();
+        nibbles[i] = x[i].to_le_radix::<30>(16);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
@@ -65,17 +64,6 @@ unconstrained fn get_wnaf_slices2<let N: u32, let M: u32>(x: [Field; M]) -> ([u8
     }
 
     (result, skew)
-}
-
-unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
-    let mut result: Field = 0;
-
-    for i in 0..64 {
-        result *= 16;
-        result += (x[i] as Field) * 2 - 15;
-    }
-    result -= skew as Field;
-    result
 }
 
 unconstrained fn get_modulus_slices() -> (Field, Field) {
@@ -109,7 +97,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
      **/
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
-        let (slices, skew): ([u8; N], bool) = get_wnaf_slices(x);
+        let (slices, skew): ([u8; N], bool) = unsafe{ get_wnaf_slices(x) };
         result.base4_slices = slices;
         result.skew = skew;
         if (N < 64) {
@@ -144,8 +132,8 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
                                 // 0x8833e84879b9709143e1f593efffffff
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-            let (plo, phi) = get_modulus_slices();
-            let borrow = get_borrow_flag(plo, lo) as Field;
+            let (plo, phi) = unsafe{ get_modulus_slices() };
+            let borrow = unsafe{ get_borrow_flag(plo, lo) as Field };
             let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
             let rhi = phi - hi - borrow;
             let offset = (N & 1 == 1) as u32;
@@ -198,7 +186,9 @@ impl<let N: u32> ScalarField<N> {
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
     fn from_bignum<let NumLimbs: u32, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs> {
         x.validate_in_field();
-        let mut (slices, skew): ([u8; N], bool) = get_wnaf_slices2(x.limbs);
+        let mut (slices, skew): ([u8; N], bool) = unsafe {
+            get_wnaf_slices2(x.limbs)
+        };
 
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
         Self { base4_slices: slices, skew }

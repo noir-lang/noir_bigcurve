@@ -1,6 +1,5 @@
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
-use dep::bignum::RuntimeBigNumTrait;
 use dep::bignum::BigNumParamsTrait;
 use dep::bignum::runtime_bignum::BigNumParamsTrait as RuntimeBigNumParamsTrait;
 
@@ -24,9 +23,8 @@ struct ScalarField<let N: u32> {
 
 // 1, 2, 3, 4
 unconstrained fn __get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
-
     let mut result: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix(16, N);
+    let mut nibbles = x.to_le_radix::<N>(16);
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] as u8 + (skew as u8);
@@ -44,11 +42,10 @@ unconstrained fn __get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
 }
 
 unconstrained fn __get_wnaf_slices2<let N: u32, let M: u32>(x: [Field; M]) -> ([u8; N], bool) {
-
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; M] = [[0; 30]; M];
     for i in 0..M {
-        nibbles[i] = x[i].to_le_radix(16, 30).as_array();
+        nibbles[i] = x[i].to_le_radix::<30>(16);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
@@ -68,18 +65,6 @@ unconstrained fn __get_wnaf_slices2<let N: u32, let M: u32>(x: [Field; M]) -> ([
 
     (result, skew)
 }
-
-unconstrained fn __from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
-    let mut result: Field = 0;
-
-    for i in 0..64 {
-        result *= 16;
-        result += (x[i] as Field) * 2 - 15;
-    }
-    result -= skew as Field;
-    result
-}
-
 
 unconstrained fn __get_modulus_slices() -> (Field, Field) {
     let bytes = std::field::modulus_be_bytes();
@@ -112,7 +97,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
      **/
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
-        let (slices, skew): ([u8; N], bool) = __get_wnaf_slices(x);
+        let (slices, skew): ([u8; N], bool) = unsafe{ __get_wnaf_slices(x) };
         result.base4_slices = slices;
         result.skew = skew;
         if (N < 64) {
@@ -147,8 +132,8 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
                                 // 0x8833e84879b9709143e1f593efffffff
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-            let (plo, phi) = __get_modulus_slices();
-            let borrow = __get_borrow_flag(plo, lo) as Field;
+            let (plo, phi) = unsafe{ __get_modulus_slices() };
+            let borrow = unsafe{ __get_borrow_flag(plo, lo) as Field };
             let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
             let rhi = phi - hi - borrow;
             let offset = (N & 1 == 1) as u32;
@@ -184,43 +169,46 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 impl<let N: u32> ScalarField<N> {
 
     fn zero() -> Self {
-        let mut result: Self = ScalarField{ base4_slices: [0; N], skew: true };
-        
-        result.base4_slices[N-1] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
+        let mut result: Self = ScalarField { base4_slices: [0; N], skew: true };
+
+        result.base4_slices[0] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
         result
     }
 
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
         let mut result = rhs;
-        if (predicate)
-        {
+        if (predicate) {
             result = lhs;
         }
         result
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<let NumLimbs: u32, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs>  {
+    fn from_bignum<let NumLimbs: u32, Params>(x: BigNum<NumLimbs, Params>) -> Self where Params: BigNumParamsTrait<NumLimbs> + RuntimeBigNumParamsTrait<NumLimbs> {
         x.validate_in_field();
-        let mut (slices, skew): ([u8; N], bool) = __get_wnaf_slices2(x.limbs);
+        let mut (slices, skew): ([u8; N], bool) = unsafe {
+            __get_wnaf_slices2(x.limbs)
+        };
 
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
-        Self{ base4_slices: slices, skew }
+        Self { base4_slices: slices, skew }
     }
 
-   fn into_bignum<BigNum>(self) -> BigNum where BigNum: BigNumTrait {
+    fn into_bignum<BigNum>(self) -> BigNum where BigNum: BigNumTrait {
         let mut result = BigNum::new();
         let mut count: u64 = 0;
         {
             let mut acc = 0;
-                let mut last_bits = (result.modulus_bits() % 120) as u64;
-                if (last_bits == 0) { last_bits = 120; }
-                let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
-                for _ in 0..last_nibbles {
-                    acc = acc * 16;
-                    acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
-                    count = count + 1;
-                }
+            let mut last_bits = (result.modulus_bits() % 120) as u64;
+            if (last_bits == 0) {
+                last_bits = 120;
+            }
+            let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
+            for _ in 0..last_nibbles {
+                acc = acc * 16;
+                acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
+                count = count + 1;
+            }
             result.set_limb(result.num_limbs() - 1, acc);
         }
         for i in 1..result.num_limbs() {
@@ -232,14 +220,17 @@ impl<let N: u32> ScalarField<N> {
             }
             if acc.lt(0x1000000000000000000000000000000) == false {
                 acc += 0x1000000000000000000000000000000;
-                result.set_limb(result.num_limbs() - i, result.get_limb((result.num_limbs() - i) as u64) - 1);
+                result.set_limb(
+                    result.num_limbs() - i,
+                    result.get_limb((result.num_limbs() - i) as u64) - 1
+                );
             }
             result.set_limb(result.num_limbs() - 1 - i, acc);
         }
         result.set_limb(0, result.get_limb(0) - self.skew as Field);
         result
     }
-    
+
     fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }

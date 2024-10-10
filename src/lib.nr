@@ -718,9 +718,6 @@ impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where 
         let lhsJ = CurveJ::from(self);
         let rhsJ = CurveJ::from(other);
 
-        let Sum_j = lhsJ.__add(rhsJ);
-        println("\nSum_j:");
-        println(Sum_j);
         let transcript = unsafe {
             AffineTranscript::__from_j(lhsJ.__add(rhsJ).1)
         };

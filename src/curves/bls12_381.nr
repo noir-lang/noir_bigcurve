@@ -1,9 +1,4 @@
-use dep::bignum::{
-    BigNum,
-    fields::{
-        bls12_381Fq::BLS12_381_Fq_Params, bls12_381Fr::BLS12_381_Fr_Params
-    }
-};
+use dep::bignum::{BigNum, fields::{bls12_381Fq::BLS12_381_Fq_Params, bls12_381Fr::BLS12_381_Fr_Params}};
 
 use crate::BigCurve;
 use crate::CurveParamsTrait;
@@ -15,45 +10,68 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::PointTable;
 
-
 type Fq = BigNum<4, BLS12_381_Fq_Params>;
 type Fr = BigNum<3, BLS12_381_Fr_Params>;
 
 struct BLS12_381_Curve_Params {
 }
 
-impl CurveParamsTrait<BigNum<4, BLS12_381_Fq_Params>> for BLS12_381_Curve_Params  {
+impl CurveParamsTrait<BigNum<4, BLS12_381_Fq_Params>> for BLS12_381_Curve_Params {
     // Generator:
     // https://github.com/zcash/librustzcash/blob/6e0364cd42a2b3d2b958a54771ef51a8db79dd29/pairing/src/bls12_381/README.md#generators
     // https://hackmd.io/@benjaminion/bls12-381#Generators
     fn one() -> [BigNum<4, BLS12_381_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x55e83ff97a1aeffb3af00adb22c6bb, 0x8c4f9774b905a14e3a3f171bac586c, 0xa73197d7942695638c4fa9ac0fc368, 0x17f1d3] },
-            BigNum { limbs: [0x3cc744a2888ae40caa232946c5e7e1, 0xe095d5d00af600db18cb2c04b3edd0, 0x81e3aaa0f1a09e30ed741d8ae4fcf5, 0x8b3f4] }
+            BigNum {
+                limbs: [
+                    0x55e83ff97a1aeffb3af00adb22c6bb, 0x8c4f9774b905a14e3a3f171bac586c, 0xa73197d7942695638c4fa9ac0fc368, 0x17f1d3
+                ]
+            },
+            BigNum {
+                limbs: [
+                    0x3cc744a2888ae40caa232946c5e7e1, 0xe095d5d00af600db18cb2c04b3edd0, 0x81e3aaa0f1a09e30ed741d8ae4fcf5, 0x8b3f4
+                ]
+            }
         ]
     }
 
     // TODO: See sage for derivation `BLS12_381_E.gens()`. It's perhaps not the best "nothing up my sleeve" generator, but it is on the curve, and works for now...
     fn offset_generator() -> [BigNum<4, BLS12_381_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x442fbd0ad62391acc555c722aea803, 0x874b86b63ecf19360c2b6d0929bb71, 0x78bb8da22c7570f7dc170e554d728b, 0x38e40] },
-            BigNum { limbs: [0x2ea24532fc73e4d7584bb0fa458df4, 0xc92ed9753fb9e1b8819f3a605248e5, 0x8b7b998bb4f0c34146feb9d46b28ef, 0xbec32] }
+            BigNum {
+                limbs: [
+                    0x442fbd0ad62391acc555c722aea803, 0x874b86b63ecf19360c2b6d0929bb71, 0x78bb8da22c7570f7dc170e554d728b, 0x38e40
+                ]
+            },
+            BigNum {
+                limbs: [
+                    0x2ea24532fc73e4d7584bb0fa458df4, 0xc92ed9753fb9e1b8819f3a605248e5, 0x8b7b998bb4f0c34146feb9d46b28ef, 0xbec32
+                ]
+            }
         ]
     }
 
     fn offset_generator_final() -> [BigNum<4, BLS12_381_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0xbf1e24769d991bf33870bd69d363ea, 0x2b423528162b0d76359c3da6ca2eea, 0xee96e3f32399f07455b37847f7acd5, 0x43fdb] },
-            BigNum { limbs: [0x25925f2a055349541935f8c7a32590, 0xb37639973145c0eff2ffab0b9cbbf3, 0x8cb4e9e6329b89a2c7ab6063948b68, 0x1168d5] }
+            BigNum {
+                limbs: [
+                    0xbf1e24769d991bf33870bd69d363ea, 0x2b423528162b0d76359c3da6ca2eea, 0xee96e3f32399f07455b37847f7acd5, 0x43fdb
+                ]
+            },
+            BigNum {
+                limbs: [
+                    0x25925f2a055349541935f8c7a32590, 0xb37639973145c0eff2ffab0b9cbbf3, 0x8cb4e9e6329b89a2c7ab6063948b68, 0x1168d5
+                ]
+            }
         ]
     }
-    
+
     fn a() -> BigNum<4, BLS12_381_Fq_Params> {
-        BigNum { limbs: [0,0,0,0]}
+        BigNum { limbs: [0, 0, 0, 0] }
     }
 
     fn b() -> BigNum<4, BLS12_381_Fq_Params> {
-        BigNum { limbs: [4,0,0,0]}
+        BigNum { limbs: [4, 0, 0, 0] }
     }
 }
 
@@ -74,7 +92,9 @@ fn main(x: Field) {
 
     // 255-bit scalar field for BLS12_381 => 64 nibbles.
     let scalar: ScalarField<64> = ScalarField::from(x); // p - 2 ? 
-    let transcript = unsafe { __get_mul_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe {
+        __get_mul_transcript(CurveJ::from(P), scalar)
+    };
     // 30768
     // 31020
     let mut A = P;
@@ -108,12 +128,7 @@ fn main(x: Field) {
     // assert(result.y.eq(expected.y));
 }
 
-unconstrained fn __evaluate_mul(
-    P: BLS12_381_Point_J,
-    scalar: ScalarField<64>,
-    Q: BLS12_381_Point_J,
-    K: BLS12_381_Point_J
-) -> bool {
+unconstrained fn __evaluate_mul(P: BLS12_381_Point_J, scalar: ScalarField<64>, Q: BLS12_381_Point_J, K: BLS12_381_Point_J) -> bool {
     let s = (P.__mul(scalar));
     assert(s.0.eq(K.__neg()));
     Q.eq(s.0)
@@ -129,10 +144,7 @@ unconstrained fn __get_msm_transcript(
     s.1
 }
 
-unconstrained fn __get_mul_transcript(
-    P: BLS12_381_Point_J,
-    scalar: ScalarField<64>
-) -> [AffineTranscript<Fq>; 326] {
+unconstrained fn __get_mul_transcript(P: BLS12_381_Point_J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
     let res = P.__mul(scalar);
     let transcript = res.1;
     // println(f"let transcript: AffineTranscript<N, Params> = {transcript}");
@@ -145,17 +157,27 @@ unconstrained fn __get_mul_transcript(
 fn test_mul() {
     let P: BLS12_381_Point = BigCurve::one();
 
-    let scalar_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let scalar_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let scalar: ScalarField<64> = ScalarField::from_bignum(scalar_fr); // r - 2
 
-    let transcript = unsafe { __get_mul_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe {
+        __get_mul_transcript(CurveJ::from(P), scalar)
+    };
 
     let result = P.mul_with_hint(scalar, transcript); // (r - 2) * P
 
     // -2
     let mut expected: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x552629e43d42e3ff7877e6868b0d83, 0xcb96d142e5d6ff5199ed9511eb9d2, 0x5d8db972f7281e0142cbae1e9f41bd, 0x39674] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x552629e43d42e3ff7877e6868b0d83, 0xcb96d142e5d6ff5199ed9511eb9d2, 0x5d8db972f7281e0142cbae1e9f41bd, 0x39674
+            ]
+        },
         is_infinity: false
     };
     // expected.y = BigNum::new() - expected.y;
@@ -180,7 +202,9 @@ fn test_mul_by_0() {
 
     let foo: Field = ScalarField::into(scalar);
     assert(foo == 0);
-    let transcript = unsafe { __get_mul_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe {
+        __get_mul_transcript(CurveJ::from(P), scalar)
+    };
 
     let result = P.mul_with_hint(scalar, transcript);
     // println(f"RESULT = {result}");
@@ -194,7 +218,9 @@ fn test_mul_a_point_at_infinity() {
 
     let scalar: ScalarField<64> = ScalarField::from(0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff); // p - 2
 
-    let transcript = unsafe { __get_mul_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe {
+        __get_mul_transcript(CurveJ::from(P), scalar)
+    };
 
     let result = P.mul_with_hint(scalar, transcript);
     // println(f"RESULT = {result}");
@@ -207,15 +233,23 @@ fn test_mul_a_point_at_infinity() {
 fn test_linear_expression() {
     let One: BLS12_381_Point = BigCurve::one();
     let Two: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         is_infinity: false
     };
 
-    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let scalar2: ScalarField<64> = ScalarField::from_bignum(r_minus_2_fr); // r - 2
 
-    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let scalar6: ScalarField<64> = ScalarField::from_bignum(r_minus_6_fr); // r - 6
 
     let expected = Two.neg();
@@ -229,15 +263,23 @@ fn test_linear_expression() {
 fn test_msm() {
     let One: BLS12_381_Point = BigCurve::one();
     let Two: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         is_infinity: false
     };
 
-    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let scalar2: ScalarField<64> = ScalarField::from_bignum(r_minus_2_fr); // r - 2
 
-    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let scalar6: ScalarField<64> = ScalarField::from_bignum(r_minus_6_fr); // r - 6
 
     let transcript = unsafe {
@@ -258,30 +300,46 @@ fn test_mul_jac() {
     let scalar_fr: Fr = BigNum { limbs: [0xbda402fffe5bfeffffffff00000000, 0xa753299d7d483339d80809a1d80553, 0x73ed] }; // r - 1
     let scalar: ScalarField<64> = ScalarField::from_bignum(scalar_fr); // r - 1
 
-    let expected = unsafe { P.__incomplete_add(P.__dbl().0.__neg()).0 }; // P + -2P = -P
-    let result = unsafe { __evaluate_mul(P, scalar, expected, P) };
+    let expected = unsafe {
+        P.__incomplete_add(P.__dbl().0.__neg()).0
+    }; // P + -2P = -P
+    let result = unsafe {
+        __evaluate_mul(P, scalar, expected, P)
+    };
     assert(result == true);
 }
 
 fn __test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     let One: BLS12_381_Point_J = CurveJ::one();
     let Two: BLS12_381_Point_J = CurveJ {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         z: BigNum::one(),
         is_infinity: false
     };
-    let result = unsafe { CurveJ::__msm([One, Two.__neg()], scalars) };
-    let expected = unsafe { Two.__neg() };
+    let result = unsafe {
+        CurveJ::__msm([One, Two.__neg()], scalars)
+    };
+    let expected = unsafe {
+        Two.__neg()
+    };
     assert(result.0 == expected);
 }
 
 #[test]
 fn test_msm_jac() {
-    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_2_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffeffffffff, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let r_minus_2_scalar: ScalarField<64> = ScalarField::from_bignum(r_minus_2_fr); // r - 2
 
-    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed ] };
+    let r_minus_6_fr: Fr = BigNum { limbs: [0xbda402fffe5bfefffffffefffffffb, 0xa753299d7d483339d80809a1d80553, 0x73ed] };
     let r_minus_6_scalar: ScalarField<64> = ScalarField::from_bignum(r_minus_6_fr); // r - 6
 
     unsafe {
@@ -292,8 +350,12 @@ fn test_msm_jac() {
 #[test]
 fn test_add_dbl() {
     let P: BLS12_381_Point_J = CurveJ::one();
-    let lhs = unsafe { ((P.__dbl().0).__dbl()).0 };
-    let rhs = unsafe { P.__dbl().0.__incomplete_add(P).0.__incomplete_add(P).0 };
+    let lhs = unsafe {
+        ((P.__dbl().0).__dbl()).0
+    };
+    let rhs = unsafe {
+        P.__dbl().0.__incomplete_add(P).0.__incomplete_add(P).0
+    };
     assert(lhs == rhs);
 }
 
@@ -301,7 +363,9 @@ fn test_add_dbl() {
 fn test_transcript() {
     let P: BLS12_381_Point_J = CurveJ::one();
 
-    let P2 = unsafe { P.__dbl() };
+    let P2 = unsafe {
+        P.__dbl()
+    };
 
     let Z_inverse = P2.1.z3.__invmod();
 
@@ -338,7 +402,9 @@ fn test_transcript() {
 fn test_double_with_hint() {
     let P: BLS12_381_Point_J = CurveJ::one();
 
-    let P2 = unsafe { P.__dbl() };
+    let P2 = unsafe {
+        P.__dbl()
+    };
 
     let P_affine: BLS12_381_Point = BigCurve::one();
 
@@ -367,23 +433,39 @@ fn test_incomplete_add_with_hint() {
 
     // Q = 2P
     let Q_affine: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         is_infinity: false
     };
     let Q = CurveJ::from(Q_affine);
-    let R = unsafe { P.__incomplete_add(Q) };
+    let R = unsafe {
+        P.__incomplete_add(Q)
+    };
 
     let P_affine: BLS12_381_Point = BigCurve::one();
 
-    let Z_inverse = unsafe { R.1.z3.__invmod() };
+    let Z_inverse = unsafe {
+        R.1.z3.__invmod()
+    };
 
     let lambda = R.1.lambda_numerator.__mul(Z_inverse);
 
     let X3 = R.1.x3;
     let Y3 = R.1.y3;
-    let ZZ = unsafe { Z_inverse.__mul(Z_inverse) };
-    let ZZZ = unsafe { ZZ.__mul(Z_inverse) };
+    let ZZ = unsafe {
+        Z_inverse.__mul(Z_inverse)
+    };
+    let ZZZ = unsafe {
+        ZZ.__mul(Z_inverse)
+    };
 
     let x3 = X3.__mul(ZZ);
     let y3 = Y3.__mul(ZZZ);
@@ -396,8 +478,12 @@ fn test_incomplete_add_with_hint() {
 
     let P: BLS12_381_Point_J = CurveJ::one();
 
-    let lhs = unsafe { P.__dbl().0.__dbl().0 };
-    let rhs = unsafe { P.__dbl().0.__incomplete_add(P).0.__incomplete_add(P).0 };
+    let lhs = unsafe {
+        P.__dbl().0.__dbl().0
+    };
+    let rhs = unsafe {
+        P.__dbl().0.__incomplete_add(P).0.__incomplete_add(P).0
+    };
     assert(lhs.eq(rhs));
 }
 
@@ -407,8 +493,16 @@ fn test_add() {
 
     // Two_P = 2P
     let Two_P: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         is_infinity: false
     };
 
@@ -416,10 +510,11 @@ fn test_add() {
 
     let P_j = CurveJ::from(P);
     let Two_P_j = CurveJ::from(Two_P);
-    let mut expected = unsafe { P_j.__add(Two_P_j).0 }; // 3P_j
+    let mut expected = unsafe {
+        P_j.__add(Two_P_j).0
+    }; // 3P_j
 
     assert(result.eq(expected));
-
 
     let Two_P_j_unconstrained = P_j.__add(P_j);
     let Two_P_j_dbl_unconstrained = P_j.__dbl();
@@ -470,8 +565,16 @@ fn test_sub() {
     let P: BLS12_381_Point = BigCurve::one();
 
     let Two_P: BLS12_381_Point = BigCurve {
-        x: BigNum { limbs: [0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb] },
-        y: BigNum { limbs: [0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d] },
+        x: BigNum {
+            limbs: [
+                0x8f75bb8f1c7c42c39a8c5529bf0f4e, 0xdb309128012543902d0ac358a62ae2, 0xea904d67468808c8eb50a9450c9721, 0x572cb
+            ]
+        },
+        y: BigNum {
+            limbs: [
+                0x56d9d4cd16bd1bba86881979749d28, 0x3ecb8670e461f73bb9021d5fd76a4c, 0x8cabc673a322fda673779d8e3822ba, 0x166a9d
+            ]
+        },
         is_infinity: false
     };
 
@@ -479,7 +582,9 @@ fn test_sub() {
 
     let P_j = CurveJ::from(P);
     let Two_P_j = CurveJ::from(Two_P);
-    let expected = unsafe { P_j.__sub(Two_P_j).0 };
+    let expected = unsafe {
+        P_j.__sub(Two_P_j).0
+    };
 
     assert(result.eq(expected));
 
@@ -487,12 +592,16 @@ fn test_sub() {
     let Q: BLS12_381_Point = BigCurve::one(); // P
 
     let result = CurveJ::from(P.sub(Q.neg()));
-    let expected = unsafe { P_j.__dbl().0 };
+    let expected = unsafe {
+        P_j.__dbl().0
+    };
     assert(result.eq(expected));
 
     // infinity
     let result = CurveJ::from(P.sub(Q));
-    let expected = unsafe { CurveJ::__point_at_infinity() };
+    let expected = unsafe {
+        CurveJ::__point_at_infinity()
+    };
     assert(result.eq(expected));
 
     // lhs infinity
@@ -503,13 +612,17 @@ fn test_sub() {
 
     // rhs infinity
     let result = CurveJ::from(Q.sub(P));
-    let expected = unsafe { expected.__neg() };
+    let expected = unsafe {
+        expected.__neg()
+    };
     assert(result.eq(expected));
 
     // both infinity
     let Q: BLS12_381_Point = BigCurve::point_at_infinity();
     let result = CurveJ::from(Q.sub(P));
-    let expected = unsafe { CurveJ::__point_at_infinity() };
+    let expected = unsafe {
+        CurveJ::__point_at_infinity()
+    };
     assert(result.eq(expected));
 }
 
@@ -518,7 +631,9 @@ fn test_make_table() {
     let P: BLS12_381_Point_J = CurveJ::one();
 
     let mut transcript: [JTranscript<Fq>] = &[];
-    let T: curve_jac::PointTable<Fq> = unsafe { curve_jac::PointTable::__new(P) };
+    let T: curve_jac::PointTable<Fq> = unsafe {
+        curve_jac::PointTable::__new(P)
+    };
     for i in 0..8 {
         transcript = transcript.push_back(T.transcript[i]);
     }

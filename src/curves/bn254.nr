@@ -15,7 +15,7 @@ type Fq = BigNum<3, BN254_Fq_Params>;
 struct BN254_Curve_Params {
 }
 
-impl CurveParamsTrait<BigNum<3, BN254_Fq_Params>> for BN254_Curve_Params  {
+impl CurveParamsTrait<BigNum<3, BN254_Fq_Params>> for BN254_Curve_Params {
     fn one() -> [BigNum<3, BN254_Fq_Params>; 2] {
         let mut one: Fq = BigNum::new();
         one.limbs[0] = 1;
@@ -43,11 +43,11 @@ impl CurveParamsTrait<BigNum<3, BN254_Fq_Params>> for BN254_Curve_Params  {
     }
 
     fn a() -> BigNum<3, BN254_Fq_Params> {
-        BigNum { limbs: [0, 0, 0]}
+        BigNum { limbs: [0, 0, 0] }
     }
 
     fn b() -> BigNum<3, BN254_Fq_Params> {
-        BigNum { limbs: [3, 0, 0]}
+        BigNum { limbs: [3, 0, 0] }
     }
 }
 
@@ -243,7 +243,7 @@ unconstrained fn __evaluate_mul(
     P: BN254_Point_J, // P
     s: ScalarField<64>, // -1
     neg_P: BN254_Point_J, // P
-    P_sub_2P: BN254_Point_J, // P - 2P
+    P_sub_2P: BN254_Point_J // P - 2P
 ) -> bool {
     let sP = P.__mul(s); // -P 
     assert(sP.0.eq(neg_P)); // -P = neg_P
@@ -445,7 +445,7 @@ fn test_add() {
     // doubling
     let Q: BN254_Point = BigCurve::one(); // P
 
-    let result = CurveJ::from(P.add(Q));  // 2P_j
+    let result = CurveJ::from(P.add(Q)); // 2P_j
     let expected = unsafe {
         P_j.__dbl().0 // 2P_j
     };
@@ -523,7 +523,9 @@ fn test_sub() {
 
     // rhs infinity
     let result = CurveJ::from(Q.sub(P));
-    let expected = unsafe { expected.__neg() };
+    let expected = unsafe {
+        expected.__neg()
+    };
     assert(result.eq(expected));
 
     // both infinity

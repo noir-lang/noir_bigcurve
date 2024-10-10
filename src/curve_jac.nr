@@ -178,7 +178,10 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
     /**
      * @brief get a value out of the lookup table
      **/
-    unconstrained fn __get<CurveParams>(self, idx: u8) -> CurveJ<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum> {
+    unconstrained fn __get<CurveParams>(
+        self,
+        idx: u8
+    ) -> CurveJ<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
 }
@@ -465,7 +468,10 @@ impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams> where BigNum: BigNumTrait,
     /**
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
-    unconstrained fn __mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> (Self, [AffineTranscript<BigNum>]) {
+    unconstrained fn __mul<let NScalarSlices: u32>(
+        self,
+        scalar: ScalarField<NScalarSlices>
+    ) -> (Self, [AffineTranscript<BigNum>]) {
         let mut transcript: [JTranscript<BigNum>; NScalarSlices * 5 + 6] = [JTranscript::__new(); NScalarSlices * 5 + 6];
 
         let input: Self = CurveJ::conditional_select(CurveJ::one(), self, self.is_infinity);

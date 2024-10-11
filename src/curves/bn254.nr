@@ -51,57 +51,12 @@ impl CurveParamsTrait<BigNum<3, BN254_Fq_Params>> for BN254_Curve_Params {
     }
 }
 
-type BN254_Point = BigCurve<Fq, BN254_Curve_Params>;
-type BN254_Point_J = CurveJ<Fq, BN254_Curve_Params>;
+pub type BN254_Point = BigCurve<Fq, BN254_Curve_Params>;
+pub type BN254_Point_J = CurveJ<Fq, BN254_Curve_Params>;
 
-fn main(x: Field) {
-    let mut foo: [Field; 6] = [0; 6];
-    foo[0] = x;
-    for i in 1..6 {
-        foo[i] = foo[i-1] * x;
-    }
-    let P: BN254_Point = BigCurve {
-        x: BigNum { limbs: [foo[0], foo[1], foo[2]] },
-        y: BigNum { limbs: [foo[3], foo[4], foo[5]] },
-        is_infinity: false
-    };
 
-    let scalar: ScalarField<64> = ScalarField::from(x); // p - 2 ? 
-    let transcript = unsafe {
-        __get_mul_transcript(CurveJ::from(P), scalar)
-    };
-    // 30768
-    // 31020
-    let mut A = P;
-    for i in 0..101 {
-        for j in 0..3 {
-            std::as_witness(transcript[i].lambda.limbs[j]);
-            std::as_witness(transcript[i].x3.limbs[j]);
-            std::as_witness(transcript[i].y3.limbs[j]);
-        }
-        A = A.double_with_hint(transcript[i]);
-    }
-    // println(f"{A}");
-    // let result = P.mul_with_hint(scalar, transcript);
-    // // -2
-    // let mut expected: BN254_Point = BigCurve {
-    //     x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
-    //     y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
-    // };
-    // expected.y = BigNum::new() - expected.y;
-    // assert(result == expected);
-    // let scalar2: ScalarField<64> = ScalarField::from(x * x); // p - 2 ? 
-    // let transcript2 = get_transcript(CurveJ { x: Q.x, y: Q.y, z: BigNum::one() }, scalar);
-    // let result = Q.mul_with_hint(scalar2, transcript2);
-    // // -2
-    // let mut expected: BN254_Point = BigCurve {
-    //     x: BigNum { limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306] },
-    //     y: BigNum { limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed] }
-    // };
-    // expected.y = BigNum::new() - expected.y;
-    // assert(result.x.eq(expected.x));
-    // assert(result.y.eq(expected.y));
-}
+// TESTING:
+
 
 unconstrained fn __get_msm_transcript(
     P: BN254_Point_J,

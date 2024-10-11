@@ -1,20 +1,20 @@
-mod scalar_field;
-mod curve_jac;
-mod curves;
+pub mod scalar_field;
+pub mod curve_jac;
+pub mod curves;
 mod test_data;
 
 use dep::bignum::BigNum;
+use dep::bignum::BigNumTrait;
 
 use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::AffineLinearExpressionTranscript;
 use crate::curve_jac::CurveJ;
-use dep::bignum::BigNumTrait;
 
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
-struct BigCurve<BigNum, CurveParams> {
+pub struct BigCurve<BigNum, CurveParams> {
     x: BigNum,
     y: BigNum,
     is_infinity: bool,
@@ -619,7 +619,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
+    pub fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32>(
         mut points: [Self; Size],
         mut scalars: [ScalarField<NScalarSlices>; Size],
         transcript: [AffineTranscript<BigNum>; NTranscriptSlices]

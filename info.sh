@@ -5,3 +5,6 @@ nargo compile --force && bb gates -b ./target/noir_bigcurve.json
 # And you'll need a recent version of nargo; possibly the one inside aztec-packages.
 
 # ~/git/noir/target/debug/nargo compile && ~/.bb/bb gates_mega_honk -b ./target/noir_bigcurve.json > txt.txt && ~/git/noir/target/debug/noir-profiler gates-flamegraph --artifact-path ./target/noir_bigcurve.json --backend-path ~/.bb/bb --output ./flamegraph --backend-gates-command "gates_mega_honk" && python3 -m http.server --directory "./flamegraph" 3000
+
+
+bb gates -b target/use.json -h

@@ -77,10 +77,14 @@ impl CurveParamsTrait<BigNum<4, BLS12_381_Fq_Params>> for BLS12_381_Curve_Params
 pub type BLS12_381_Point = BigCurve<Fq, BLS12_381_Curve_Params>;
 pub type BLS12_381_Point_J = CurveJ<Fq, BLS12_381_Curve_Params>;
 
-
 // TESTING:
 
-unconstrained fn __evaluate_mul(P: BLS12_381_Point_J, scalar: ScalarField<64>, Q: BLS12_381_Point_J, K: BLS12_381_Point_J) -> bool {
+unconstrained fn __evaluate_mul(
+    P: BLS12_381_Point_J,
+    scalar: ScalarField<64>,
+    Q: BLS12_381_Point_J,
+    K: BLS12_381_Point_J
+) -> bool {
     let s = (P.__mul(scalar));
     assert(s.0.eq(K.__neg()));
     Q.eq(s.0)
@@ -96,7 +100,10 @@ unconstrained fn __get_msm_transcript(
     s.1
 }
 
-unconstrained fn __get_mul_transcript(P: BLS12_381_Point_J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
+unconstrained fn __get_mul_transcript(
+    P: BLS12_381_Point_J,
+    scalar: ScalarField<64>
+) -> [AffineTranscript<Fq>; 326] {
     let res = P.__mul(scalar);
     let transcript = res.1;
     transcript.as_array()

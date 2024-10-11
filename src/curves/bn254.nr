@@ -54,9 +54,7 @@ impl CurveParamsTrait<BigNum<3, BN254_Fq_Params>> for BN254_Curve_Params {
 pub type BN254_Point = BigCurve<Fq, BN254_Curve_Params>;
 pub type BN254_Point_J = CurveJ<Fq, BN254_Curve_Params>;
 
-
 // TESTING:
-
 
 unconstrained fn __get_msm_transcript(
     P: BN254_Point_J,
@@ -74,9 +72,7 @@ unconstrained fn __get_mul_transcript(
 ) -> [AffineTranscript<Fq>; 326] {
     let res = P.__mul(scalar);
     let transcript = res.1;
-    // println(f"let transcript: AffineTranscript<N, Params> = {transcript}");
-    // let ff = transcript.len();
-    // println(f"transcript len = {ff}");
+
     transcript.as_array()
 }
 

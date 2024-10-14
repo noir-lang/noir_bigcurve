@@ -8,7 +8,6 @@ use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::PointTable;
-use crate::utils::hash_to_curve::hash_to_curve;
 use crate::curves::bn254::{BN254, BN254Scalar, BN254Params};
 type Fq = BigNum<3, BNParams>;
 
@@ -47,16 +46,6 @@ unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: 
     let s = (P.mul(scalar));
     assert(s.0.eq(K.neg()));
     Q.eq(s.0)
-}
-
-unconstrained fn get_msm_transcript(
-    P: BN254J,
-    Q: BN254J,
-    scalar1: ScalarField<64>,
-    scalar2: ScalarField<64>
-) -> [AffineTranscript<Fq>; 399] {
-    let s = (CurveJ::msm([P, Q], [scalar1, scalar2]));
-    s.1
 }
 
 unconstrained fn get_transcript(P: BN254J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {

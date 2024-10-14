@@ -818,7 +818,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
     fn msm<let NScalarSlices: u32, let NMuls: u32>(
         mul_points: [Self; NMuls],
-        mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+        mul_scalars: [ScalarField<NScalarSlices>; NMuls]
     ) -> Self {
         BigCurve::evaluate_linear_expression(mul_points, mul_scalars, [])
     }

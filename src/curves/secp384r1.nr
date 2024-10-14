@@ -73,7 +73,7 @@ mod test {
     use crate::scalar_field::ScalarField;
     use crate::curves::secp384r1::Secp384r1Scalar;
     use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
-    
+
     #[test]
 fn test_bits() {
         let x: BigNum<4, Secp384r1_Fr_Params> = BigNum::new();

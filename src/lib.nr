@@ -1,20 +1,163 @@
-mod scalar_field;
-mod curve_jac;
+pub(crate) mod scalar_field;
+pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
+pub(crate) mod utils;
+pub(crate) mod curves;
 
 use dep::bignum::BigNum;
 
 use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
-use crate::curve_jac::AffineLinearExpressionTranscript;
 use crate::curve_jac::CurveJ;
+use crate::utils::hash_to_curve::hash_to_curve;
+
 use dep::bignum::BigNumTrait;
 
+use dep::sort::sort_advanced;
+fn __sort_field_as_u32(lhs: Field, rhs: Field) -> bool {
+    lhs as u32 < rhs as u32
+}
+
+fn assert_sorted(lhs: Field, rhs: Field) {
+    let result = (rhs - lhs - 1);
+    result.assert_max_bit_size(32);
+}
+
+struct SparseLookup<let N: u32> {
+    keys: [Field; N],
+    values: [Field; N],
+    maximum: Field // can be up to 2^32
+}
+
+/**
+ * @brief records data used to reason about whether a key exists in a json blob
+ **/
+struct KeySearchResult {
+    found: bool, // does the key exist?
+    target_lt_smallest_entry: bool, // is the target keyhash smaller than the smallest keyhash in self.key_hashes?
+    target_gt_largest_entry: bool, // is the target keyhash larger than the largest keyhash in self.key_hashes?
+    lhs_index: Field, // either the index of the key being searched for, or the index of the keyhash in self.key_hashes that is closest to keyhash (hash > lhs_index_hash)
+    rhs_index: Field, // either the index of the key being searched for, or the index of the keyhash in self.key_hashes that is closest to keyhash (hash < rhs_index_hash)
+}
+
+impl<let N: u32> SparseLookup<N> {
+    fn create(_keys: [Field; N], _values: [Field; N], _maximum: Field) -> Self {
+        let mut r: Self = SparseLookup { keys: [0; N], values: [0; N], maximum: _maximum };
+        let sorted_keys = sort_advanced(_keys, __sort_field_as_u32, assert_sorted);
+        r.keys = sorted_keys.sorted;
+        for i in 0..N {
+            r.values[i] = _values[sorted_keys.sort_indices[i]];
+        }
+        _maximum.assert_max_bit_size(32);
+        r
+    }
+
+    unconstrained fn search_for_key_in_map(self, target: Field) -> KeySearchResult {
+        let mut found_index: Field = 0;
+        let mut found: bool = false;
+
+        let mut lhs_maximum: Field = 0;
+        let mut rhs_minimum: Field = -1;
+        let mut lhs_maximum_index: Field = 0;
+        let mut rhs_minimum_index: Field = 0;
+        for i in 0..N {
+            let key= self.keys[i];
+            if (key == target) {
+                found_index = i as Field;
+                found = true;
+                break;
+            } else {
+                if key.lt(target) & (lhs_maximum.lt(key)) {
+                    lhs_maximum = key;
+                    lhs_maximum_index = i as Field;
+                }
+                if (target.lt(key)) & (key.lt(rhs_minimum)) {
+                    rhs_minimum = key;
+                    rhs_minimum_index = i as Field;
+                }
+            }
+        }
+        let target_lt_smallest_entry = target.lt(self.keys[0]);
+        let target_gt_largest_entry = self.keys[N - 1].lt(target);
+
+        let result_not_first_or_last = !target_lt_smallest_entry & !target_gt_largest_entry & !found;
+
+        let mut lhs_index = result_not_first_or_last as Field * lhs_maximum_index;
+        let mut rhs_index = result_not_first_or_last as Field * rhs_minimum_index;
+
+        // if target_lt_smallest_entry, rhs_index = 0
+        // if target_gt_largest_entry, lhs_index = TranscriptEntries - 1
+        rhs_index = rhs_index * (1 - target_lt_smallest_entry as Field);
+
+        // we rely here on the fact that target_gt_largest_entry and result_not_first_or_last are mutually exclusive
+        lhs_index = lhs_index  + target_gt_largest_entry as Field * (N as Field - 1);
+
+        // If target is FOUND, we want the following:
+        // keyhash[target_index] - 1 < hash < keyhash[target_index] + 1
+        lhs_index = lhs_index  + found as Field * found_index;
+        rhs_index = rhs_index  + found as Field * found_index;
+
+        KeySearchResult { found, target_lt_smallest_entry, target_gt_largest_entry, lhs_index, rhs_index }
+    }
+
+    unconstrained fn __exists(self, idx: Field) -> bool {
+        let mut r: bool = false;
+        for i in 0..N {
+            if (self.keys[i] == idx) {
+                r = true;
+                break;
+            }
+        }
+        r
+    }
+
+    fn get(self, idx: Field) -> Field {
+        let search_result = unsafe {
+            self.search_for_key_in_map(idx)
+        };
+
+        let found = search_result.found as Field;
+
+        let target_lt_smallest_entry = search_result.target_lt_smallest_entry as Field;
+        let target_gt_largest_entry = search_result.target_gt_largest_entry as Field;
+
+        assert(((search_result.lhs_index - search_result.rhs_index) * found) == 0);
+
+        // only one of "found", "target_lt_smallest_entry", "target_gt_largest_entry" can be true
+        let exclusion_test = found + target_gt_largest_entry + target_lt_smallest_entry;
+        assert(exclusion_test * exclusion_test == exclusion_test);
+
+        let mut lhs = self.keys[search_result.lhs_index];
+        let mut rhs = self.keys[search_result.rhs_index];
+
+        // case where hash < self.key_hashes[0]
+        // 0 < hash < hashes[0]
+        lhs = lhs * (1 - target_lt_smallest_entry);
+
+        // case where hash > self.key_hashes[last]
+        // largest < x < -1
+        rhs = rhs * (1 - target_gt_largest_entry) + target_gt_largest_entry * 0x100000000;
+
+        // case where hash == self.key_hashes[found_index]
+        lhs = lhs - found;
+        rhs = rhs + found;
+
+        (idx - lhs - 1).assert_max_bit_size(32);
+        (rhs - idx - 1).assert_max_bit_size(32);
+
+        (self.maximum - idx - 1).assert_max_bit_size(32);
+
+        let value_index = search_result.lhs_index * found;
+
+        let value = self.values[value_index] * found;
+        value
+    }
+}
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
-struct BigCurve<BigNum, CurveParams> {
+pub struct BigCurve<BigNum, CurveParams> {
     x: BigNum,
     y: BigNum,
     is_infinity: bool,
@@ -43,7 +186,7 @@ struct PointTable<BigNum> {
     y: [BigNum; 16],
 }
 
-impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
+impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
     fn empty() -> Self {
         PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
     }
@@ -86,7 +229,24 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait {
     }
 }
 
-impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait {
+trait BigCurveTrait {
+    fn neg(self) -> Self;
+    fn point_at_infinity() -> Self;
+    fn offset_generator() -> Self;
+    fn offset_generator_final() -> Self;
+    fn one() -> Self;
+    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
+    fn validate_on_curve(self);
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
+    fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
+}
+impl<BigNum, CurveParams> BigCurveTrait for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
+
+    fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
+        let r = hash_to_curve::<BigNum, N>(seed, CurveParams::a(), CurveParams::b());
+        BigCurve { x: r.0, y: r.1, is_infinity: false }
+    }
+
     /**
     * @brief negate a point
     **/
@@ -140,6 +300,18 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
             [false]
         );
     }
+
+    /// 64 * 5 = 320
+    // Expensive witness generation! Avoid if possible 
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+        let transcript: [AffineTranscript<BigNum>; (NScalarSlices * 5) + 6] = unsafe {
+            BigCurve::get_mul_transcript(self, scalar)
+        };
+
+        self.mul_with_hint(scalar, transcript)
+    }
+}
+impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
 
     /**
      * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
@@ -454,6 +626,18 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         BigCurve { x: x3, y: y3, is_infinity: false }
     }
 
+    fn conditional_incomplete_add_with_hint(self, other: Self, predicate: bool, transcript: AffineTranscript<BigNum>) -> Self {
+        let operand_output = self.incomplete_add_with_hint(other, transcript);
+        let result = BigCurve::conditional_select(operand_output, self, predicate);
+        result
+    }
+
+    fn conditional_incomplete_subtract_with_hint(self, other: Self, predicate: bool, transcript: AffineTranscript<BigNum>) -> Self {
+        let operand_output = self.incomplete_subtract_with_hint(other, transcript);
+        let result = BigCurve::conditional_select(operand_output, self, predicate);
+        result
+    }
+
     /**
      * @brief Double a point, using an AffineTranscript that contains inverses and output witnesses
      * @note This method minimizes the number of calls to `evalute_quadratic_expression`,
@@ -541,9 +725,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
         // windowed non-adjacent form can only represent odd scalar values.
         // if value is even, the result will be off by one and we need to subtract the input point
-        if (scalar.skew) {
-            accumulator = accumulator.incomplete_subtract_with_hint(input, transcript[4 + 5 * NScalarSlices]);
-        }
+        accumulator = accumulator.conditional_incomplete_subtract_with_hint(input, scalar.skew, transcript[4 + 5 * NScalarSlices]);
 
         accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[5 + 5 * NScalarSlices]);
         accumulator
@@ -611,9 +793,7 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         // windowed non-adjacent form can only represent odd scalar values.
         // if value is even, the result will be off by one and we need to subtract the input point
         for i in 0..Size {
-            if (scalars[i].skew) {
-                accumulator = accumulator.incomplete_subtract_with_hint(points[i], transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) + i]);
-            }
+            accumulator = accumulator.conditional_incomplete_subtract_with_hint(points[i], scalars[i].skew, transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) + i]);
         }
 
         accumulator
@@ -629,28 +809,28 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         accumulator
     }
 
-    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(P: Self, scalar: ScalarField<NScalarSlices>) -> [AffineTranscript<BigNum>; 326] {
+    unconstrained fn get_mul_transcript<let NScalarSlices: u32>(
+        P: Self,
+        scalar: ScalarField<NScalarSlices>
+    ) -> [AffineTranscript<BigNum>; 6 + NScalarSlices * 5] {
         CurveJ::from(P).mul(scalar).1.as_array()
     }
 
-    // Expensive witness generation! Avoid if possible 
-    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
-        let transcript: [AffineTranscript<BigNum>; 326] = unsafe {
-            BigCurve::get_mul_transcript(self, scalar)
-        };
-
-        self.mul_with_hint(scalar, transcript)
+    fn msm<let NScalarSlices: u32, let NMuls: u32>(
+        mul_points: [Self; NMuls],
+        mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    ) -> Self {
+        BigCurve::evaluate_linear_expression(mul_points, mul_scalars, [])
     }
 
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
-        mut mul_points: [Self; NMuls],
-        mut mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+        mul_points: [Self; NMuls],
+        mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]
     ) -> Self {
-        let affine_transcript: AffineLinearExpressionTranscript<BigNum, NScalarSlices, NMuls, NAdds> = unsafe {
-            CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points)
+        let transcript: [AffineTranscript<BigNum>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
+            CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
         };
-
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
         let mut  _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
         for i in 0..NMuls {
@@ -662,32 +842,34 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
 
         let mut tables: [PointTable<BigNum>; NMuls] = [PointTable::empty(); NMuls];
         for i in 0..NMuls {
-            tables[i] = PointTable::new_with_hint(msm_points[i], affine_transcript.table_transcript[i]);
+            let mut table_transcript: [AffineTranscript<BigNum>; 8] = [AffineTranscript::new(); 8];
+            for j in 0..8 {
+                table_transcript[j] = transcript[i * 8 + j];
+            }
+            tables[i] = PointTable::new_with_hint(msm_points[i], table_transcript);
         }
 
         // Init the accumulator from the most significant scalar slice
         let mut accumulator: Self = BigCurve::offset_generator();
         let mut accumulator = accumulator.incomplete_add_with_hint(
             tables[0].get(scalars[0].base4_slices[0]),
-            affine_transcript.msm_add_transcript[0][0]
+            transcript[8 * NMuls]
         );
-
         for i in 1..NMuls {
             accumulator = accumulator.incomplete_add_with_hint(
                 tables[i].get(scalars[i].base4_slices[0]),
-                affine_transcript.msm_add_transcript[0][i]
+                transcript[8 * NMuls + i]
             );
         }
 
         // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
         for i in 1..NScalarSlices {
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][0]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][1]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][2]);
-            accumulator = accumulator.double_with_hint(affine_transcript.msm_double_transcript[i-1][3]);
-
+            accumulator = accumulator.double_with_hint(transcript[9 * NMuls + (4 + NMuls) * (i - 1)]);
+            accumulator = accumulator.double_with_hint(transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 1]);
+            accumulator = accumulator.double_with_hint(transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 2]);
+            accumulator = accumulator.double_with_hint(transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3]);
             for j in 0..NMuls {
-                accumulator = accumulator.incomplete_add_with_hint(tables[j].get(scalars[j].base4_slices[i]), affine_transcript.msm_add_transcript[i][j]);
+                accumulator = accumulator.incomplete_add_with_hint(tables[j].get(scalars[j].base4_slices[i]), transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 4 + j]);
             }
         }
 
@@ -696,23 +878,20 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         // windowed non-adjacent form can only represent odd scalar values.
         // if value is even, the result will be off by one and we need to subtract the input point
         for i in 0..NMuls {
-            if (scalars[i].skew) {
-                accumulator = accumulator.incomplete_subtract_with_hint(msm_points[i], affine_transcript.skew_transcript[i]);
-            }
+            accumulator = accumulator.conditional_incomplete_subtract_with_hint(msm_points[i], scalars[i].skew, transcript[9 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i]);
         }
 
         for i in 0..NAdds {
-            let res = accumulator.incomplete_subtract_with_hint(add_points[i], affine_transcript.add_transcript[i]);
-            accumulator = BigCurve::conditional_select(accumulator, res, add_points[i].is_infinity);
+            accumulator = accumulator.conditional_incomplete_add_with_hint(add_points[i], !add_points[i].is_infinity, transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i]);
         }
 
-        accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), affine_transcript.offset_generator_transcript);
+        accumulator = accumulator.sub_with_hint(BigCurve::offset_generator_final(), transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4]);
 
         accumulator
     }
 }
 
-impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait {
+impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
     // Expensive witness generation! Avoid if possible 
     fn add(self, other: Self) -> Self {
         let lhsJ = CurveJ::from(self);
@@ -726,7 +905,7 @@ impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams> where 
     }
 }
 
-impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait {
+impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
     // Expensive witness generation! Avoid if possible 
     fn sub(self, other: Self) -> Self {
         let lhsJ = CurveJ::from(self);
@@ -743,7 +922,7 @@ impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams> where 
 /**
  * @brief are two Affine points equal?
  **/
-impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams> where BigNum: BigNumTrait {
+impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams> where BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
     fn eq(self, other: Self) -> bool {
         let coords_equal = self.x.eq(other.x) & self.y.eq(other.y) & !self.is_infinity & !other.is_infinity;
         let infinity = self.is_infinity & other.is_infinity;

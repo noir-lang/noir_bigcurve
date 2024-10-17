@@ -1,4 +1,4 @@
-use dep::bignum::fields::bn254Fq::BNParams as BNParams;
+use dep::bignum::fields::bn254Fq::BNParams;
 use dep::bignum::BigNum;
 use crate::curve_jac::AffineTranscript;
 

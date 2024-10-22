@@ -24,11 +24,11 @@ The most efficient method to evaluate curve operations is `BigCurve::evaluate_li
 
 - When performing MSMs, utilize the Montgomery Ladder to minimize the number of field operations (see `batch_mul` in `barretenberg/src/stdlib/biggroup` for example implementation)
 - `ScalarField` is not properly constrained when constructed from a `BigNum` object
-- Add tests for curves that have a nonzero `a` parameter
-- Add hash to curve method
+- [x] Add tests for curves that have a nonzero `a` parameter
+- [x] Add hash to curve method
 - Add method to check point is in prime-order subgroup for curves with a cofactor
 - Parametrise and test with a degree-2 extension field instead of `BigNum`
-- Add curve parameters for commonly used curves (BN254, BLS12-381, MNT4, MNT6, Pasta, Vella, Secp256K1, Secp256R1)
+- [x] Add curve parameters for commonly used curves (BN254, BLS12-381, MNT4, MNT6, Pasta, Vella, Secp256K1, Secp256R1)
 - Create benchmarks
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)
 

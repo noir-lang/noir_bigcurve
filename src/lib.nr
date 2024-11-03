@@ -6,22 +6,22 @@ pub(crate) mod utils;
 pub(crate) mod curves;
 
 use dep::bignum::BigNum;
+use dep::bignum::BigNumTrait;
 
 use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-use dep::bignum::BigNumTrait;
-
 use dep::sort::sort_advanced;
+
 fn __sort_field_as_u32(lhs: Field, rhs: Field) -> bool {
     lhs as u32 < rhs as u32
 }
 
 fn assert_sorted(lhs: Field, rhs: Field) {
     let result = (rhs - lhs - 1);
-    result.assert_max_bit_size(32);
+    result.assert_max_bit_size::<32>();
 }
 
 struct SparseLookup<let N: u32> {
@@ -49,7 +49,7 @@ impl<let N: u32> SparseLookup<N> {
         for i in 0..N {
             r.values[i] = _values[sorted_keys.sort_indices[i]];
         }
-        _maximum.assert_max_bit_size(32);
+        _maximum.assert_max_bit_size::<32>();
         r
     }
 
@@ -143,10 +143,10 @@ impl<let N: u32> SparseLookup<N> {
         lhs = lhs - found;
         rhs = rhs + found;
 
-        (idx - lhs - 1).assert_max_bit_size(32);
-        (rhs - idx - 1).assert_max_bit_size(32);
+        (idx - lhs - 1).assert_max_bit_size::<32>();
+        (rhs - idx - 1).assert_max_bit_size::<32>();
 
-        (self.maximum - idx - 1).assert_max_bit_size(32);
+        (self.maximum - idx - 1).assert_max_bit_size::<32>();
 
         let value_index = search_result.lhs_index * found;
 
@@ -158,17 +158,17 @@ impl<let N: u32> SparseLookup<N> {
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
 pub struct BigCurve<BigNum, CurveParams> {
-    x: BigNum,
-    y: BigNum,
-    is_infinity: bool,
+    pub x: BigNum,
+    pub y: BigNum,
+    pub is_infinity: bool,
 }
 
 trait CurveParamsTrait<BigNum> where BigNum: BigNumTrait {
     fn offset_generator() -> [BigNum; 2];
     fn offset_generator_final() -> [BigNum; 2];
-    fn one() -> [BigNum; 2];
-    fn b() -> BigNum;
-    fn a() -> BigNum;
+    pub fn one() -> [BigNum; 2];
+    pub fn b() -> BigNum;
+    pub fn a() -> BigNum;
 }
 
 /**
@@ -187,7 +187,7 @@ struct PointTable<BigNum> {
 }
 
 impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
-    fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
     }
 
@@ -195,7 +195,7 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait + std::ops::Add + std:
      * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
      * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
      **/
-    fn new_with_hint<CurveParams>(
+    pub(crate) fn new_with_hint<CurveParams>(
         P: BigCurve<BigNum, CurveParams>,
         transcript: [AffineTranscript<BigNum>; 8]
     ) -> Self where CurveParams: CurveParamsTrait<BigNum> {
@@ -224,22 +224,23 @@ impl<BigNum> PointTable<BigNum> where BigNum: BigNumTrait + std::ops::Add + std:
      * @description if the backend has an efficient implementation of memory lookups,
      * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
      **/
-    fn get<CurveParams>(self, idx: u8) -> BigCurve<BigNum, CurveParams> {
+    pub(crate) fn get<CurveParams>(self, idx: u8) -> BigCurve<BigNum, CurveParams> {
         BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
     }
 }
 
 trait BigCurveTrait {
-    fn neg(self) -> Self;
-    fn point_at_infinity() -> Self;
+    pub fn neg(self) -> Self;
+    pub fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
     fn offset_generator_final() -> Self;
-    fn one() -> Self;
-    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    fn validate_on_curve(self);
-    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
-    fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
+    pub fn one() -> Self;
+    pub fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
+    pub fn validate_on_curve(self);
+    pub fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
+    pub fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 }
+
 impl<BigNum, CurveParams> BigCurveTrait for BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
 
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
@@ -311,6 +312,7 @@ impl<BigNum, CurveParams> BigCurveTrait for BigCurve<BigNum, CurveParams> where 
         self.mul_with_hint(scalar, transcript)
     }
 }
+
 impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: CurveParamsTrait<BigNum>, BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq {
 
     /**
@@ -816,14 +818,14 @@ impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams> where CurveParams: Curve
         CurveJ::from(P).mul(scalar).1.as_array()
     }
 
-    fn msm<let NScalarSlices: u32, let NMuls: u32>(
+    pub fn msm<let NScalarSlices: u32, let NMuls: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls]
     ) -> Self {
         BigCurve::evaluate_linear_expression(mul_points, mul_scalars, [])
     }
 
-    fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    pub fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Self; NAdds]

@@ -15,8 +15,8 @@ use dep::bignum::BigNumTrait;
  *          ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
  **/
 pub struct ScalarField<let N: u32> {
-    base4_slices: [u8; N],
-    skew: bool
+    pub(crate) base4_slices: [u8; N],
+    pub(crate) skew: bool
 }
 
 // 1, 2, 3, 4
@@ -39,10 +39,10 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     (result, skew)
 }
 
-unconstrained fn get_wnaf_slices2<let N: u32, BigNum>(x: BigNum /*[Field; M]*/) -> ([u8; N], bool) where BigNum: BigNumTrait {
+unconstrained fn get_wnaf_slices2<let N: u32, BigNum>(x: BigNum) -> ([u8; N], bool) where BigNum: BigNumTrait {
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [Field] = x.get();
+    let x: [Field] = x.get_limbs_slice();
     for i in 0..x.len() {
         nibbles[i] = x[i].to_le_radix::<30>(16);
     }
@@ -146,7 +146,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // // rhi.assert_max_bit_size(hibits as u32);
         }
         for i in 0..N {
-            (result.base4_slices[i] as Field).assert_max_bit_size(4);
+            (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
         }
         result
     }
@@ -236,7 +236,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
                 acc += 0x1000000000000000000000000000000;
                 result.set_limb(
                     result.num_limbs() - i,
-                    result.get_limb((result.num_limbs() - i) as u64) - 1
+                    result.get_limb((result.num_limbs() - i)) - 1
                 );
             }
             result.set_limb(result.num_limbs() - 1 - i, acc);

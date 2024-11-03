@@ -9,7 +9,7 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::PointTable;
 use crate::curves::bn254::{BN254, BN254Scalar, BN254Params};
-type Fq = BigNum<3, BNParams>;
+type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
 
@@ -73,8 +73,8 @@ fn test_mul() {
         is_infinity: false
     };
     expected.y = BigNum::new() - expected.y;
-    assert(result.x.eq(expected.x));
-    assert(result.y.eq(expected.y));
+    assert(result.x == expected.x);
+    assert(result.y == expected.y);
 }
 
 #[test]
@@ -193,7 +193,7 @@ fn test_transcript() {
         let lhs = (lambda.__add(lambda)).__mul(P.y);
         let rhs = (P.x.__add(P.x).__add(P.x)).__mul(P.x);
 
-        assert(lhs.eq(rhs));
+        assert(lhs == rhs);
 
         let X2 = P2.1.x3;
         let Y2 = P2.1.y3;
@@ -217,7 +217,7 @@ fn test_transcript() {
         let lhs = lambda.__mul(x2.__sub(x1));
         let rhs = y2.__sub(y1);
 
-        assert(lhs.eq(rhs));
+        assert(lhs == rhs);
     }
 }
 
@@ -247,8 +247,8 @@ fn test_double_with_hint() {
         let transcript: AffineTranscript<Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine = P_affine.double_with_hint(transcript);
 
-        assert(P2_affine.x.eq(x3));
-        assert(P2_affine.y.eq(y3));
+        assert(P2_affine.x == x3);
+        assert(P2_affine.y == y3);
     }
 }
 
@@ -285,8 +285,8 @@ fn test_incomplete_add_with_hint() {
         let transcript: AffineTranscript<Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine = P_affine.incomplete_add_with_hint(Q_affine, transcript);
 
-        assert(P2_affine.x.eq(x3));
-        assert(P2_affine.y.eq(y3));
+        assert(P2_affine.x == x3);
+        assert(P2_affine.y == y3);
 
         let P: BN254J = CurveJ::one();
 
@@ -296,7 +296,7 @@ fn test_incomplete_add_with_hint() {
         let rhs = unsafe {
             P.dbl().0.incomplete_add(P).0.incomplete_add(P).0
         };
-        assert(lhs.eq(rhs));
+        assert(lhs == rhs);
     }
 }
 
@@ -462,7 +462,7 @@ fn test_make_table() {
     }
 }
 
-use dep::bignum::fields::bn254Fq::BNParams;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
 use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
 use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
@@ -547,7 +547,7 @@ fn test_msm() {
 }
 }
 
-#[make_test(quote{BN254}, quote{BigNum<3, BNParams>}, quote{BN254Scalar})]
+#[make_test(quote{BN254}, quote{BigNum<3, 254, BN254_Fq_Params>}, quote{BN254Scalar})]
 pub struct BN254GenTests{}
 #[make_test(quote{Vesta}, quote{VestaFr}, quote{VestaScalar})]
 pub struct VestaGenTests{}

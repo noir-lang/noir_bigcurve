@@ -6,22 +6,22 @@ use crate::BigCurve;
 use crate::scalar_field::ScalarField;
 
 pub struct Secp384r1_Params {}
-impl CurveParamsTrait<BigNum<4, Secp384r1_Fq_Params>> for Secp384r1_Params {
-    fn a() -> BigNum<4, Secp384r1_Fq_Params> {
+impl CurveParamsTrait<BigNum<4, 384, Secp384r1_Fq_Params>> for Secp384r1_Params {
+    fn a() -> BigNum<4, 384, Secp384r1_Fq_Params> {
         BigNum {
             limbs: [
                 0xffffff0000000000000000fffffffc, 0xfffffffffffffffffffffffffffeff, 0xffffffffffffffffffffffffffffff, 0xffffff
             ]
         }
     }
-    fn b() -> BigNum<4, Secp384r1_Fq_Params> {
+    fn b() -> BigNum<4, 384, Secp384r1_Fq_Params> {
         BigNum {
             limbs: [
                 0x56398d8a2ed19d2a85c8edd3ec2aef, 0x9c6efe8141120314088f5013875ac6, 0xa7e23ee7e4988e056be3f82d19181d, 0xb3312f
             ]
         }
     }
-    fn one() -> [BigNum<4, Secp384r1_Fq_Params>; 2] {
+    fn one() -> [BigNum<4, 384, Secp384r1_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -34,7 +34,7 @@ impl CurveParamsTrait<BigNum<4, Secp384r1_Fq_Params>> for Secp384r1_Params {
             }
         ]
     }
-    fn offset_generator() -> [BigNum<4, Secp384r1_Fq_Params>; 2] {
+    fn offset_generator() -> [BigNum<4, 384, Secp384r1_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -47,7 +47,7 @@ impl CurveParamsTrait<BigNum<4, Secp384r1_Fq_Params>> for Secp384r1_Params {
             }
         ]
     }
-    fn offset_generator_final() -> [BigNum<4, Secp384r1_Fq_Params>; 2] {
+    fn offset_generator_final() -> [BigNum<4, 384, Secp384r1_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -63,20 +63,21 @@ impl CurveParamsTrait<BigNum<4, Secp384r1_Fq_Params>> for Secp384r1_Params {
 }
 
 pub global SECP384r1_SCALAR_SLICES = 97;
-pub type Secp384r1 = BigCurve<BigNum<4, Secp384r1_Fq_Params>, Secp384r1_Params>;
+pub type Secp384r1 = BigCurve<BigNum<4, 384, Secp384r1_Fq_Params>, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
-pub type Secp384r1Fq = BigNum<4, Secp384r1_Fq_Params>;
-pub type Secp384r1Fr = BigNum<4, Secp384r1_Fr_Params>;
+pub type Secp384r1Fq = BigNum<4, 384, Secp384r1_Fq_Params>;
+pub type Secp384r1Fr = BigNum<4, 384, Secp384r1_Fr_Params>;
 
 mod test {
-    use dep::bignum::BigNum;
-    use crate::scalar_field::ScalarField;
-    use crate::curves::secp384r1::Secp384r1Scalar;
-    use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
 
-    #[test]
+use dep::bignum::BigNum;
+use crate::scalar_field::ScalarField;
+use crate::curves::secp384r1::Secp384r1Scalar;
+use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
+
+#[test]
 fn test_bits() {
-        let x: BigNum<4, Secp384r1_Fr_Params> = BigNum::new();
+        let x: BigNum<4, 384, Secp384r1_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

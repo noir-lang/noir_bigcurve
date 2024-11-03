@@ -1,9 +1,9 @@
-use dep::bignum::fields::bn254Fq::BNParams;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 use dep::bignum::BigNum;
 use crate::curve_jac::AffineTranscript;
 
 // addition transcrpt for p - 2
-pub fn get_transcript() -> [AffineTranscript<BigNum<3, BNParams>>; 326] {
+pub fn get_transcript() -> [AffineTranscript<BigNum<3, 254, BN254_Fq_Params>>; 326] {
     [
         AffineTranscript {
             lambda: BigNum { limbs: [0xa10fed0e5557e9ed186911225dbdf6, 0x3ad628e5381f4a3c3448e121024631, 0x244b] },
@@ -1313,7 +1313,7 @@ pub fn get_transcript() -> [AffineTranscript<BigNum<3, BNParams>>; 326] {
     ]
 }
 
-pub fn get_msm_transcript() -> [AffineTranscript<BigNum<3, BNParams>>; 397] {
+pub fn get_msm_transcript() -> [AffineTranscript<BigNum<3, 254, BN254_Fq_Params>>; 397] {
     [
         AffineTranscript {
             lambda: BigNum { limbs: [0xa10fed0e5557e9ed186911225dbdf6, 0x3ad628e5381f4a3c3448e121024631, 0x244b] },

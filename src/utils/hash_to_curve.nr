@@ -19,14 +19,14 @@ unconstrained fn hash_to_curve_inner<Fq, let SeedBytes: u32>(
     x.validate_in_field();
     x.validate_in_range();
     let y = yy.__tonelli_shanks_sqrt();
-    let yy_reconstructed = y._value * y._value;
-    let mut result: (Fq, Fq, Field) = (x, y._value, seed_counter);
-    if (((yy_reconstructed == yy) & (y._is_some)) == false) {
+    let yy_reconstructed = y.unwrap_unchecked() * y.unwrap_unchecked();
+    let mut result: (Fq, Fq, Field) = (x, y.unwrap_unchecked(), seed_counter);
+    if (((yy_reconstructed == yy) & (y.is_some())) == false) {
         result = hash_to_curve_inner(seedbase, seed_counter + 1, a, b);
     }
     if (y.is_some()) {
-        y._value.validate_in_field();
-        y._value.validate_in_range();
+        y.unwrap_unchecked().validate_in_field();
+        y.unwrap_unchecked().validate_in_range();
     }
     result
 }

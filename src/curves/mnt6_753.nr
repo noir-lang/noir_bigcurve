@@ -7,18 +7,18 @@ use crate::scalar_field::ScalarField;
 
 global MNT6_753_SCALAR_SLICES = 189;
 pub struct MNT6_753_Params {}
-impl CurveParamsTrait<BigNum<7, MNT6_753_Fq_Params>> for MNT6_753_Params {
-    fn a() -> BigNum<7, MNT6_753_Fq_Params> {
+impl CurveParamsTrait<BigNum<7, 753, MNT6_753_Fq_Params>> for MNT6_753_Params {
+    fn a() -> BigNum<7, 753, MNT6_753_Fq_Params> {
         BigNum { limbs: [0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] }
     }
-    fn b() -> BigNum<7, MNT6_753_Fq_Params> {
+    fn b() -> BigNum<7, 753, MNT6_753_Fq_Params> {
         BigNum {
             limbs: [
                 0xba7505ba6fcf2485540b13dfc8468a, 0xf9a80a95f401867c4e80f4747fde5a, 0x0fcf2c43d7bf847957c34cca1e3585, 0xb7985993f62f03b22a9a3c737a1a1e, 0xbb64b2bb01b10e60a5d5dfe0a25714, 0x0863c79d56446237ce2e1468d14ae9, 0x7da285e7
             ]
         }
     }
-    fn one() -> [BigNum<7, MNT6_753_Fq_Params>; 2] {
+    fn one() -> [BigNum<7, 753, MNT6_753_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -31,7 +31,7 @@ impl CurveParamsTrait<BigNum<7, MNT6_753_Fq_Params>> for MNT6_753_Params {
             }
         ]
     }
-    fn offset_generator() -> [BigNum<7, MNT6_753_Fq_Params>; 2] {
+    fn offset_generator() -> [BigNum<7, 753, MNT6_753_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -44,7 +44,7 @@ impl CurveParamsTrait<BigNum<7, MNT6_753_Fq_Params>> for MNT6_753_Params {
             }
         ]
     }
-    fn offset_generator_final() -> [BigNum<7, MNT6_753_Fq_Params>; 2] {
+    fn offset_generator_final() -> [BigNum<7, 753, MNT6_753_Fq_Params>; 2] {
         [
             BigNum {
                 limbs: [
@@ -59,18 +59,20 @@ impl CurveParamsTrait<BigNum<7, MNT6_753_Fq_Params>> for MNT6_753_Params {
     }
 }
 
-pub type MNT6_753 = BigCurve<BigNum<7, MNT6_753_Fq_Params>, MNT6_753_Params>;
+pub type MNT6_753 = BigCurve<BigNum<7, 753, MNT6_753_Fq_Params>, MNT6_753_Params>;
 pub type MNT6_753Scalar = ScalarField<MNT6_753_SCALAR_SLICES>;
-pub type MNT6_753Fq = BigNum<7, MNT6_753_Fq_Params>;
-pub type MNT6_753Fr = BigNum<7, MNT6_753_Fr_Params>;
+pub type MNT6_753Fq = BigNum<7, 753, MNT6_753_Fq_Params>;
+pub type MNT6_753Fr = BigNum<7, 753, MNT6_753_Fr_Params>;
 
 mod test {
-    use dep::bignum::BigNum;
-    use crate::curves::mnt6_753::MNT6_753_SCALAR_SLICES;
-    use dep::bignum::fields::mnt6_753Fr::MNT6_753_Fr_Params;
-    #[test]
+
+use dep::bignum::BigNum;
+use crate::curves::mnt6_753::MNT6_753_SCALAR_SLICES;
+use dep::bignum::fields::mnt6_753Fr::MNT6_753_Fr_Params;
+
+#[test]
 fn test_bits() {
-        let x: BigNum<7, MNT6_753_Fr_Params> = BigNum::new();
+        let x: BigNum<7, 753, MNT6_753_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

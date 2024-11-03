@@ -1,8 +1,8 @@
-use dep::bignum::BigNumTrait;
 use crate::CurveParamsTrait;
 use crate::BigCurve;
 use crate::curve_jac::CurveJ;
 
+use dep::bignum::BigNumTrait;
 use dep::bignum::BigNum;
 use dep::bignum::fields::bls12_377Fq::BLS12_377_Fq_Params;
 use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
@@ -14,18 +14,19 @@ use dep::bignum::fields::mnt6_753Fq::MNT6_753_Fq_Params;
 use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
 use dep::bignum::fields::vestaFq::Vesta_Fq_Params;
 use dep::bignum::fields::ed25519Fq::ED25519_Fq_Params;
-use dep::bignum::fields::bn254Fq::BNParams;
-type BLS377BN = BigNum<4, BLS12_377_Fq_Params>;
-type BLS381BN = BigNum<4, BLS12_381_Fq_Params>;
-type Secp256k1BN = BigNum<3, Secp256k1_Fq_Params>;
-type Secp256r1BN = BigNum<3, Secp256r1_Fq_Params>;
-type Secp384r1BN = BigNum<4, Secp384r1_Fq_Params>;
-type Mnt4BN = BigNum<7, MNT4_753_Fq_Params>;
-type Mnt6BN = BigNum<7, MNT6_753_Fq_Params>;
-type PallasBN = BigNum<3, Pallas_Fq_Params>;
-type VestaBN = BigNum<3, Vesta_Fq_Params>;
-type ED25519BN = BigNum<3, ED25519_Fq_Params>;
-type BN254 = BigNum<3, BNParams>;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
+
+type BLS377BN = BigNum<4, 377, BLS12_377_Fq_Params>;
+type BLS381BN = BigNum<4, 381, BLS12_381_Fq_Params>;
+type Secp256k1BN = BigNum<3, 256, Secp256k1_Fq_Params>;
+type Secp256r1BN = BigNum<3, 256, Secp256r1_Fq_Params>;
+type Secp384r1BN = BigNum<4, 384, Secp384r1_Fq_Params>;
+type Mnt4BN = BigNum<7, 753, MNT4_753_Fq_Params>;
+type Mnt6BN = BigNum<7, 753, MNT6_753_Fq_Params>;
+type PallasBN = BigNum<3, 255, Pallas_Fq_Params>;
+type VestaBN = BigNum<3, 255, Vesta_Fq_Params>;
+type ED25519BN = BigNum<3, 255, ED25519_Fq_Params>;
+type BN254 = BigNum<3, 254, BN254_Fq_Params>;
 
 pub struct BLS377PartialCurveParams {
 

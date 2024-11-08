@@ -17,17 +17,28 @@ impl CurveParamsTrait<BigNum<3, 255, Pallas_Fq_Params>> for Pallas_Params {
     }
     fn one() -> [BigNum<3, 255, Pallas_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x4698fc094cf91b992d30ed00000000, 0x22, 0x4000] }, BigNum { limbs: [0x02, 0x00, 0x00] }
+            BigNum { limbs: [0x4698fc094cf91b992d30ed00000000, 0x22, 0x4000] },
+            BigNum { limbs: [0x02, 0x00, 0x00] },
         ]
     }
     fn offset_generator() -> [BigNum<3, 255, Pallas_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0xd2422812b398350c1aebba48ec188a, 0xb131381b40fe8f0a2a6379eb41d224, 0x241a] }, BigNum { limbs: [0x0b9046b0869b1629091d1fa9f16692, 0xc5dec5f6d150a01e8529316736e0fa, 0x2c49] }
+            BigNum {
+                limbs: [0xd2422812b398350c1aebba48ec188a, 0xb131381b40fe8f0a2a6379eb41d224, 0x241a],
+            },
+            BigNum {
+                limbs: [0x0b9046b0869b1629091d1fa9f16692, 0xc5dec5f6d150a01e8529316736e0fa, 0x2c49],
+            },
         ]
     }
     fn offset_generator_final() -> [BigNum<3, 255, Pallas_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x8d735ee60f0b794209ba47e69517b5, 0x0268fe41698522f06c1f464e5425f6, 0x1e33] }, BigNum { limbs: [0xbd45401bf9c27bf9dd24a5ce54ce87, 0x47abf9cd0515d86bf76d53b264cfcc, 0x072a] }
+            BigNum {
+                limbs: [0x8d735ee60f0b794209ba47e69517b5, 0x0268fe41698522f06c1f464e5425f6, 0x1e33],
+            },
+            BigNum {
+                limbs: [0xbd45401bf9c27bf9dd24a5ce54ce87, 0x47abf9cd0515d86bf76d53b264cfcc, 0x072a],
+            },
         ]
     }
 }
@@ -39,12 +50,12 @@ pub type PallasFr = BigNum<3, 255, Pallas_Fr_Params>;
 
 mod test {
 
-use dep::bignum::BigNum;
-use crate::curves::pallas::PALLAS_SCALAR_SLICES;
-use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
+    use dep::bignum::BigNum;
+    use crate::curves::pallas::PALLAS_SCALAR_SLICES;
+    use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
-#[test]
-fn test_bits() {
+    #[test]
+    fn test_bits() {
         let x: BigNum<3, 255, Pallas_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

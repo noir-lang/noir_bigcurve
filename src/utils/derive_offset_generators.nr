@@ -28,9 +28,7 @@ type VestaBN = BigNum<3, 255, Vesta_Fq_Params>;
 type ED25519BN = BigNum<3, 255, ED25519_Fq_Params>;
 type BN254 = BigNum<3, 254, BN254_Fq_Params>;
 
-pub struct BLS377PartialCurveParams {
-
-}
+pub struct BLS377PartialCurveParams {}
 
 impl CurveParamsTrait<BLS377BN> for BLS377PartialCurveParams {
     fn a() -> BLS377BN {
@@ -45,16 +43,16 @@ impl CurveParamsTrait<BLS377BN> for BLS377PartialCurveParams {
                 0xfe3d3634a9591afd82de55559c8ea6,
                 0xb348ca3e52d96d182ad44fb82305c2,
                 0x69c5102eff1f674f5d30afeec4bd7f,
-                0x01914a
-            ]
+                0x01914a,
+            ],
         };
         let mut x: BLS377BN = BigNum {
             limbs: [
                 0x481512ffcd394eeab9b16eb21be9ef,
                 0x1e2caa9d41bb188282c8bd37cb5cd5,
                 0xdefe740a67c8fc6225bf87ff548595,
-                0x008848
-            ]
+                0x008848,
+            ],
         };
         [x, y]
     }
@@ -85,16 +83,16 @@ impl CurveParamsTrait<BLS381BN> for BLS381PartialCurveParams {
                 0x3CC744A2888AE40CAA232946C5E7E1,
                 0xE095D5D00AF600DB18CB2C04B3EDD0,
                 0x81E3AAA0F1A09E30ED741D8AE4FCF5,
-                0x08B3F4
-            ]
+                0x08B3F4,
+            ],
         };
         let mut x: BLS381BN = BigNum {
             limbs: [
                 0x55E83FF97A1AEFFB3AF00ADB22C6BB,
                 0x8C4F9774B905A14E3A3F171BAC586C,
                 0xA73197D7942695638C4FA9AC0FC368,
-                0x17F1D3
-            ]
+                0x17F1D3,
+            ],
         };
         [x, y]
     }
@@ -113,13 +111,7 @@ impl CurveParamsTrait<BLS381BN> for BLS381PartialCurveParams {
 pub struct Curve25519PartialCurveParams {}
 impl CurveParamsTrait<ED25519BN> for Curve25519PartialCurveParams {
     fn a() -> ED25519BN {
-        BigNum {
-            limbs: [
-                486662,
-                0,
-                0
-            ]
-        }
+        BigNum { limbs: [486662, 0, 0] }
     }
     fn b() -> ED25519BN {
         BigNum { limbs: [1, 0, 0] }
@@ -127,20 +119,10 @@ impl CurveParamsTrait<ED25519BN> for Curve25519PartialCurveParams {
 
     fn one() -> [ED25519BN; 2] {
         let mut y: ED25519BN = BigNum {
-            limbs: [
-                0x3d4d7e6d7c61b229e9c5a27eced3d9,
-                0x19a1b8a086b4e01edd2c7748d14c92,
-                0x20ae
-            ]
+            limbs: [0x3d4d7e6d7c61b229e9c5a27eced3d9, 0x19a1b8a086b4e01edd2c7748d14c92, 0x20ae],
         };
 
-        let mut x: ED25519BN = BigNum {
-            limbs: [
-                9,
-                0,
-                0
-            ]
-        };
+        let mut x: ED25519BN = BigNum { limbs: [9, 0, 0] };
         [x, y]
     }
 
@@ -159,37 +141,21 @@ pub struct Secp256r1PartialCurveParams {}
 impl CurveParamsTrait<Secp256r1BN> for Secp256r1PartialCurveParams {
     fn a() -> Secp256r1BN {
         BigNum {
-            limbs: [
-                0x000000fffffffffffffffffffffffc,
-                0xffff00000001000000000000000000,
-                0xffff
-            ]
+            limbs: [0x000000fffffffffffffffffffffffc, 0xffff00000001000000000000000000, 0xffff],
         }
     }
     fn b() -> Secp256r1BN {
         BigNum {
-            limbs: [
-                0x1d06b0cc53b0f63bce3c3e27d2604b,
-                0x35d8aa3a93e7b3ebbd55769886bc65,
-                0x5ac6
-            ]
+            limbs: [0x1d06b0cc53b0f63bce3c3e27d2604b, 0x35d8aa3a93e7b3ebbd55769886bc65, 0x5ac6],
         }
     }
 
     fn one() -> [Secp256r1BN; 2] {
         let mut y: Secp256r1BN = BigNum {
-            limbs: [
-                0xce33576b315ececbb6406837bf51f5,
-                0x42e2fe1a7f9b8ee7eb4a7c0f9e162b,
-                0x4fe3
-            ]
+            limbs: [0xce33576b315ececbb6406837bf51f5, 0x42e2fe1a7f9b8ee7eb4a7c0f9e162b, 0x4fe3],
         };
         let mut x: Secp256r1BN = BigNum {
-            limbs: [
-                0x037d812deb33a0f4a13945d898c296,
-                0xd1f2e12c4247f8bce6e563a440f277,
-                0x6b17
-            ]
+            limbs: [0x037d812deb33a0f4a13945d898c296, 0xd1f2e12c4247f8bce6e563a440f277, 0x6b17],
         };
         [x, y]
     }
@@ -208,14 +174,7 @@ impl CurveParamsTrait<Secp256r1BN> for Secp256r1PartialCurveParams {
 pub struct Secp384r1PartialCurveParams {}
 impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
     fn a() -> Secp384r1BN {
-        let x: Secp384r1BN = BigNum {
-            limbs: [
-                3,
-                0,
-                0,
-                0
-            ]
-        };
+        let x: Secp384r1BN = BigNum { limbs: [3, 0, 0, 0] };
         x.neg()
     }
     fn b() -> Secp384r1BN {
@@ -224,8 +183,8 @@ impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
                 0x56398D8A2ED19D2A85C8EDD3EC2AEF,
                 0x9C6EFE8141120314088F5013875AC6,
                 0xA7E23EE7E4988E056BE3F82D19181D,
-                0xB3312F
-            ]
+                0xB3312F,
+            ],
         }
     }
 
@@ -235,8 +194,8 @@ impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
                 0x60B1CE1D7E819D7A431D7C90EA0E5F,
                 0x1DBD289A147CE9DA3113B5F0B8C00A,
                 0x4A96262C6F5D9E98BF9292DC29F8F4,
-                0x3617DE
-            ]
+                0x3617DE,
+            ],
         };
 
         let mut x: Secp384r1BN = BigNum {
@@ -244,8 +203,8 @@ impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
                 0x02F25DBF55296C3A545E3872760AB7,
                 0x3B628BA79B9859F741E082542A3855,
                 0x22BE8B05378EB1C71EF320AD746E1D,
-                0xAA87CA
-            ]
+                0xAA87CA,
+            ],
         };
         [x, y]
     }
@@ -264,38 +223,18 @@ impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
 pub struct Secp256k1PartialCurveParams {}
 impl CurveParamsTrait<Secp256k1BN> for Secp256k1PartialCurveParams {
     fn a() -> Secp256k1BN {
-        BigNum {
-            limbs: [
-                0,
-                0,
-                0
-            ]
-        }
+        BigNum { limbs: [0, 0, 0] }
     }
     fn b() -> Secp256k1BN {
-        BigNum {
-            limbs: [
-                7,
-                0,
-                0
-            ]
-        }
+        BigNum { limbs: [7, 0, 0] }
     }
 
     fn one() -> [Secp256k1BN; 2] {
         let mut y: Secp256k1BN = BigNum {
-            limbs: [
-                0x17b448a68554199c47d08ffb10d4b8,
-                0xda7726a3c4655da4fbfc0e1108a8fd,
-                0x483a
-            ]
+            limbs: [0x17b448a68554199c47d08ffb10d4b8, 0xda7726a3c4655da4fbfc0e1108a8fd, 0x483a],
         };
         let mut x: Secp256k1BN = BigNum {
-            limbs: [
-                0x9bfcdb2dce28d959f2815b16f81798,
-                0x667ef9dcbbac55a06295ce870b0702,
-                0x79be
-            ]
+            limbs: [0x9bfcdb2dce28d959f2815b16f81798, 0x667ef9dcbbac55a06295ce870b0702, 0x79be],
         };
         [x, y]
     }
@@ -314,17 +253,7 @@ impl CurveParamsTrait<Secp256k1BN> for Secp256k1PartialCurveParams {
 pub struct Mnt4PartialCurveParams {}
 impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
     fn a() -> Mnt4BN {
-        BigNum {
-            limbs: [
-                2,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ]
-        }
+        BigNum { limbs: [2, 0, 0, 0, 0, 0, 0] }
     }
     fn b() -> Mnt4BN {
         BigNum {
@@ -335,8 +264,8 @@ impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
                 0xA92C78DC537E51A16703EC9855C77F,
                 0x051C596560835DF0C9E50A5B59B882,
                 0xC9DCAE7A016AC5D7748D3313CD8E39,
-                0x01373684A8
-            ]
+                0x01373684A8,
+            ],
         }
     }
 
@@ -349,8 +278,8 @@ impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
                 0xEE5599DD7C3DFA4100284833115AEC,
                 0x7FDDCDEA19CB10B2BF61F37AE2C456,
                 0x26E257B175AE94DEB9E10ABA4BA72F,
-                0x4AB64735
-            ]
+                0x4AB64735,
+            ],
         };
 
         let mut x: Mnt4BN = BigNum {
@@ -361,8 +290,8 @@ impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
                 0x6D1EF781D1DE4FFB1F806B314C5AD3,
                 0xEFA5546444D40C82D6A271F1A43862,
                 0x450BB76A02D86DAAFFBAEB69995EB9,
-                0x542F1DAD
-            ]
+                0x542F1DAD,
+            ],
         };
         [x, y]
     }
@@ -381,17 +310,7 @@ impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
 pub struct Mnt6PartialCurveParams {}
 impl CurveParamsTrait<Mnt6BN> for Mnt6PartialCurveParams {
     fn a() -> Mnt6BN {
-        BigNum {
-            limbs: [
-                11,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ]
-        }
+        BigNum { limbs: [11, 0, 0, 0, 0, 0, 0] }
     }
     fn b() -> Mnt6BN {
         BigNum {
@@ -402,8 +321,8 @@ impl CurveParamsTrait<Mnt6BN> for Mnt6PartialCurveParams {
                 0xB7985993F62F03B22A9A3C737A1A1E,
                 0xBB64B2BB01B10E60A5D5DFE0A25714,
                 0x0863C79D56446237CE2E1468D14AE9,
-                0x7DA285E7
-            ]
+                0x7DA285E7,
+            ],
         }
     }
 
@@ -416,8 +335,8 @@ impl CurveParamsTrait<Mnt6BN> for Mnt6PartialCurveParams {
                 0x4C7A18ED9C4BD3C7ED0FFB31C57E61,
                 0x2A3585BDD6D7722C6C07D7873BB02D,
                 0x6E2EB3FCA70DC1063BAC3455180120,
-                0x128C02FFF
-            ]
+                0x128C02FFF,
+            ],
         };
 
         let mut x: Mnt6BN = BigNum {
@@ -428,8 +347,8 @@ impl CurveParamsTrait<Mnt6BN> for Mnt6PartialCurveParams {
                 0x0C0D5FC5E818771B931F1D5BDD069C,
                 0x131C2437E884C4997FD1DCB409367D,
                 0x6E831147412CFB1002284F30338088,
-                0x255F8E87
-            ]
+                0x255F8E87,
+            ],
         };
         [x, y]
     }
@@ -534,8 +453,12 @@ unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let 
     n: u32,
     paramstr: str<K>,
     curvestr: str<J>,
-    cofactor: Field
-) where Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq, Curve:CurveParamsTrait<Fq> {
+    cofactor: Field,
+)
+where
+    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+    Curve: CurveParamsTrait<Fq>,
+{
     let a = Curve::a();
     let b = Curve::b();
     let one = Curve::one();
@@ -556,7 +479,7 @@ unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let 
     let mut it: u32 = 0;
     for i in 0..128 {
         if (cofactor_bits[i] == 1) {
-            it = i+1;
+            it = i + 1;
             break;
         }
     }
@@ -596,20 +519,31 @@ unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let 
     }
 
     println(f"pub struct {curvestr} {}");
-    println(f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {");
+    println(
+        f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {",
+    );
 
     println(f"  fn a() -> BigNum<{n}, {paramstr}> { {a} }");
     println(f"  fn b() -> BigNum<{n}, {paramstr}> { {b} }");
     println(f"  fn one() -> [BigNum<{n}, {paramstr}>; 2] { {one} }");
-    println(f"  fn offset_generator() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_initial} }");
-    println(f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_final} }");
+    println(
+        f"  fn offset_generator() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_initial} }",
+    );
+    println(
+        f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_final} }",
+    );
     println("}");
 }
 
 #[test]
 fn test_compute_and_print_offset_generators() {
     unsafe {
-        compute_and_print_offset_generators::<BN254, BN254PartialCurveParams, _, _, 64>(3, "BN254_Fq_Params", "BN254PartialCurveParams", 1);
+        compute_and_print_offset_generators::<BN254, BN254PartialCurveParams, _, _, 64>(
+            3,
+            "BN254_Fq_Params",
+            "BN254PartialCurveParams",
+            1,
+        );
         // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>(3, "Pallas_Fq_Params", "Pallas_Params", 1);
         // compute_and_print_offset_generators::<VestaBN, VestaPartialCurveParams, _, _, 64>(3, "Vesta_Fq_Params", "Vesta_Params", 1);
         // compute_and_print_offset_generators::<BLS377BN, BLS377PartialCurveParams, _, _, 64>(
@@ -629,6 +563,6 @@ fn test_compute_and_print_offset_generators() {
         // compute_and_print_offset_generators::<Secp256k1BN, Secp256k1PartialCurveParams, _, _, 65>(3, "Secp256k1_Fq_Params", "Secp256k1_Params", 1);
         // compute_and_print_offset_generators::<Secp256r1BN, Secp256r1PartialCurveParams, _, _, 65>(3, "Secp256r1_Fq_Params", "Secp256r1_Params", 1);
         // compute_and_print_offset_generators::<Secp384r1BN, Secp384r1PartialCurveParams, _, _, 97>(4, "Secp384r1_Fq_Params", "Secp384r1_Params", 1);
-        // cofactor = 0x170b5d44300000000000000000000000 booooo 
+        // cofactor = 0x170b5d44300000000000000000000000 booooo
     }
 }

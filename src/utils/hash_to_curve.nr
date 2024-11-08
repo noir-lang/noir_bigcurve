@@ -4,11 +4,13 @@ unconstrained fn hash_to_curve_inner<Fq, let SeedBytes: u32>(
     seedbase: Field,
     seed_counter: Field,
     a: Fq,
-    b: Fq
-) -> (Fq, Fq, Field) where Fq:BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq {
+    b: Fq,
+) -> (Fq, Fq, Field)
+where
+    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+{
     let seedhash = std::hash::poseidon2::Poseidon2::hash([seedbase, seed_counter], 2);
     // TODO: assert in field?
-
     let seedhash: [u8; 32] = seedhash.to_le_bytes();
 
     let x = Fq::derive_from_seed(seedhash);
@@ -34,8 +36,11 @@ unconstrained fn hash_to_curve_inner<Fq, let SeedBytes: u32>(
 unconstrained fn __hash_to_curve_witgen<Fq, let SeedBytes: u32>(
     seed: [u8; SeedBytes],
     a: Fq,
-    b: Fq
-) -> (Fq, Fq, Field) where Fq:BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq {
+    b: Fq,
+) -> (Fq, Fq, Field)
+where
+    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+{
     let hashed_seed = poseidon_hash_bytes(seed);
     hash_to_curve_inner(hashed_seed, 0, a, b)
 }
@@ -56,14 +61,11 @@ fn poseidon_hash_bytes<let SeedBytes: u32>(seed: [u8; SeedBytes]) -> Field {
     let hashed_seed: Field = std::hash::poseidon2::Poseidon2::hash(packed_seed, SeedBytes / 31 + 1);
     hashed_seed
 }
-pub fn hash_to_curve<Fq, let SeedBytes: u32>(
-    seed: [u8; SeedBytes],
-    a: Fq,
-    b: Fq
-) -> (Fq, Fq) where Fq:BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq {
-    let (_, y, salt) = unsafe {
-        __hash_to_curve_witgen(seed, a, b)
-    };
+pub fn hash_to_curve<Fq, let SeedBytes: u32>(seed: [u8; SeedBytes], a: Fq, b: Fq) -> (Fq, Fq)
+where
+    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+{
+    let (_, y, salt) = unsafe { __hash_to_curve_witgen(seed, a, b) };
     let outer_hash: Field = poseidon_hash_bytes(seed);
 
     let inner_hash = std::hash::poseidon2::Poseidon2::hash([outer_hash, salt], 2);

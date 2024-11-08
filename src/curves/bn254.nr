@@ -17,18 +17,28 @@ impl CurveParamsTrait<BigNum<3, 254, BN254_Fq_Params>> for BN254Params {
     }
     fn offset_generator() -> [BigNum<3, 254, BN254_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x377f339fa8372d1d3adc42a3d4901c, 0x96cbfde252d4502d20fe63e6eb2b52, 0x0666] }, BigNum { limbs: [0x06d5ac65dd163514b69bb7b45a8c52, 0xa20295561f2b500335be517e2f9ddf, 0x1390] }
+            BigNum {
+                limbs: [0x377f339fa8372d1d3adc42a3d4901c, 0x96cbfde252d4502d20fe63e6eb2b52, 0x0666],
+            },
+            BigNum {
+                limbs: [0x06d5ac65dd163514b69bb7b45a8c52, 0xa20295561f2b500335be517e2f9ddf, 0x1390],
+            },
         ]
     }
     fn offset_generator_final() -> [BigNum<3, 254, BN254_Fq_Params>; 2] {
         [
-            BigNum { limbs: [0x876f472cd3289fef9f11dc404e447f, 0x7b083434c2a69effc4cb7fce9fecb6, 0x0336] }, BigNum { limbs: [0xa33149d0f82e5335a130fd3baf1bf4, 0x37bbf991eefb0b04d52e689358228b, 0x178e] }
+            BigNum {
+                limbs: [0x876f472cd3289fef9f11dc404e447f, 0x7b083434c2a69effc4cb7fce9fecb6, 0x0336],
+            },
+            BigNum {
+                limbs: [0xa33149d0f82e5335a130fd3baf1bf4, 0x37bbf991eefb0b04d52e689358228b, 0x178e],
+            },
         ]
     }
 }
 
 global BN254_SCALAR_SLICES = 64;
-pub type BN254 = BigCurve<BigNum<3, 254,  BN254_Fq_Params>, BN254Params>;
+pub type BN254 = BigCurve<BigNum<3, 254, BN254_Fq_Params>, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 pub type BN254Fq = BigNum<3, 254, BN254_Fq_Params>;
 // pub type Secp256r1Fr = BigNum<3, Secp256r1_Fr_Params>;

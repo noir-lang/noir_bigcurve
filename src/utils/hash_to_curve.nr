@@ -1,6 +1,6 @@
 use dep::bignum::BigNumTrait;
 
-unconstrained fn hash_to_curve_inner<Fq, let SeedBytes: u32>(
+unconstrained fn hash_to_curve_inner<Fq>(
     seedbase: Field,
     seed_counter: Field,
     a: Fq,

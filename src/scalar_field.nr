@@ -15,8 +15,8 @@ use dep::bignum::BigNumTrait;
  *          ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
  **/
 pub struct ScalarField<let N: u32> {
-    base4_slices: [u8; N],
-    skew: bool
+    pub(crate) base4_slices: [u8; N],
+    pub(crate) skew: bool,
 }
 
 // 1, 2, 3, 4
@@ -26,12 +26,12 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] as u8 + (skew as u8);
-    result[N-1] = (nibbles[0] + 15) / 2;
+    result[N - 1] = (nibbles[0] + 15) / 2;
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
-        result[N-1 - i] = (nibble + 15) / 2;
+        result[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
-            result[N-1 - i] += 1;
+            result[N - 1 - i] += 1;
             result[N - i] -= 8;
         }
     }
@@ -39,25 +39,28 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     (result, skew)
 }
 
-unconstrained fn get_wnaf_slices2<let N: u32, BigNum>(x: BigNum /*[Field; M]*/) -> ([u8; N], bool) where BigNum: BigNumTrait {
+unconstrained fn get_wnaf_slices2<let N: u32, BigNum>(x: BigNum) -> ([u8; N], bool)
+where
+    BigNum: BigNumTrait,
+{
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [Field] = x.get();
+    let x: [Field] = x.get_limbs_slice();
     for i in 0..x.len() {
         nibbles[i] = x[i].to_le_radix::<30>(16);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
     nibbles[0][0] = nibbles[0][0] as u8 + (skew as u8);
-    result[N-1] = (nibbles[0][0] + 15) / 2;
+    result[N - 1] = (nibbles[0][0] + 15) / 2;
 
     for i in 1..N {
         let major_index = i / 30;
         let minor_index = i % 30;
         let mut nibble: u8 = nibbles[major_index][minor_index];
-        result[N-1 - i] = (nibble + 15) / 2;
+        result[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
-            result[N-1 - i] += 1;
+            result[N - 1 - i] += 1;
             result[N - i] -= 8;
         }
     }
@@ -96,9 +99,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
      **/
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
-        let (slices, skew): ([u8; N], bool) = unsafe {
-            get_wnaf_slices(x)
-        };
+        let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
         result.base4_slices = slices;
         result.skew = skew;
         if (N < 64) {
@@ -146,7 +147,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // // rhi.assert_max_bit_size(hibits as u32);
         }
         for i in 0..N {
-            (result.base4_slices[i] as Field).assert_max_bit_size(4);
+            (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
         }
         result
     }
@@ -171,8 +172,12 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 pub trait ScalarFieldTrait {
     fn zero() -> Self;
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    fn from_bignum<BigNum>(x: BigNum) -> Self where BigNum: BigNumTrait;
-    fn into_bignum<BigNum>(self) -> BigNum where BigNum: BigNumTrait;
+    fn from_bignum<BigNum>(x: BigNum) -> Self
+    where
+        BigNum: BigNumTrait;
+    fn into_bignum<BigNum>(self) -> BigNum
+    where
+        BigNum: BigNumTrait;
     fn new() -> Self;
     fn get(self, idx: u64) -> u8;
     fn len(self) -> u32;
@@ -198,17 +203,21 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<BigNum>(x: BigNum) -> Self where BigNum: BigNumTrait {
+    fn from_bignum<BigNum>(x: BigNum) -> Self
+    where
+        BigNum: BigNumTrait,
+    {
         x.validate_in_field();
-        let mut (slices, skew): ([u8; N], bool) = unsafe {
-            get_wnaf_slices2(x)
-        };
+        let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
 
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
         Self { base4_slices: slices, skew }
     }
 
-    fn into_bignum<BigNum>(self) -> BigNum where BigNum: BigNumTrait {
+    fn into_bignum<BigNum>(self) -> BigNum
+    where
+        BigNum: BigNumTrait,
+    {
         let mut result = BigNum::new();
         let mut count: u64 = 0;
         {
@@ -236,7 +245,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
                 acc += 0x1000000000000000000000000000000;
                 result.set_limb(
                     result.num_limbs() - i,
-                    result.get_limb((result.num_limbs() - i) as u64) - 1
+                    result.get_limb((result.num_limbs() - i)) - 1,
                 );
             }
             result.set_limb(result.num_limbs() - 1 - i, acc);

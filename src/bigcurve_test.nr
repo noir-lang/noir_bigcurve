@@ -871,6 +871,7 @@ fn test_secp256r1_msm() {
     assert(result.is_infinity);
 }
 
+// Failed to solve brillig function
 #[test]
 fn test_secp384r1_msm() {
     let mut four = Secp384r1Fr::new();

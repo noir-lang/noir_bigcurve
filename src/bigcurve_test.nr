@@ -1,14 +1,23 @@
 use dep::bignum::BigNum;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
 use crate::BigCurve;
-
 use crate::curve_jac;
-use crate::curve_jac::JTranscript;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
-use crate::scalar_field::ScalarField;
+use crate::curve_jac::JTranscript;
+use crate::curves::bls12_377::{BLS12_377, BLS12_377Fr, BLS12_377Scalar};
+use crate::curves::bls12_381::{BLS12_381, BLS12_381Fr, BLS12_381Scalar};
+use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
+use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
+use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
+use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
+use crate::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
+use crate::curves::secp256r1::{Secp256r1, Secp256r1Fr, Secp256r1Scalar};
+use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
+use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
 use crate::PointTable;
-use crate::curves::bn254::{BN254, BN254Scalar, BN254Params};
+use crate::scalar_field::ScalarField;
 type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
@@ -446,113 +455,454 @@ fn test_make_table() {
     }
 }
 
-use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
-
-use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
-use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
-use crate::curves::bls12_377::{BLS12_377, BLS12_377Fr, BLS12_377Scalar};
-use crate::curves::bls12_381::{BLS12_381, BLS12_381Fr, BLS12_381Scalar};
-use crate::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
-use crate::curves::secp256r1::{Secp256r1, Secp256r1Fr, Secp256r1Scalar};
-use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
-use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
-use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
-
-//comptime fn
-comptime fn make_test(
-    f: StructDefinition,
-    Curve: Quoted,
-    Fr: Quoted,
-    ScalarType: Quoted,
-) -> Quoted {
-    let k = f.name();
-    let mut offset_generator_test: Quoted = quote {};
-    // hacky workaround because we don't have a defined BN254Fr BigNum instance (assumption is the circuit field is BN254 :o)
-    if (!Curve.eq(quote {BN254})) {
-        offset_generator_test = quote {#[test]
-fn test_offset_generators() {
-    let one: $Curve = BigCurve::one();
-    let negone: $Fr = BigNum::one().neg();
-    let scalar: $ScalarType  = ScalarField::from_bignum(negone);
+#[test]
+fn test_bls12_377_offset_generators() {
+    let one = BLS12_377::one();
+    let negone = BLS12_377Fr::one().neg();
+    let scalar = BLS12_377Scalar::from_bignum(negone);
     let final = one.mul(scalar);
+
     assert(final.eq(one.neg()));
-}};
-    } else {
-        offset_generator_test = quote {#[test]
-fn test_offset_generators() {
-    let one: $Curve = BigCurve::one();
-    let scalar: $ScalarType  = ScalarField::from(-1);
-    let final = one.mul(scalar);
-    assert(final.eq(one.neg()));
-}};
-    }
-    quote {
-impl $k {
-$offset_generator_test
+}
 
 #[test]
-    fn test_num_scalar_slices_in_scalar_field() {
-        let x: $Fr = BigNum::new();
-        let max_wnaf_bits: u32 = x.modulus_bits() + 1;
+fn test_bls12_381_offset_generators() {
+    let one = BLS12_381::one();
+    let negone = BLS12_381Fr::one().neg();
+    let scalar = BLS12_381Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
 
-        let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-        let scalar: $ScalarType = ScalarField::zero();
-        let expected = scalar.len();
-        assert(scalar_slices == expected);
-
-    }
-
+    assert(final.eq(one.neg()));
+}
 
 #[test]
-fn test_hash_to_curve() {
+fn test_bn254_offset_generators() {
+    let one = BN254::one();
+    let scalar = BN254Scalar::from(-1);
+    let final = one.mul(scalar);
 
-    let r: $Curve = BigCurve::hash_to_curve("hello world".as_bytes());
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_mnt4_753_offset_generators() {
+    let one = MNT4_753::one();
+    let negone = MNT4_753Fr::one().neg();
+    let scalar = MNT4_753Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_mnt6_753_offset_generators() {
+    let one = MNT6_753::one();
+    let negone = MNT6_753Fr::one().neg();
+    let scalar = MNT6_753Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_pallas_offset_generators() {
+    let one = Pallas::one();
+    let negone = PallasFr::one().neg();
+    let scalar = PallasScalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_secp256k1_offset_generators() {
+    let one = Secp256k1::one();
+    let negone = Secp256k1Fr::one().neg();
+    let scalar = Secp256k1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_secp256r1_offset_generators() {
+    let one = Secp256r1::one();
+    let negone = Secp256r1Fr::one().neg();
+    let scalar = Secp256r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_secp384r1_offset_generators() {
+    let one = Secp384r1::one();
+    let negone = Secp384r1Fr::one().neg();
+    let scalar = Secp384r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_vesta_offset_generators() {
+    let one = Vesta::one();
+    let negone = VestaFr::one().neg();
+    let scalar = VestaScalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_bls12_377_num_scalar_slices_in_scalar_field() {
+    let x = BLS12_377Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BLS12_377Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_bls12_381_num_scalar_slices_in_scalar_field() {
+    let x = BLS12_381Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BLS12_381Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_bn254_num_scalar_slices_in_scalar_field() {
+    let x = BigNum::<3, 254, BN254_Fq_Params>::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BN254Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
+    let x = MNT4_753Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = MNT4_753Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
+    let x = MNT6_753Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = MNT6_753Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_pallas_num_scalar_slices_in_scalar_field() {
+    let x = PallasFr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = PallasScalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_secp256k1_num_scalar_slices_in_scalar_field() {
+    let x = Secp256k1Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = Secp256k1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_secp256r1_num_scalar_slices_in_scalar_field() {
+    let x = Secp256r1Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = Secp256r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_secp384r1_num_scalar_slices_in_scalar_field() {
+    let x = Secp384r1Fr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = Secp384r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_vesta_num_scalar_slices_in_scalar_field() {
+    let x = VestaFr::new();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = VestaScalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_bls12_377_hash_to_curve() {
+    let r = BLS12_377::hash_to_curve("hello world".as_bytes());
+
     r.validate_on_curve();
 }
 
+#[test]
+fn test_bls12_381_hash_to_curve() {
+    let r = BLS12_381::hash_to_curve("hello world".as_bytes());
 
+    r.validate_on_curve();
+}
 
 #[test]
-fn test_msm() {
+fn test_bn254_hash_to_curve() {
+    let r = BN254::hash_to_curve("hello world".as_bytes());
 
-    // (p-4)[X] + (p-5)[-X] = [X]
-    let mut four: $Fr = BigNum::new();
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_mnt4_753_hash_to_curve() {
+    let r = MNT4_753::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_mnt6_753_hash_to_curve() {
+    let r = MNT6_753::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_pallas_hash_to_curve() {
+    let r = Pallas::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_secp256k1_hash_to_curve() {
+    let r = Secp256k1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_secp256r1_hash_to_curve() {
+    let r = Secp256r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_secp384r1_hash_to_curve() {
+    let r = Secp384r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_vesta_hash_to_curve() {
+    let r = Vesta::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_bls12_377_msm() {
+    let mut four = BLS12_377Fr::new();
     four.limbs[0] = 4;
-    let p_minus_4_fr: $Fr = BigNum::modulus() - four;
-    let p_minus_4: $ScalarType = ScalarField::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BigNum::one();
-    let p_minus_5: $ScalarType = ScalarField::from_bignum(p_minus_5_fr);
+    let p_minus_4_fr = BLS12_377Fr::modulus() - four;
+    let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BLS12_377Fr::one();
+    let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BLS12_377::one();
+    let b = a.neg();
+    let mut points = [a, b];
 
-    let mut scalars: [$ScalarType; 2] = [p_minus_4, p_minus_5];
+    let result = BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);
 
-    let A: $Curve = BigCurve::one();
-    let B = A.neg();
-    let mut points: [$Curve; 2] = [A, B];
-    // -4.[1] -5.[-1] + [1] = [0]
-    let result: $Curve = BigCurve::evaluate_linear_expression(points, scalars, [BigCurve::one().neg()]);
     assert(result.is_infinity);
 }
-}
-}
+
+#[test]
+fn test_bls12_381_msm() {
+    let mut four = BLS12_381Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = BLS12_381Fr::modulus() - four;
+    let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BLS12_381Fr::one();
+    let p_minus_5 = BLS12_381Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BLS12_381::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BLS12_381::evaluate_linear_expression(points, scalars, [BLS12_381::one().neg()]);
+
+    assert(result.is_infinity);
 }
 
-#[make_test(quote{BN254}, quote{BigNum<3, 254, BN254_Fq_Params>}, quote{BN254Scalar})]
-pub struct BN254GenTests {}
-#[make_test(quote{Vesta}, quote{VestaFr}, quote{VestaScalar})]
-pub struct VestaGenTests {}
-#[make_test(quote{Pallas}, quote{PallasFr}, quote{PallasScalar})]
-pub struct PallasGenTests {}
-#[make_test(quote{BLS12_377}, quote{BLS12_377Fr}, quote{BLS12_377Scalar})]
-pub struct BLS377GenTests {}
-#[make_test(quote{BLS12_381}, quote{BLS12_381Fr}, quote{BLS12_381Scalar})]
-pub struct BLS381GenTests {}
-#[make_test(quote{Secp256k1}, quote{Secp256k1Fr}, quote{Secp256k1Scalar})]
-pub struct Secp256k1GenTests {}
-#[make_test(quote{Secp256r1}, quote{Secp256r1Fr}, quote{Secp256r1Scalar})]
-pub struct Secp256r1GenTests {}
-#[make_test(quote{Secp384r1}, quote{Secp384r1Fr}, quote{Secp384r1Scalar})]
-pub struct Secp384r1GenTests {}
-#[make_test(quote{MNT4_753}, quote{MNT4_753Fr}, quote{MNT4_753Scalar})]
-pub struct MNT4GenTests {}
-#[make_test(quote{MNT6_753}, quote{MNT6_753Fr}, quote{MNT6_753Scalar})]
-pub struct MNT6GenTests {}
+#[test]
+fn test_bn254_msm() {
+    let mut four = BigNum::<3, 254, BN254_Fq_Params>::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = BigNum::modulus() - four;
+    let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BigNum::one();
+    let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BN254::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+// Failed to solve brillig function
+#[test]
+fn test_mnt4_753_msm() {
+    let mut four = MNT4_753Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = MNT4_753Fr::modulus() - four;
+    let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - MNT4_753Fr::one();
+    let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = MNT4_753::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+// Failed to solve brillig function
+#[test]
+fn test_mnt6_753_msm() {
+    let mut four = MNT6_753Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = MNT6_753Fr::modulus() - four;
+    let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - MNT6_753Fr::one();
+    let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = MNT6_753::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_pallas_msm() {
+    let mut four = PallasFr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = PallasFr::modulus() - four;
+    let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - PallasFr::one();
+    let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Pallas::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_secp256k1_msm() {
+    let mut four = Secp256k1Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = Secp256k1Fr::modulus() - four;
+    let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp256k1Fr::one();
+    let p_minus_5 = Secp256k1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp256k1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Secp256k1::evaluate_linear_expression(points, scalars, [Secp256k1::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+// Failed to solve brillig function
+#[test]
+fn test_secp256r1_msm() {
+    let mut four = Secp256r1Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = Secp256r1Fr::modulus() - four;
+    let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp256r1Fr::one();
+    let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp256r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_secp384r1_msm() {
+    let mut four = Secp384r1Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = Secp384r1Fr::modulus() - four;
+    let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp384r1Fr::one();
+    let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp384r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_vesta_msm() {
+    let mut four = VestaFr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = VestaFr::modulus() - four;
+    let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - VestaFr::one();
+    let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Vesta::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
+
+    assert(result.is_infinity);
+}

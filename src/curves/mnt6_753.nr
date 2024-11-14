@@ -116,7 +116,7 @@ mod test {
     use dep::bignum::fields::mnt6_753Fr::MNT6_753_Fr_Params;
 
     #[test]
-    fn test_bits() {
+    fn test_mnt6_753_bits() {
         let x: BigNum<7, 753, MNT6_753_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

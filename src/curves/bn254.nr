@@ -47,7 +47,7 @@ pub type BN254Fq = BigNum<3, 254, BN254_Fq_Params>;
 //     use dep::bignum::BigNum;
 //     use crate::curves::secp256r1::SECP256r1_SCALAR_SLICES;
 //     #[test]
-// fn test_bits() {
+// fn test_bn254_bits() {
 //         let x: BigNum<3, 254, BN254_Fq_Params> = BigNum::new();
 //         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

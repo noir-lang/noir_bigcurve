@@ -54,7 +54,7 @@ mod test {
     use dep::bignum::fields::vestaFr::Vesta_Fr_Params;
 
     #[test]
-    fn test_bits() {
+    fn test_vesta_bits() {
         let x: BigNum<3, 255, Vesta_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

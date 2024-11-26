@@ -37,7 +37,7 @@ impl CurveParamsTrait<BigNum<3, 254, BN254_Fq_Params>> for BN254Params {
     }
 }
 
-global BN254_SCALAR_SLICES = 64;
+global BN254_SCALAR_SLICES  : u32 = 64;
 pub type BN254 = BigCurve<BigNum<3, 254, BN254_Fq_Params>, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 pub type BN254Fq = BigNum<3, 254, BN254_Fq_Params>;

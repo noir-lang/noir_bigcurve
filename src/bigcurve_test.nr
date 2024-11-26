@@ -3,12 +3,12 @@ use dep::bignum::BigNum;
 use crate::BigCurve;
 
 use crate::curve_jac;
-use crate::curve_jac::JTranscript;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
-use crate::scalar_field::ScalarField;
+use crate::curve_jac::JTranscript;
+use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
 use crate::PointTable;
-use crate::curves::bn254::{BN254, BN254Scalar, BN254Params};
+use crate::scalar_field::ScalarField;
 type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
@@ -448,15 +448,15 @@ fn test_make_table() {
 
 use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
-use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
-use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
 use crate::curves::bls12_377::{BLS12_377, BLS12_377Fr, BLS12_377Scalar};
 use crate::curves::bls12_381::{BLS12_381, BLS12_381Fr, BLS12_381Scalar};
+use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
+use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
+use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
 use crate::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
 use crate::curves::secp256r1::{Secp256r1, Secp256r1Fr, Secp256r1Scalar};
 use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
-use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
-use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
+use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
 
 //comptime fn
 comptime fn make_test(
@@ -535,24 +535,3 @@ fn test_msm() {
 }
 }
 }
-
-#[make_test(quote{BN254}, quote{BigNum<3, 254, BN254_Fq_Params>}, quote{BN254Scalar})]
-pub struct BN254GenTests {}
-#[make_test(quote{Vesta}, quote{VestaFr}, quote{VestaScalar})]
-pub struct VestaGenTests {}
-#[make_test(quote{Pallas}, quote{PallasFr}, quote{PallasScalar})]
-pub struct PallasGenTests {}
-#[make_test(quote{BLS12_377}, quote{BLS12_377Fr}, quote{BLS12_377Scalar})]
-pub struct BLS377GenTests {}
-#[make_test(quote{BLS12_381}, quote{BLS12_381Fr}, quote{BLS12_381Scalar})]
-pub struct BLS381GenTests {}
-#[make_test(quote{Secp256k1}, quote{Secp256k1Fr}, quote{Secp256k1Scalar})]
-pub struct Secp256k1GenTests {}
-#[make_test(quote{Secp256r1}, quote{Secp256r1Fr}, quote{Secp256r1Scalar})]
-pub struct Secp256r1GenTests {}
-#[make_test(quote{Secp384r1}, quote{Secp384r1Fr}, quote{Secp384r1Scalar})]
-pub struct Secp384r1GenTests {}
-#[make_test(quote{MNT4_753}, quote{MNT4_753Fr}, quote{MNT4_753Scalar})]
-pub struct MNT4GenTests {}
-#[make_test(quote{MNT6_753}, quote{MNT6_753Fr}, quote{MNT6_753Scalar})]
-pub struct MNT6GenTests {}

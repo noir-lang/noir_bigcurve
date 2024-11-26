@@ -5,7 +5,7 @@ use crate::CurveParamsTrait;
 use crate::BigCurve;
 use crate::scalar_field::ScalarField;
 
-global SECP256k1_SCALAR_SLICES = 65;
+global SECP256k1_SCALAR_SLICES  : u32 = 65;
 pub struct Secp256k1_Params {}
 impl CurveParamsTrait<BigNum<3, 256, Secp256k1_Fq_Params>> for Secp256k1_Params {
     fn a() -> BigNum<3, 256, Secp256k1_Fq_Params> {

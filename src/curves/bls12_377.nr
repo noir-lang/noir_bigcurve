@@ -5,7 +5,7 @@ use crate::CurveParamsTrait;
 use crate::BigCurve;
 use crate::scalar_field::ScalarField;
 
-global BLS12_377_SCALAR_SLICES = 64;
+global BLS12_377_SCALAR_SLICES  : u32 = 64;
 pub struct BLS12_377_Params {}
 impl CurveParamsTrait<BigNum<4, 377, BLS12_377_Fq_Params>> for BLS12_377_Params {
     fn a() -> BigNum<4, 377, BLS12_377_Fq_Params> {

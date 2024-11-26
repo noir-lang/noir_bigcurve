@@ -41,7 +41,7 @@ impl CurveParamsTrait<BigNum<3, 255, Vesta_Fq_Params>> for Vesta_Params {
     }
 }
 
-pub global VESTA_SCALAR_SLICES : u32  = 64;
+pub global VESTA_SCALAR_SLICES: u32 = 64;
 pub type Vesta = BigCurve<BigNum<3, 255, Vesta_Fq_Params>, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 pub type VestaFq = BigNum<3, 255, Vesta_Fq_Params>;

@@ -5,7 +5,7 @@ use crate::BigCurve;
 use crate::scalar_field::ScalarField;
 use crate::CurveParamsTrait;
 
-global PALLAS_SCALAR_SLICES : u32 = 64;
+global PALLAS_SCALAR_SLICES: u32 = 64;
 
 pub struct Pallas_Params {}
 impl CurveParamsTrait<BigNum<3, 255, Pallas_Fq_Params>> for Pallas_Params {

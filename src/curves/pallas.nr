@@ -1,9 +1,9 @@
-use dep::bignum::BigNum;
-use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
-use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
 use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
+use dep::bignum::BigNum;
+use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
+use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
 global PALLAS_SCALAR_SLICES = 64;
 
@@ -50,8 +50,8 @@ pub type PallasFr = BigNum<3, 255, Pallas_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::pallas::PALLAS_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
     #[test]

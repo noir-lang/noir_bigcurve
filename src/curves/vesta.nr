@@ -1,9 +1,9 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::vestaFq::Vesta_Fq_Params;
 use dep::bignum::fields::vestaFr::Vesta_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 pub struct Vesta_Params {}
 impl CurveParamsTrait<BigNum<3, 255, Vesta_Fq_Params>> for Vesta_Params {
@@ -49,8 +49,8 @@ pub type VestaFr = BigNum<3, 255, Vesta_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::vesta::VESTA_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::vestaFr::Vesta_Fr_Params;
 
     #[test]

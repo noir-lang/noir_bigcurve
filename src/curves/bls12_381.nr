@@ -1,9 +1,9 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
 use dep::bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 global BLS12_381_SCALAR_SLICES = 64;
 pub struct BLS12_381_Params {}
@@ -83,8 +83,8 @@ pub type BLS12_381Fr = BigNum<3, 255, BLS12_381_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::bls12_381::BLS12_381_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
 
     #[test]

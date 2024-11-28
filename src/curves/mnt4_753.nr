@@ -1,9 +1,9 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::mnt4_753Fq::MNT4_753_Fq_Params;
 use dep::bignum::fields::mnt4_753Fr::MNT4_753_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 global MNT4_753_SCALAR_SLICES = 189;
 pub struct MNT4_753_Params {}
@@ -111,8 +111,8 @@ pub type MNT4_753Fr = BigNum<7, 753, MNT4_753_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::mnt4_753::MNT4_753_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::mnt4_753Fr::MNT4_753_Fr_Params;
 
     #[test]

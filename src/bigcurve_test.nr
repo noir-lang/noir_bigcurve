@@ -18,6 +18,8 @@ use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
 use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
 use crate::PointTable;
 use crate::scalar_field::ScalarField;
+use super::curves::mnt6_753::MNT6_753Fq;
+
 type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
@@ -798,23 +800,23 @@ fn test_bn254_msm() {
 // }
 
 // // Failed to solve brillig function
-// #[test]
-// fn test_mnt6_753_msm() {
-//     let mut four = MNT6_753Fr::new();
-//     four.limbs[0] = 4;
-//     let p_minus_4_fr = MNT6_753Fr::modulus() - four;
-//     let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
-//     let p_minus_5_fr = p_minus_4_fr - MNT6_753Fr::one();
-//     let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
-//     let mut scalars = [p_minus_4, p_minus_5];
-//     let a = MNT6_753::one();
-//     let b = a.neg();
-//     let mut points = [a, b];
+#[test]
+fn test_mnt6_753_msm() {
+    let mut four = MNT6_753Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = MNT6_753Fr::modulus() - four;
+    let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - MNT6_753Fr::one();
+    let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = MNT6_753::one();
+    let b = a.neg();
+    let mut points = [a, b];
 
-//     let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
+    let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
 
-//     assert(result.is_infinity);
-// }
+    assert(result.is_infinity);
+}
 
 #[test]
 fn test_pallas_msm() {
@@ -905,5 +907,66 @@ fn test_vesta_msm() {
 
     let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_bigcurve_sub_with_hint() {
+    let accumulator: MNT6_753 = BigCurve {
+        x: BigNum {
+            limbs: [
+                0x5b6ad7b65e3a86239c2efbdb300b8d,
+                0x7d06f1a94609f8e4eb48c998d1571d,
+                0x95a74f11f2fb5be7544da5c184e38d,
+                0x600f8f2fdcd5e802342ebe03c3787f,
+                0xc3fa8f3f017c7aed50e1a14b78f3b3,
+                0xe7f3b2638fa13f65670c15eb006e99,
+                0x016389a6fb,
+            ],
+        },
+        y: BigNum {
+            limbs: [
+                0x42eb137506b02f7665ebbe0211b768,
+                0x814148c3996475176b11c4db1d356a,
+                0xf97e6cd350259b5456471a2237553f,
+                0x5c822035f3f7c21fc2e6f9aac5945a,
+                0xa319d0923fc0ac9db23b819dcb7371,
+                0xa4186459f74d57db479c998a5db03a,
+                0x7f824db1,
+            ],
+        },
+        is_infinity: false,
+    };
+    let offset_generator: MNT6_753 = BigCurve {
+        x: BigNum {
+            limbs: [
+                0x5b6ad7b65e3a86239c2efbdb300b8d,
+                0x7d06f1a94609f8e4eb48c998d1571d,
+                0x95a74f11f2fb5be7544da5c184e38d,
+                0x600f8f2fdcd5e802342ebe03c3787f,
+                0xc3fa8f3f017c7aed50e1a14b78f3b3,
+                0xe7f3b2638fa13f65670c15eb006e99,
+                0x016389a6fb,
+            ],
+        },
+        y: BigNum {
+            limbs: [
+                0x42eb137506b02f7665ebbe0211b768,
+                0x814148c3996475176b11c4db1d356a,
+                0xf97e6cd350259b5456471a2237553f,
+                0x5c822035f3f7c21fc2e6f9aac5945a,
+                0xa319d0923fc0ac9db23b819dcb7371,
+                0xa4186459f74d57db479c998a5db03a,
+                0x7f824db1,
+            ],
+        },
+        is_infinity: false,
+    };
+    let transcript: AffineTranscript<MNT6_753Fq> = AffineTranscript {
+        lambda: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+        x3: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+        y3: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+    };
+    let result = accumulator.sub_with_hint(offset_generator, transcript);
     assert(result.is_infinity);
 }

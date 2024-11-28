@@ -8,9 +8,9 @@ pub(crate) mod curves;
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;
 
-use crate::scalar_field::ScalarField;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
+use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
 use dep::sort::sort_advanced;
@@ -445,7 +445,7 @@ where
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
             BigNum::new(),
-            x_equal_predicate & !y_equal_predicate & !self.is_infinity & !other.is_infinity,
+            x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
         BigNum::evaluate_quadratic_expression(
@@ -552,8 +552,9 @@ where
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
             BigNum::new(),
-            x_equal_predicate & !y_equal_predicate & !self.is_infinity & !other.is_infinity,
+            x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
+
         BigNum::evaluate_quadratic_expression(
             [[lambda], [product_2_lhs_t0]],
             [[true], [false]],
@@ -566,8 +567,6 @@ where
             [false],
         );
 
-        // x3 = lambda * lambda - x2 - x1
-        // if double, then x2 = x1 so we good
         BigNum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -993,6 +992,7 @@ where
             );
         }
 
+        let final_offsetgen: BigCurve<BigNum, CurveParams> = BigCurve::offset_generator_final();
         accumulator = accumulator.sub_with_hint(
             BigCurve::offset_generator_final(),
             transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],

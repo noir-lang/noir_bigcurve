@@ -1,8 +1,8 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 pub struct BN254Params {}
 impl CurveParamsTrait<BigNum<3, 254, BN254_Fq_Params>> for BN254Params {

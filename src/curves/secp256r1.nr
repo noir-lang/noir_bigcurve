@@ -1,9 +1,9 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::secp256r1Fq::Secp256r1_Fq_Params;
 use dep::bignum::fields::secp256r1Fr::Secp256r1_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 pub struct Secp256r1_Params {}
 impl CurveParamsTrait<BigNum<3, 256, Secp256r1_Fq_Params>> for Secp256r1_Params {
@@ -55,8 +55,8 @@ pub type Secp256r1Fr = BigNum<3, 256, Secp256r1_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::secp256r1::SECP256r1_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::secp256r1Fr::Secp256r1_Fr_Params;
 
     #[test]

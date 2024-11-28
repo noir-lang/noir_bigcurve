@@ -992,7 +992,6 @@ where
             );
         }
 
-        let final_offsetgen: BigCurve<BigNum, CurveParams> = BigCurve::offset_generator_final();
         accumulator = accumulator.sub_with_hint(
             BigCurve::offset_generator_final(),
             transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],

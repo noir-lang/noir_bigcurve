@@ -5,7 +5,7 @@ use dep::bignum::BigNum;
 use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
 use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
-global PALLAS_SCALAR_SLICES = 64;
+global PALLAS_SCALAR_SLICES: u32 = 64;
 
 pub struct Pallas_Params {}
 impl CurveParamsTrait<BigNum<3, 255, Pallas_Fq_Params>> for Pallas_Params {

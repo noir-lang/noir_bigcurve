@@ -5,7 +5,7 @@ use dep::bignum::BigNum;
 use dep::bignum::fields::mnt4_753Fq::MNT4_753_Fq_Params;
 use dep::bignum::fields::mnt4_753Fr::MNT4_753_Fr_Params;
 
-global MNT4_753_SCALAR_SLICES = 189;
+global MNT4_753_SCALAR_SLICES: u32 = 189;
 pub struct MNT4_753_Params {}
 impl CurveParamsTrait<BigNum<7, 753, MNT4_753_Fq_Params>> for MNT4_753_Params {
     fn a() -> BigNum<7, 753, MNT4_753_Fq_Params> {

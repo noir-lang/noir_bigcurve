@@ -5,7 +5,7 @@ use dep::bignum::BigNum;
 use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
 use dep::bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
 
-global BLS12_381_SCALAR_SLICES = 64;
+global BLS12_381_SCALAR_SLICES: u32 = 64;
 pub struct BLS12_381_Params {}
 impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params {
     fn a() -> BigNum<4, 381, BLS12_381_Fq_Params> {

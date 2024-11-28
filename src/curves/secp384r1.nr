@@ -89,7 +89,7 @@ impl CurveParamsTrait<BigNum<4, 384, Secp384r1_Fq_Params>> for Secp384r1_Params 
     }
 }
 
-pub global SECP384r1_SCALAR_SLICES = 97;
+pub global SECP384r1_SCALAR_SLICES: u32 = 97;
 pub type Secp384r1 = BigCurve<BigNum<4, 384, Secp384r1_Fq_Params>, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
 pub type Secp384r1Fq = BigNum<4, 384, Secp384r1_Fq_Params>;

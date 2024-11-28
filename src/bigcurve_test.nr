@@ -780,26 +780,26 @@ fn test_bn254_msm() {
     assert(result.is_infinity);
 }
 
-// // Failed to solve brillig function
-// #[test]
-// fn test_mnt4_753_msm() {
-//     let mut four = MNT4_753Fr::new();
-//     four.limbs[0] = 4;
-//     let p_minus_4_fr = MNT4_753Fr::modulus() - four;
-//     let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
-//     let p_minus_5_fr = p_minus_4_fr - MNT4_753Fr::one();
-//     let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
-//     let mut scalars = [p_minus_4, p_minus_5];
-//     let a = MNT4_753::one();
-//     let b = a.neg();
-//     let mut points = [a, b];
 
-//     let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
+#[test]
+fn test_mnt4_753_msm() {
+    let mut four = MNT4_753Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = MNT4_753Fr::modulus() - four;
+    let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - MNT4_753Fr::one();
+    let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = MNT4_753::one();
+    let b = a.neg();
+    let mut points = [a, b];
 
-//     assert(result.is_infinity);
-// }
+    let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
 
-// // Failed to solve brillig function
+    assert(result.is_infinity);
+}
+
+
 #[test]
 fn test_mnt6_753_msm() {
     let mut four = MNT6_753Fr::new();
@@ -854,43 +854,43 @@ fn test_secp256k1_msm() {
     assert(result.is_infinity);
 }
 
-// // Failed to solve brillig function
-// #[test]
-// fn test_secp256r1_msm() {
-//     let mut four = Secp256r1Fr::new();
-//     four.limbs[0] = 4;
-//     let p_minus_4_fr = Secp256r1Fr::modulus() - four;
-//     let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
-//     let p_minus_5_fr = p_minus_4_fr - Secp256r1Fr::one();
-//     let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
-//     let mut scalars = [p_minus_4, p_minus_5];
-//     let a = Secp256r1::one();
-//     let b = a.neg();
-//     let mut points = [a, b];
 
-//     let result = Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);
+#[test]
+fn test_secp256r1_msm() {
+    let mut four = Secp256r1Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = Secp256r1Fr::modulus() - four;
+    let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp256r1Fr::one();
+    let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp256r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
 
-//     assert(result.is_infinity);
-// }
+    let result = Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);
 
-// // Failed to solve brillig function
-// #[test]
-// fn test_secp384r1_msm() {
-//     let mut four = Secp384r1Fr::new();
-//     four.limbs[0] = 4;
-//     let p_minus_4_fr = Secp384r1Fr::modulus() - four;
-//     let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
-//     let p_minus_5_fr = p_minus_4_fr - Secp384r1Fr::one();
-//     let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
-//     let mut scalars = [p_minus_4, p_minus_5];
-//     let a = Secp384r1::one();
-//     let b = a.neg();
-//     let mut points = [a, b];
+    assert(result.is_infinity);
+}
 
-//     let result = Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
 
-//     assert(result.is_infinity);
-// }
+#[test]
+fn test_secp384r1_msm() {
+    let mut four = Secp384r1Fr::new();
+    four.limbs[0] = 4;
+    let p_minus_4_fr = Secp384r1Fr::modulus() - four;
+    let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp384r1Fr::one();
+    let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp384r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
+
+    assert(result.is_infinity);
+}
 
 #[test]
 fn test_vesta_msm() {

@@ -780,7 +780,6 @@ fn test_bn254_msm() {
     assert(result.is_infinity);
 }
 
-
 #[test]
 fn test_mnt4_753_msm() {
     let mut four = MNT4_753Fr::new();
@@ -798,7 +797,6 @@ fn test_mnt4_753_msm() {
 
     assert(result.is_infinity);
 }
-
 
 #[test]
 fn test_mnt6_753_msm() {
@@ -854,7 +852,6 @@ fn test_secp256k1_msm() {
     assert(result.is_infinity);
 }
 
-
 #[test]
 fn test_secp256r1_msm() {
     let mut four = Secp256r1Fr::new();
@@ -872,7 +869,6 @@ fn test_secp256r1_msm() {
 
     assert(result.is_infinity);
 }
-
 
 #[test]
 fn test_secp384r1_msm() {

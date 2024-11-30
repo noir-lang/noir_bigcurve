@@ -1,6 +1,6 @@
-use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
-use dep::bignum::BigNum;
 use crate::curve_jac::AffineTranscript;
+use dep::bignum::BigNum;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
 // addition transcrpt for p - 2
 pub fn get_transcript() -> [AffineTranscript<BigNum<3, 254, BN254_Fq_Params>>; 326] {

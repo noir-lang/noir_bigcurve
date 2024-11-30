@@ -1,11 +1,11 @@
-use dep::bignum::BigNum;
-use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
-use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
 use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
+use dep::bignum::BigNum;
+use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
+use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
-global PALLAS_SCALAR_SLICES = 64;
+global PALLAS_SCALAR_SLICES: u32 = 64;
 
 pub struct Pallas_Params {}
 impl CurveParamsTrait<BigNum<3, 255, Pallas_Fq_Params>> for Pallas_Params {
@@ -50,12 +50,12 @@ pub type PallasFr = BigNum<3, 255, Pallas_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
     use crate::curves::pallas::PALLAS_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
     #[test]
-    fn test_bits() {
+    fn test_pallas_bits() {
         let x: BigNum<3, 255, Pallas_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

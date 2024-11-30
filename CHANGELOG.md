@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/noir-lang/noir_bigcurve/compare/v0.5.0...v0.5.1) (2024-11-30)
+
+
+### Bug Fixes
+
+* Update Tests ([#13](https://github.com/noir-lang/noir_bigcurve/issues/13)) ([e1f1c9c](https://github.com/noir-lang/noir_bigcurve/commit/e1f1c9c985c29213b17d965266e4f30a67b59766))
+
 ## [0.5.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.3.1...v0.5.0) (2024-11-08)
 
 

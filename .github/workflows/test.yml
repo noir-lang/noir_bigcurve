@@ -28,6 +28,8 @@ jobs:
 
       - name: Run Noir tests
         run: nargo test
+        env:
+          RAYON_NUM_THREADS: 1
 
   format:
     runs-on: ubuntu-latest

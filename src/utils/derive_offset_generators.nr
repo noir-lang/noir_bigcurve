@@ -1,20 +1,20 @@
-use crate::CurveParamsTrait;
 use crate::BigCurve;
 use crate::curve_jac::CurveJ;
+use crate::CurveParamsTrait;
 
-use dep::bignum::BigNumTrait;
 use dep::bignum::BigNum;
+use dep::bignum::BigNumTrait;
 use dep::bignum::fields::bls12_377Fq::BLS12_377_Fq_Params;
 use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
-use dep::bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
-use dep::bignum::fields::secp256r1Fq::Secp256r1_Fq_Params;
-use dep::bignum::fields::secp384r1Fq::Secp384r1_Fq_Params;
+use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
+use dep::bignum::fields::ed25519Fq::ED25519_Fq_Params;
 use dep::bignum::fields::mnt4_753Fq::MNT4_753_Fq_Params;
 use dep::bignum::fields::mnt6_753Fq::MNT6_753_Fq_Params;
 use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
+use dep::bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
+use dep::bignum::fields::secp256r1Fq::Secp256r1_Fq_Params;
+use dep::bignum::fields::secp384r1Fq::Secp384r1_Fq_Params;
 use dep::bignum::fields::vestaFq::Vesta_Fq_Params;
-use dep::bignum::fields::ed25519Fq::ED25519_Fq_Params;
-use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
 type BLS377BN = BigNum<4, 377, BLS12_377_Fq_Params>;
 type BLS381BN = BigNum<4, 381, BLS12_381_Fq_Params>;

@@ -1,9 +1,9 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::secp384r1Fq::Secp384r1_Fq_Params;
 use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
 pub struct Secp384r1_Params {}
 impl CurveParamsTrait<BigNum<4, 384, Secp384r1_Fq_Params>> for Secp384r1_Params {
@@ -89,7 +89,7 @@ impl CurveParamsTrait<BigNum<4, 384, Secp384r1_Fq_Params>> for Secp384r1_Params 
     }
 }
 
-pub global SECP384r1_SCALAR_SLICES = 97;
+pub global SECP384r1_SCALAR_SLICES: u32 = 97;
 pub type Secp384r1 = BigCurve<BigNum<4, 384, Secp384r1_Fq_Params>, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
 pub type Secp384r1Fq = BigNum<4, 384, Secp384r1_Fq_Params>;
@@ -97,13 +97,13 @@ pub type Secp384r1Fr = BigNum<4, 384, Secp384r1_Fr_Params>;
 
 mod test {
 
-    use dep::bignum::BigNum;
-    use crate::scalar_field::ScalarField;
     use crate::curves::secp384r1::Secp384r1Scalar;
+    use crate::scalar_field::ScalarField;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
 
     #[test]
-    fn test_bits() {
+    fn test_secp384r1_bits() {
         let x: BigNum<4, 384, Secp384r1_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

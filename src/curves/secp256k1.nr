@@ -1,11 +1,11 @@
+use crate::BigCurve;
+use crate::CurveParamsTrait;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
 use dep::bignum::fields::secp256k1Fr::Secp256k1_Fr_Params;
-use crate::CurveParamsTrait;
-use crate::BigCurve;
-use crate::scalar_field::ScalarField;
 
-global SECP256k1_SCALAR_SLICES = 65;
+global SECP256k1_SCALAR_SLICES: u32 = 65;
 pub struct Secp256k1_Params {}
 impl CurveParamsTrait<BigNum<3, 256, Secp256k1_Fq_Params>> for Secp256k1_Params {
     fn a() -> BigNum<3, 256, Secp256k1_Fq_Params> {
@@ -52,12 +52,12 @@ pub type Secp256k1Fq = BigNum<3, 256, Secp256k1_Fq_Params>;
 pub type Secp256k1Fr = BigNum<3, 256, Secp256k1_Fr_Params>;
 
 mod test {
-    use dep::bignum::BigNum;
     use crate::curves::secp256k1::SECP256k1_SCALAR_SLICES;
+    use dep::bignum::BigNum;
     use dep::bignum::fields::secp256k1Fr::Secp256k1_Fr_Params;
 
     #[test]
-    fn test_bits() {
+    fn test_secp256k1_bits() {
         let x: BigNum<3, 256, Secp256k1_Fr_Params> = BigNum::new();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 

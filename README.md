@@ -6,11 +6,18 @@ noir_bigcurve uses the [noir-bignum](https://github.com/zac-williamson/noir-bign
 
 This library is a work in progress and likely full of bugs!
 
-# Overview
+## Overview
 
 `noir_bigcurve` make use of `noir-bignum` to optimally evaluate group operations using a minimal number of modular reductions. Runtime lookup tables are also used to reduce the number of group operations required when evaluating scalar multiplications
 
-# Usage
+## Dependencies
+
+- Noir >=1.0.0
+- Barretenberg >=v0.56.1
+
+Refer to [Noir's docs](https://noir-lang.org/docs/getting_started/quick_start) and [Barretenberg's docs](https://github.com/AztecProtocol/aztec-packages/blob/master/barretenberg/cpp/src/barretenberg/bb/readme.md) for installation steps.
+
+## Usage
 
 See `bigcurve_test.nr` for some ways in which the library can be used.
 
@@ -20,7 +27,7 @@ Complete elliptic curve operations can be evalauted using `BigCurve::add`, `BigC
 
 The most efficient method to evaluate curve operations is `BigCurve::evaluate_linear_expression` (TODO: Brillig bug means this method does not currently work!)
 
-# Future work
+## Future work
 
 - When performing MSMs, utilize the Montgomery Ladder to minimize the number of field operations (see `batch_mul` in `barretenberg/src/stdlib/biggroup` for example implementation)
 - `ScalarField` is not properly constrained when constructed from a `BigNum` object
@@ -32,7 +39,7 @@ The most efficient method to evaluate curve operations is `BigCurve::evaluate_li
 - Create benchmarks
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)
 
-# FAQ
+## FAQ
 
 Q: What's up with the Jacobian points and the transcript objects?
 A: To minimize witness generation time (currently the bottleneck due to Brillig VM) we evaluate ECC operations over Jacobian coordinates in an unconstrained function, in order to efficiently batch-compute the modular inverses required to constrain ECC operations over Affine coordinates (which is more constraint-efficient)

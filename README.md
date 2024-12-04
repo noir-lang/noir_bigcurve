@@ -10,6 +10,10 @@ This library is a work in progress and likely full of bugs!
 
 `noir_bigcurve` make use of `noir-bignum` to optimally evaluate group operations using a minimal number of modular reductions. Runtime lookup tables are also used to reduce the number of group operations required when evaluating scalar multiplications
 
+## Noir Version Compatibility
+
+We have tested this library with Noir nightly, 0.36.0, and 1.0.0-beta.0
+
 ## Dependencies
 
 - Noir >=1.0.0

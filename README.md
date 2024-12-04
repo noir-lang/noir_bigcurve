@@ -12,11 +12,11 @@ This library is a work in progress and likely full of bugs!
 
 ## Noir Version Compatibility
 
-We have tested this library with Noir nightly, 0.36.0, and 1.0.0-beta.0
+We have tested this library with Noir nightly, 0.37.0, and 1.0.0-beta.0
 
 ## Dependencies
 
-- Noir >=1.0.0
+- Noir >=0.37.0
 - Barretenberg >=v0.56.1
 
 Refer to [Noir's docs](https://noir-lang.org/docs/getting_started/quick_start) and [Barretenberg's docs](https://github.com/AztecProtocol/aztec-packages/blob/master/barretenberg/cpp/src/barretenberg/bb/readme.md) for installation steps.

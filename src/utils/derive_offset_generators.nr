@@ -518,19 +518,19 @@ where
         offset_generator_final[1] = gen.y.__mul(zzz);
     }
 
-    println(f"pub struct {curvestr} {}");
+    println(f"pub struct {curvestr} {{}}");
     println(
-        f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {",
+        f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {{",
     );
 
-    println(f"  fn a() -> BigNum<{n}, {paramstr}> { {a} }");
-    println(f"  fn b() -> BigNum<{n}, {paramstr}> { {b} }");
-    println(f"  fn one() -> [BigNum<{n}, {paramstr}>; 2] { {one} }");
+    println(f"  fn a() -> BigNum<{n}, {paramstr}> {{ {a} }}");
+    println(f"  fn b() -> BigNum<{n}, {paramstr}> {{ {b} }}");
+    println(f"  fn one() -> [BigNum<{n}, {paramstr}>; 2] {{ {one} }}");
     println(
-        f"  fn offset_generator() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_initial} }",
+        f"  fn offset_generator() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_initial} }}",
     );
     println(
-        f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] { {offset_generator_final} }",
+        f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_final} }}",
     );
     println("}");
 }

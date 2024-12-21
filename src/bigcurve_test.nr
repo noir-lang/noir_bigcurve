@@ -184,8 +184,8 @@ fn test_msm_jac() {
 #[test]
 fn test_add_dbl() {
     let P: BN254J = CurveJ::one();
-    let lhs =  unsafe {((P.dbl().0).dbl()).0 };
-    let rhs = unsafe {P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
+    let lhs = unsafe { ((P.dbl().0).dbl()).0 };
+    let rhs = unsafe { P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
     assert(lhs == rhs);
 }
 
@@ -194,7 +194,7 @@ fn test_transcript() {
     unsafe {
         let P: BN254J = CurveJ::one();
 
-        let P2 =  P.dbl();
+        let P2 = P.dbl();
 
         let Z_inverse = P2.1.z3.__invmod();
 
@@ -214,7 +214,7 @@ fn test_transcript() {
         let y2 = Y2.__mul(ZZZ);
 
         // ### test add transcript
-        let P3 =  P.incomplete_add(P2.0);
+        let P3 = P.incomplete_add(P2.0);
         let Z_inverse = P3.1.z3.__invmod();
 
         let lambda = P3.1.lambda_numerator.__mul(Z_inverse);
@@ -234,7 +234,7 @@ fn test_double_with_hint() {
     unsafe {
         let P: BN254J = CurveJ::one();
 
-        let P2 = P.dbl() ;
+        let P2 = P.dbl();
 
         let P_affine: BN254 = BigCurve::one();
 
@@ -274,7 +274,7 @@ fn test_incomplete_add_with_hint() {
             is_infinity: false,
         };
         let Q = CurveJ::from(Q_affine);
-        let R =  P.incomplete_add(Q);
+        let R = P.incomplete_add(Q);
 
         let P_affine: BN254 = BigCurve::one();
 
@@ -298,8 +298,8 @@ fn test_incomplete_add_with_hint() {
 
         let P: BN254J = CurveJ::one();
 
-        let lhs =  P.dbl().0.dbl().0 ;
-        let rhs =  P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 ;
+        let lhs = P.dbl().0.dbl().0;
+        let rhs = P.dbl().0.incomplete_add(P).0.incomplete_add(P).0;
         assert(lhs == rhs);
     }
 }
@@ -324,7 +324,7 @@ fn test_add() {
 
         let P_j = CurveJ::from(P);
         let Q_j = CurveJ::from(Q);
-        let expected =  P_j.add(Q_j).0 ;
+        let expected = P_j.add(Q_j).0;
 
         assert(result.eq(expected));
 
@@ -332,13 +332,13 @@ fn test_add() {
         let Q: BN254 = BigCurve::one();
 
         let result = CurveJ::from(P.add(Q));
-        let expected =  P_j.dbl().0;
+        let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
         let Q = P.neg();
         let result = CurveJ::from(P.add(Q));
-        let expected = CurveJ::point_at_infinity() ;
+        let expected = CurveJ::point_at_infinity();
         assert(result.eq(expected));
 
         // lhs infinity
@@ -379,7 +379,7 @@ fn test_sub() {
 
         let P_j = CurveJ::from(P);
         let Q_j = CurveJ::from(Q);
-        let expected =  P_j.sub(Q_j).0 ;
+        let expected = P_j.sub(Q_j).0;
 
         assert(result.eq(expected));
 
@@ -387,7 +387,7 @@ fn test_sub() {
         let Q: BN254 = BigCurve::one();
 
         let result = CurveJ::from(P.sub(Q.neg()));
-        let expected =  P_j.dbl().0;
+        let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
@@ -409,7 +409,7 @@ fn test_sub() {
         // both infinity
         let Q: BN254 = BigCurve::point_at_infinity();
         let result = CurveJ::from(Q.sub(P));
-        let expected =  CurveJ::point_at_infinity();
+        let expected = CurveJ::point_at_infinity();
         assert(result.eq(expected));
     }
 }
@@ -420,7 +420,7 @@ fn test_make_table() {
         let P: BN254J = CurveJ::one();
 
         let mut transcript: [JTranscript<Fq>] = &[];
-        let T: curve_jac::PointTable<Fq> =  curve_jac::PointTable::new(P);
+        let T: curve_jac::PointTable<Fq> = curve_jac::PointTable::new(P);
         for i in 0..8 {
             transcript = transcript.push_back(T.transcript[i]);
         }

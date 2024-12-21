@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/noir-lang/noir_bigcurve/compare/v0.5.1...v0.5.2) (2024-12-21)
+
+
+### Bug Fixes
+
+* Update format strings to use new format ([#22](https://github.com/noir-lang/noir_bigcurve/issues/22)) ([b8bd97c](https://github.com/noir-lang/noir_bigcurve/commit/b8bd97c7510e9ea7303c8e8c16719dbb42374596))
+
 ## [0.5.1](https://github.com/noir-lang/noir_bigcurve/compare/v0.5.0...v0.5.1) (2024-11-30)
 
 

@@ -44,7 +44,7 @@ pub type BN254Fq = BigNum<3, 254, BN254_Fq_Params>;
 // pub type Secp256r1Fr = BigNum<3, Secp256r1_Fr_Params>;
 
 // mod test {
-//     use dep::bignum::BigNum;
+//     use dep::bignum::{BigNum, BigNumTrait};
 //     use crate::curves::secp256r1::SECP256r1_SCALAR_SLICES;
 //     #[test]
 // fn test_bn254_bits() {

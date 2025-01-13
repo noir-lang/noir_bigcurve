@@ -50,7 +50,7 @@ pub type VestaFr = BigNum<3, 255, Vesta_Fr_Params>;
 mod test {
 
     use crate::curves::vesta::VESTA_SCALAR_SLICES;
-    use dep::bignum::BigNum;
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::vestaFr::Vesta_Fr_Params;
 
     #[test]

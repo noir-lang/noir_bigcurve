@@ -15,6 +15,8 @@ use crate::utils::hash_to_curve::hash_to_curve;
 
 use dep::sort::sort_advanced;
 
+use scalar_field::ScalarFieldTrait;
+
 fn __sort_field_as_u32(lhs: Field, rhs: Field) -> bool {
     lhs as u32 < rhs as u32
 }
@@ -174,9 +176,9 @@ where
 {
     fn offset_generator() -> [BigNum; 2];
     fn offset_generator_final() -> [BigNum; 2];
-    pub fn one() -> [BigNum; 2];
-    pub fn b() -> BigNum;
-    pub fn a() -> BigNum;
+    fn one() -> [BigNum; 2];
+    fn b() -> BigNum;
+    fn a() -> BigNum;
 }
 
 /**
@@ -196,7 +198,7 @@ struct PointTable<BigNum> {
 
 impl<BigNum> PointTable<BigNum>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     pub(crate) fn empty() -> Self {
         PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
@@ -244,21 +246,21 @@ where
 }
 
 trait BigCurveTrait {
-    pub fn neg(self) -> Self;
-    pub fn point_at_infinity() -> Self;
+    fn neg(self) -> Self;
+    fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
     fn offset_generator_final() -> Self;
-    pub fn one() -> Self;
-    pub fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    pub fn validate_on_curve(self);
-    pub fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
-    pub fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
+    fn one() -> Self;
+    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
+    fn validate_on_curve(self);
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
+    fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 }
 
 impl<BigNum, CurveParams> BigCurveTrait for BigCurve<BigNum, CurveParams>
 where
     CurveParams: CurveParamsTrait<BigNum>,
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
 
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
@@ -335,7 +337,7 @@ where
 impl<BigNum, CurveParams> BigCurve<BigNum, CurveParams>
 where
     CurveParams: CurveParamsTrait<BigNum>,
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
 
     /**
@@ -1004,7 +1006,7 @@ where
 impl<BigNum, CurveParams> std::ops::Add for BigCurve<BigNum, CurveParams>
 where
     CurveParams: CurveParamsTrait<BigNum>,
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     // Expensive witness generation! Avoid if possible
     fn add(self, other: Self) -> Self {
@@ -1020,7 +1022,7 @@ where
 impl<BigNum, CurveParams> std::ops::Sub for BigCurve<BigNum, CurveParams>
 where
     CurveParams: CurveParamsTrait<BigNum>,
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     // Expensive witness generation! Avoid if possible
     fn sub(self, other: Self) -> Self {
@@ -1038,7 +1040,7 @@ where
  **/
 impl<BigNum, CurveParams> std::cmp::Eq for BigCurve<BigNum, CurveParams>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     fn eq(self, other: Self) -> bool {
         let coords_equal =

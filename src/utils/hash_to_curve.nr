@@ -39,7 +39,7 @@ unconstrained fn __hash_to_curve_witgen<Fq, let SeedBytes: u32>(
     b: Fq,
 ) -> (Fq, Fq, Field)
 where
-    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+    Fq: BigNumTrait,
 {
     let hashed_seed = poseidon_hash_bytes(seed);
     hash_to_curve_inner(hashed_seed, 0, a, b)

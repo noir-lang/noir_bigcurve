@@ -1,6 +1,5 @@
 use crate::BigCurve;
 use crate::CurveParamsTrait;
-use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
@@ -39,7 +38,6 @@ impl CurveParamsTrait<BigNum<3, 254, BN254_Fq_Params>> for BN254Params {
 
 global BN254_SCALAR_SLICES: u32 = 64;
 pub type BN254 = BigCurve<BigNum<3, 254, BN254_Fq_Params>, BN254Params>;
-pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 pub type BN254Fq = BigNum<3, 254, BN254_Fq_Params>;
 // pub type Secp256r1Fr = BigNum<3, Secp256r1_Fr_Params>;
 

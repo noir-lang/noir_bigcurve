@@ -1,7 +1,9 @@
-use dep::bignum::BigNum;
+use std::ops::{Add, Neg, Sub};
+
+use dep::bignum::{BigNum, BigNumTrait};
 use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
 
-use crate::BigCurve;
+use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
@@ -17,7 +19,7 @@ use crate::curves::secp256r1::{Secp256r1, Secp256r1Fr, Secp256r1Scalar};
 use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
 use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
 use crate::PointTable;
-use crate::scalar_field::ScalarField;
+use crate::scalar_field::{ScalarField, ScalarFieldTrait};
 use super::curves::mnt6_753::MNT6_753Fq;
 
 type Fq = BigNum<3, 254, BN254_Fq_Params>;

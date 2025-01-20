@@ -51,7 +51,7 @@ pub type PallasFr = BigNum<3, 255, Pallas_Fr_Params>;
 mod test {
 
     use crate::curves::pallas::PALLAS_SCALAR_SLICES;
-    use dep::bignum::BigNum;
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::pallasFr::Pallas_Fr_Params;
 
     #[test]

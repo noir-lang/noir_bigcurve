@@ -53,7 +53,7 @@ pub type Secp256k1Fr = BigNum<3, 256, Secp256k1_Fr_Params>;
 
 mod test {
     use crate::curves::secp256k1::SECP256k1_SCALAR_SLICES;
-    use dep::bignum::BigNum;
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::secp256k1Fr::Secp256k1_Fr_Params;
 
     #[test]

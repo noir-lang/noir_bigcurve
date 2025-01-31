@@ -112,7 +112,7 @@ pub type MNT4_753Fr = BigNum<7, 753, MNT4_753_Fr_Params>;
 mod test {
 
     use crate::curves::mnt4_753::MNT4_753_SCALAR_SLICES;
-    use dep::bignum::BigNum;
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::mnt4_753Fr::MNT4_753_Fr_Params;
 
     #[test]

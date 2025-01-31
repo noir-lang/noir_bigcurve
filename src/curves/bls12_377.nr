@@ -84,7 +84,7 @@ pub type BLS12_377Fr = BigNum<3, 253, BLS12_377_Fr_Params>;
 mod test {
 
     use crate::curves::bls12_377::BLS12_377_SCALAR_SLICES;
-    use dep::bignum::BigNum;
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::bls12_377Fr::BLS12_377_Fr_Params;
 
     #[test]

@@ -1,4 +1,6 @@
-use crate::BigCurve;
+use std::ops::Neg;
+
+use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 
@@ -456,7 +458,7 @@ unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let 
     cofactor: Field,
 )
 where
-    Fq: BigNumTrait + std::ops::Mul + std::ops::Add + std::cmp::Eq,
+    Fq: BigNumTrait,
     Curve: CurveParamsTrait<Fq>,
 {
     let a = Curve::a();
@@ -532,7 +534,7 @@ where
     println(
         f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_final} }}",
     );
-    println("}");
+    println("}}");
 }
 
 #[test]

@@ -98,8 +98,8 @@ pub type Secp384r1Fr = BigNum<4, 384, Secp384r1_Fr_Params>;
 mod test {
 
     use crate::curves::secp384r1::Secp384r1Scalar;
-    use crate::scalar_field::ScalarField;
-    use dep::bignum::BigNum;
+    use crate::scalar_field::{ScalarField, ScalarFieldTrait};
+    use dep::bignum::{BigNum, BigNumTrait};
     use dep::bignum::fields::secp384r1Fr::Secp384r1_Fr_Params;
 
     #[test]

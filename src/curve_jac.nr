@@ -3,7 +3,7 @@ use dep::bignum::BigNumTrait;
 
 use crate::BigCurve;
 use crate::CurveParamsTrait;
-use crate::scalar_field::ScalarField;
+use crate::scalar_field::{ScalarField, ScalarFieldTrait};
 /**
  * @brief CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
  *        representation in Jacobian form is X, Y, Z
@@ -44,7 +44,7 @@ pub struct JTranscript<BigNum> {
 
 impl<BigNum> JTranscript<BigNum>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     unconstrained fn new() -> Self {
         JTranscript {
@@ -75,7 +75,7 @@ pub struct AffineTranscript<BigNum> {
  **/
 impl<BigNum> AffineTranscript<BigNum>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     pub(crate) fn new() -> Self {
         AffineTranscript { lambda: BigNum::new(), x3: BigNum::new(), y3: BigNum::new() }
@@ -144,7 +144,7 @@ pub struct PointTable<BigNum> {
 
 impl<BigNum> PointTable<BigNum>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
 {
     pub(crate) fn empty() -> Self {
         PointTable {
@@ -214,7 +214,7 @@ where
  **/
 impl<BigNum, CurveParams> std::convert::From<BigCurve<BigNum, CurveParams>> for CurveJ<BigNum, CurveParams>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
     CurveParams: CurveParamsTrait<BigNum>,
 {
     fn from(affine_point: BigCurve<BigNum, CurveParams>) -> Self {
@@ -233,7 +233,7 @@ where
  **/
 impl<BigNum, CurveParams> std::cmp::Eq for CurveJ<BigNum, CurveParams>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
     CurveParams: CurveParamsTrait<BigNum>,
 {
     fn eq(self, other: Self) -> bool {
@@ -269,7 +269,7 @@ where
 
 impl<BigNum, CurveParams> CurveJ<BigNum, CurveParams>
 where
-    BigNum: BigNumTrait + std::ops::Add + std::ops::Mul + std::cmp::Eq,
+    BigNum: BigNumTrait,
     CurveParams: CurveParamsTrait<BigNum>,
 {
     /**

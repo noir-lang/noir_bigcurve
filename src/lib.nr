@@ -245,7 +245,9 @@ where
     }
 }
 
-trait BigCurveTrait {
+pub trait BigCurveTrait<BigNum> {
+    fn x(self) -> BigNum;
+    fn y(self) -> BigNum;
     fn neg(self) -> Self;
     fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
@@ -257,15 +259,22 @@ trait BigCurveTrait {
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 }
 
-impl<BigNum, CurveParams> BigCurveTrait for BigCurve<BigNum, CurveParams>
+impl<BigNum, CurveParams> BigCurveTrait<BigNum> for BigCurve<BigNum, CurveParams>
 where
     CurveParams: CurveParamsTrait<BigNum>,
     BigNum: BigNumTrait,
 {
-
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
         let r = hash_to_curve::<BigNum, N>(seed, CurveParams::a(), CurveParams::b());
         BigCurve { x: r.0, y: r.1, is_infinity: false }
+    }
+
+    fn x(self) -> BigNum {
+        self.x
+    }
+
+    fn y(self) -> BigNum {
+        self.y
     }
 
     /**

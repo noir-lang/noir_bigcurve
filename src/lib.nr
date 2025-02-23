@@ -3,7 +3,7 @@ pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
 pub(crate) mod utils;
-pub(crate) mod curves;
+pub mod curves;
 
 use dep::bignum::BigNum;
 use dep::bignum::BigNumTrait;

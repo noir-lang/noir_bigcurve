@@ -1,22 +1,22 @@
-use std::ops::Neg;
+use std::{ops::Neg, panic};
 
 use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
-use dep::bignum::fields::bls12_377Fq::BLS12_377_Fq_Params;
-use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
-use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
-use dep::bignum::fields::ed25519Fq::ED25519_Fq_Params;
-use dep::bignum::fields::mnt4_753Fq::MNT4_753_Fq_Params;
-use dep::bignum::fields::mnt6_753Fq::MNT6_753_Fq_Params;
-use dep::bignum::fields::pallasFq::Pallas_Fq_Params;
-use dep::bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
-use dep::bignum::fields::secp256r1Fq::Secp256r1_Fq_Params;
-use dep::bignum::fields::secp384r1Fq::Secp384r1_Fq_Params;
-use dep::bignum::fields::vestaFq::Vesta_Fq_Params;
+use bignum::BigNum;
+use bignum::BigNumTrait;
+use bignum::fields::bls12_377Fq::BLS12_377_Fq_Params;
+use bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
+use bignum::fields::bn254Fq::BN254_Fq_Params;
+use bignum::fields::ed25519Fq::ED25519_Fq_Params;
+use bignum::fields::mnt4_753Fq::MNT4_753_Fq_Params;
+use bignum::fields::mnt6_753Fq::MNT6_753_Fq_Params;
+use bignum::fields::pallasFq::Pallas_Fq_Params;
+use bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
+use bignum::fields::secp256r1Fq::Secp256r1_Fq_Params;
+use bignum::fields::secp384r1Fq::Secp384r1_Fq_Params;
+use bignum::fields::vestaFq::Vesta_Fq_Params;
 
 type BLS377BN = BigNum<4, 377, BLS12_377_Fq_Params>;
 type BLS381BN = BigNum<4, 381, BLS12_381_Fq_Params>;
@@ -34,7 +34,7 @@ pub struct BLS377PartialCurveParams {}
 
 impl CurveParamsTrait<BLS377BN> for BLS377PartialCurveParams {
     fn a() -> BLS377BN {
-        BigNum::new()
+        BigNum::zero()
     }
     fn b() -> BLS377BN {
         BigNum::one()
@@ -71,10 +71,10 @@ impl CurveParamsTrait<BLS377BN> for BLS377PartialCurveParams {
 pub struct BLS381PartialCurveParams {}
 impl CurveParamsTrait<BLS381BN> for BLS381PartialCurveParams {
     fn a() -> BLS381BN {
-        BigNum::new()
+        BigNum::zero()
     }
     fn b() -> BLS381BN {
-        let mut r = BigNum::new();
+        let mut r = BigNum::zero();
         r.limbs[0] = 4;
         r
     }
@@ -100,13 +100,11 @@ impl CurveParamsTrait<BLS381BN> for BLS381PartialCurveParams {
     }
 
     fn offset_generator_final() -> [BLS381BN; 2] {
-        assert(true == false, "generator does not exist!");
-        BLS381PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [BLS381BN; 2] {
-        assert(true == false, "generator does not exist!");
-        BLS381PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -129,13 +127,11 @@ impl CurveParamsTrait<ED25519BN> for Curve25519PartialCurveParams {
     }
 
     fn offset_generator_final() -> [ED25519BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Curve25519PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [ED25519BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Curve25519PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -163,13 +159,11 @@ impl CurveParamsTrait<Secp256r1BN> for Secp256r1PartialCurveParams {
     }
 
     fn offset_generator_final() -> [Secp256r1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp256r1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [Secp256r1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp256r1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -212,13 +206,11 @@ impl CurveParamsTrait<Secp384r1BN> for Secp384r1PartialCurveParams {
     }
 
     fn offset_generator_final() -> [Secp384r1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp384r1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [Secp384r1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp384r1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -242,13 +234,11 @@ impl CurveParamsTrait<Secp256k1BN> for Secp256k1PartialCurveParams {
     }
 
     fn offset_generator_final() -> [Secp256k1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp256k1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [Secp256k1BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Secp256k1PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -299,13 +289,11 @@ impl CurveParamsTrait<Mnt4BN> for Mnt4PartialCurveParams {
     }
 
     fn offset_generator_final() -> [Mnt4BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Mnt4PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [Mnt4BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Mnt4PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -356,13 +344,11 @@ impl CurveParamsTrait<Mnt6BN> for Mnt6PartialCurveParams {
     }
 
     fn offset_generator_final() -> [Mnt6BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Mnt6PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [Mnt6BN; 2] {
-        assert(true == false, "generator does not exist!");
-        Mnt6PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -383,13 +369,11 @@ impl CurveParamsTrait<BN254> for BN254PartialCurveParams {
     }
 
     fn offset_generator_final() -> [BN254; 2] {
-        assert(true == false, "generator does not exist!");
-        BN254PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [BN254; 2] {
-        assert(true == false, "generator does not exist!");
-        BN254PartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -410,13 +394,11 @@ impl CurveParamsTrait<PallasBN> for PallasPartialCurveParams {
     }
 
     fn offset_generator_final() -> [PallasBN; 2] {
-        assert(true == false, "generator does not exist!");
-        PallasPartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [PallasBN; 2] {
-        assert(true == false, "generator does not exist!");
-        PallasPartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 
@@ -437,13 +419,11 @@ impl CurveParamsTrait<VestaBN> for VestaPartialCurveParams {
     }
 
     fn offset_generator_final() -> [VestaBN; 2] {
-        assert(true == false, "generator does not exist!");
-        VestaPartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 
     fn offset_generator() -> [VestaBN; 2] {
-        assert(true == false, "generator does not exist!");
-        VestaPartialCurveParams::one()
+        panic(f"generator does not exist!")
     }
 }
 /*

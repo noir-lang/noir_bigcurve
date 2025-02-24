@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
+use bignum::BigNum;
+use bignum::BigNumTrait;
 
 use crate::BigCurve;
 use crate::CurveParamsTrait;
@@ -48,10 +48,10 @@ where
 {
     unconstrained fn new() -> Self {
         JTranscript {
-            lambda_numerator: BigNum::new(),
-            x3: BigNum::new(),
-            y3: BigNum::new(),
-            z3: BigNum::new(),
+            lambda_numerator: BigNum::zero(),
+            x3: BigNum::zero(),
+            y3: BigNum::zero(),
+            z3: BigNum::zero(),
         }
     }
 }
@@ -78,7 +78,7 @@ where
     BigNum: BigNumTrait,
 {
     pub(crate) fn new() -> Self {
-        AffineTranscript { lambda: BigNum::new(), x3: BigNum::new(), y3: BigNum::new() }
+        AffineTranscript { lambda: BigNum::zero(), x3: BigNum::zero(), y3: BigNum::zero() }
     }
 
     pub(crate) unconstrained fn from_j(j_tx: JTranscript<BigNum>) -> Self {
@@ -104,7 +104,7 @@ where
         let mut result: [AffineTranscript<BigNum>; NumEntries] =
             [AffineTranscript::new(); NumEntries];
 
-        let mut inverses: [BigNum; NumEntries] = [BigNum::new(); NumEntries];
+        let mut inverses: [BigNum; NumEntries] = [BigNum::zero(); NumEntries];
         for i in 0..j_tx.len() {
             inverses[i] = j_tx[i].z3;
         }
@@ -148,9 +148,9 @@ where
 {
     pub(crate) fn empty() -> Self {
         PointTable {
-            x: [BigNum::new(); 16],
-            y: [BigNum::new(); 16],
-            z: [BigNum::new(); 16],
+            x: [BigNum::zero(); 16],
+            y: [BigNum::zero(); 16],
+            z: [BigNum::zero(); 16],
             transcript: [unsafe { JTranscript::new() }; 8],
         }
     }
@@ -167,9 +167,9 @@ where
         CurveParams: CurveParamsTrait<BigNum>,
     {
         let mut result = PointTable {
-            x: [BigNum::new(); 16],
-            y: [BigNum::new(); 16],
-            z: [BigNum::new(); 16],
+            x: [BigNum::zero(); 16],
+            y: [BigNum::zero(); 16],
+            z: [BigNum::zero(); 16],
             transcript: [JTranscript::new(); 8],
         };
         let op = P.dbl();
@@ -280,11 +280,11 @@ where
     }
 
     pub(crate) unconstrained fn new() -> Self {
-        CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new(), is_infinity: false }
+        CurveJ { x: BigNum::zero(), y: BigNum::zero(), z: BigNum::zero(), is_infinity: false }
     }
 
     pub(crate) unconstrained fn point_at_infinity() -> Self {
-        CurveJ { x: BigNum::new(), y: BigNum::new(), z: BigNum::new(), is_infinity: true }
+        CurveJ { x: BigNum::zero(), y: BigNum::zero(), z: BigNum::zero(), is_infinity: true }
     }
 
     pub(crate) unconstrained fn sub(self, p2: Self) -> (Self, JTranscript<BigNum>) {
@@ -332,9 +332,9 @@ where
         result
         // let (_, PP): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression([[U2, U1]], [[false, true]], [[U2, U1]], [[false, true]], [], []);
         // let (_, X3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
-        //     [[BigNum::new(), PP], [R, BigNum::new()]],
+        //     [[BigNum::zero(), PP], [R, BigNum::zero()]],
         //     [[false, true], [false, false]],
-        //     [[U1, U2], [R, BigNum::new()]],
+        //     [[U1, U2], [R, BigNum::zero()]],
         //     [[false, false], [false, false]],
         //     [],
         //     []
@@ -357,7 +357,7 @@ where
         // );
         // let Z1Z2 = Z1.__mulmod(Z2);
         // let (_, Z3): (BigNum, BigNum ) = BigNum::__compute_quadratic_expression(
-        //     [[Z1Z2, BigNum::new()]],
+        //     [[Z1Z2, BigNum::zero()]],
         //     [[false, false]],
         //     [[U2, U1]],
         //     [[false, true]],
@@ -403,9 +403,9 @@ where
             [],
         );
         let (_, X3): (BigNum, BigNum) = BigNum::__compute_quadratic_expression(
-            [[BigNum::new(), PP], [R, BigNum::new()]],
+            [[BigNum::zero(), PP], [R, BigNum::zero()]],
             [[false, true], [false, false]],
-            [[U1, U2], [R, BigNum::new()]],
+            [[U1, U2], [R, BigNum::zero()]],
             [[false, false], [false, false]],
             [],
             [],
@@ -429,7 +429,7 @@ where
         );
         let Z1Z2 = Z1.__mul(Z2);
         let (_, Z3): (BigNum, BigNum) = BigNum::__compute_quadratic_expression(
-            [[Z1Z2, BigNum::new()]],
+            [[Z1Z2, BigNum::zero()]],
             [[false, false]],
             [[U2, U1]],
             [[false, true]],
@@ -609,7 +609,7 @@ where
         let mut tables: [PointTable<BigNum>; Size] = [PointTable::empty(); Size];
 
         let mut _inputs: [Self; Size] = [CurveJ::new(); Size];
-        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::new(); Size];
+        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
         for i in 0..Size {
             _inputs[i] =
                 CurveJ::conditional_select(CurveJ::one(), points[i], points[i].is_infinity);

@@ -1,22 +1,25 @@
 use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
-use dep::bignum::BigNum;
-use dep::bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
-use dep::bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
+use bignum::BigNum;
+use bignum::fields::bls12_381Fq::BLS12_381_Fq_Params;
+use bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
+
+pub type BLS12_381Fq = BigNum<4, 381, BLS12_381_Fq_Params>;
+pub type BLS12_381Fr = BigNum<3, 255, BLS12_381_Fr_Params>;
 
 global BLS12_381_SCALAR_SLICES: u32 = 64;
 pub struct BLS12_381_Params {}
-impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params {
-    fn a() -> BigNum<4, 381, BLS12_381_Fq_Params> {
-        BigNum { limbs: [0x00, 0x00, 0x00, 0x00] }
+impl CurveParamsTrait<BLS12_381Fq> for BLS12_381_Params {
+    fn a() -> BLS12_381Fq {
+        BLS12_381Fq { limbs: [0x00, 0x00, 0x00, 0x00] }
     }
-    fn b() -> BigNum<4, 381, BLS12_381_Fq_Params> {
-        BigNum { limbs: [0x04, 0x00, 0x00, 0x00] }
+    fn b() -> BLS12_381Fq {
+        BLS12_381Fq { limbs: [0x04, 0x00, 0x00, 0x00] }
     }
-    fn one() -> [BigNum<4, 381, BLS12_381_Fq_Params>; 2] {
+    fn one() -> [BLS12_381Fq; 2] {
         [
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0x55e83ff97a1aeffb3af00adb22c6bb,
                     0x8c4f9774b905a14e3a3f171bac586c,
@@ -24,7 +27,7 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
                     0x17f1d3,
                 ],
             },
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0x3cc744a2888ae40caa232946c5e7e1,
                     0xe095d5d00af600db18cb2c04b3edd0,
@@ -34,9 +37,9 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
             },
         ]
     }
-    fn offset_generator() -> [BigNum<4, 381, BLS12_381_Fq_Params>; 2] {
+    fn offset_generator() -> [BLS12_381Fq; 2] {
         [
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0xcaa8bd3652a69894c3e8ce75bd7de0,
                     0x921cf06eacb00767c6aa2186d51836,
@@ -44,7 +47,7 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
                     0x1660ef,
                 ],
             },
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0xdf7b66a7f319b3af6961dd328b5691,
                     0x3debb030dcfa8fd697ac3704931596,
@@ -54,9 +57,9 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
             },
         ]
     }
-    fn offset_generator_final() -> [BigNum<4, 381, BLS12_381_Fq_Params>; 2] {
+    fn offset_generator_final() -> [BLS12_381Fq; 2] {
         [
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0xe3a05fbbe9bd6bb2669ccc7a7c81c4,
                     0xfdd0554fc1ae7ef6bae1896afe2dd1,
@@ -64,7 +67,7 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
                     0x0efaeb,
                 ],
             },
-            BigNum {
+            BLS12_381Fq {
                 limbs: [
                     0x1b17500cfb60985fc0834ca89b798c,
                     0x76fe94b37e801b6b8d582c683bd931,
@@ -76,20 +79,16 @@ impl CurveParamsTrait<BigNum<4, 381, BLS12_381_Fq_Params>> for BLS12_381_Params 
     }
 }
 
-pub type BLS12_381 = BigCurve<BigNum<4, 381, BLS12_381_Fq_Params>, BLS12_381_Params>;
+pub type BLS12_381 = BigCurve<BLS12_381Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
-pub type BLS12_381Fq = BigNum<4, 381, BLS12_381_Fq_Params>;
-pub type BLS12_381Fr = BigNum<3, 255, BLS12_381_Fr_Params>;
 
 mod test {
-
-    use crate::curves::bls12_381::BLS12_381_SCALAR_SLICES;
-    use dep::bignum::{BigNum, BigNumTrait};
-    use dep::bignum::fields::bls12_381Fr::BLS12_381_Fr_Params;
+    use super::{BLS12_381_SCALAR_SLICES, BLS12_381Fr};
+    use bignum::BigNumTrait;
 
     #[test]
     fn test_bls12_381_bits() {
-        let x: BigNum<3, 255, BLS12_381_Fr_Params> = BigNum::new();
+        let x = BLS12_381Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

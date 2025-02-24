@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
+use bignum::BigNum;
+use bignum::BigNumTrait;
 
 /**
  * @brief ScalarField represents a scalar multiplier as a sequence of 4-bit slices
@@ -218,7 +218,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     where
         BigNum: BigNumTrait,
     {
-        let mut result = BigNum::new();
+        let mut result = BigNum::zero();
         let mut count: u64 = 0;
         {
             let mut acc = 0;
@@ -261,4 +261,3 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         self.base4_slices[idx]
     }
 }
-

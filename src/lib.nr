@@ -5,8 +5,8 @@ mod bigcurve_test;
 pub(crate) mod utils;
 pub(crate) mod curves;
 
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
+use bignum::BigNum;
+use bignum::BigNumTrait;
 
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
@@ -201,7 +201,7 @@ where
     BigNum: BigNumTrait,
 {
     pub(crate) fn empty() -> Self {
-        PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
+        PointTable { x: [BigNum::zero(); 16], y: [BigNum::zero(); 16] }
     }
 
     /**
@@ -215,7 +215,7 @@ where
     where
         CurveParams: CurveParamsTrait<BigNum>,
     {
-        let mut result = PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] };
+        let mut result = PointTable { x: [BigNum::zero(); 16], y: [BigNum::zero(); 16] };
 
         let D2 = P.double_with_hint(transcript[0]);
 
@@ -276,7 +276,7 @@ where
     }
 
     fn point_at_infinity() -> Self {
-        BigCurve { x: BigNum::new(), y: BigNum::new(), is_infinity: true }
+        BigCurve { x: BigNum::zero(), y: BigNum::zero(), is_infinity: true }
     }
 
     fn offset_generator() -> Self {
@@ -315,7 +315,7 @@ where
         // (xx + a) * x - y*y + b = 0
         // validate the provided value of `y3` is correct
         BigNum::evaluate_quadratic_expression(
-            [[xx, CurveParams::a()], [y, BigNum::new()]],
+            [[xx, CurveParams::a()], [y, BigNum::zero()]],
             [[false, false], [false, false]],
             [[x], [y]],
             [[false], [true]],
@@ -426,10 +426,10 @@ where
 
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
-        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
-        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
-        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
-        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+        x1 = BigNum::conditional_select(x1, BigNum::zero(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::zero(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::zero(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::zero(), evaluate_group_operation_predicate);
 
         // lambda * 2y - 3x * x = 0
         // or
@@ -439,14 +439,14 @@ where
         let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
         let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = BigNum::conditional_select(x1, y1.neg(), double_predicate);
-        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
         // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
-            BigNum::new(),
+            BigNum::zero(),
             x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
@@ -454,7 +454,7 @@ where
             [[lambda], [product_2_lhs_t0]],
             [[false], [false]],
             [
-                [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()],
+                [product_1_rhs_t0, product_1_rhs_t1, BigNum::zero()],
                 [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
             ],
             [[false, false, false], [true, true, true]],
@@ -488,11 +488,11 @@ where
         let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
         x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
         x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
-        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        x_out = BigNum::conditional_select(BigNum::zero(), x_out, infinity_predicate);
         let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
         y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
         y_out = BigNum::conditional_select(other.y, y_out, output_is_rhs);
-        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+        y_out = BigNum::conditional_select(BigNum::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
             ((a as Field - b as Field) * predicate as Field + b as Field) as bool
@@ -530,10 +530,10 @@ where
             !infinity_predicate & !self.is_infinity & !other.is_infinity;
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
-        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
-        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
-        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
-        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+        x1 = BigNum::conditional_select(x1, BigNum::zero(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::zero(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::zero(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::zero(), evaluate_group_operation_predicate);
 
         // lambda * 2y - 3x*x = 0
         // 3 x * x - lambda * 2y
@@ -546,14 +546,14 @@ where
         let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
         let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = BigNum::conditional_select(x1, y1, double_predicate);
-        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0
         // if add:    -lambda * (x1 - x2) + 1 * (y2 + y1) = 0 => lambda * (x2 - x1) - (-y2 - y1) = 0
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
-            BigNum::new(),
+            BigNum::zero(),
             x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
@@ -561,7 +561,7 @@ where
             [[lambda], [product_2_lhs_t0]],
             [[true], [false]],
             [
-                [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()],
+                [product_1_rhs_t0, product_1_rhs_t1, BigNum::zero()],
                 [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
             ],
             [[false, false, false], [false, false, false]],
@@ -593,11 +593,11 @@ where
         let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
         x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
         x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
-        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        x_out = BigNum::conditional_select(BigNum::zero(), x_out, infinity_predicate);
         let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
         y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
         y_out = BigNum::conditional_select(other.y.neg(), y_out, output_is_rhs);
-        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+        y_out = BigNum::conditional_select(BigNum::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
             ((a as Field - b as Field) * predicate as Field + b as Field) as bool
@@ -710,7 +710,7 @@ where
         // validate the provided value of `lambda` is correct
         // n.b. if CurveParams::a() == 0, its inclusion shouldn't cost extra constraints...I thnk
         BigNum::evaluate_quadratic_expression(
-            [[x1, x1, x1], [y1, y1, BigNum::new()]],
+            [[x1, x1, x1], [y1, y1, BigNum::zero()]],
             [[false, false, false], [false, false, false]],
             [[x1], [lambda]],
             [[false], [true]],
@@ -813,7 +813,7 @@ where
     ) -> Self {
         // Compute a 4-bit lookup table of multiples of P
         let mut _inputs: [Self; Size] = [BigCurve::one(); Size];
-        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::new(); Size];
+        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
         for i in 0..Size {
             _inputs[i] =
                 BigCurve::conditional_select(BigCurve::one(), points[i], points[i].is_infinity);
@@ -918,7 +918,7 @@ where
             CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
         };
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
-        let mut _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
+        let mut _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::zero(); NMuls];
         for i in 0..NMuls {
             _inputs[i] = BigCurve::conditional_select(
                 BigCurve::one(),

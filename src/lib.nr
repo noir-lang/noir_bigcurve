@@ -753,7 +753,7 @@ where
         P: Self,
         scalar: ScalarField<NScalarSlices>,
     ) -> [AffineTranscript<BigNum>; 6 + NScalarSlices * 5] {
-        CurveJ::from(P).mul(scalar).1.as_array()
+        CurveJ::from(P).mul(scalar).1
     }
 
     pub fn msm<let NScalarSlices: u32, let NMuls: u32>(

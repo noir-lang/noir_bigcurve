@@ -26,8 +26,8 @@ type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
 
-fn main(x: Field) {
-    let mut foo: [Field; 12] = [0; 12];
+fn main(x: u128) {
+    let mut foo: [u128; 12] = [0; 12];
     foo[0] = x;
     for i in 1..12 {
         foo[i] = foo[i - 1] * x;
@@ -38,16 +38,16 @@ fn main(x: Field) {
         is_infinity: false,
     };
 
-    let scalar: ScalarField<64> = ScalarField::from(x); // p - 2 ?
+    let scalar: ScalarField<64> = ScalarField::from(x as Field); // p - 2 ?
     let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
     // 30768
     // 31020
     let mut A = P;
     for i in 0..101 {
         for j in 0..3 {
-            std::as_witness(transcript[i].lambda.limbs[j]);
-            std::as_witness(transcript[i].x3.limbs[j]);
-            std::as_witness(transcript[i].y3.limbs[j]);
+            std::as_witness(transcript[i].lambda.limbs[j] as Field);
+            std::as_witness(transcript[i].x3.limbs[j] as Field);
+            std::as_witness(transcript[i].y3.limbs[j] as Field);
         }
         A = A.double_with_hint(transcript[i]);
     }

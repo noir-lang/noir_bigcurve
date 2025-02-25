@@ -5,162 +5,16 @@ mod bigcurve_test;
 pub(crate) mod utils;
 pub(crate) mod curves;
 
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
+use bignum::BigNum;
+use bignum::BigNumTrait;
 
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-use dep::sort::sort_advanced;
-
 use scalar_field::ScalarFieldTrait;
 
-fn __sort_field_as_u32(lhs: Field, rhs: Field) -> bool {
-    lhs as u32 < rhs as u32
-}
-
-fn assert_sorted(lhs: Field, rhs: Field) {
-    let result = (rhs - lhs - 1);
-    result.assert_max_bit_size::<32>();
-}
-
-struct SparseLookup<let N: u32> {
-    keys: [Field; N],
-    values: [Field; N],
-    maximum: Field, // can be up to 2^32
-}
-
-/**
- * @brief records data used to reason about whether a key exists in a json blob
- **/
-struct KeySearchResult {
-    found: bool, // does the key exist?
-    target_lt_smallest_entry: bool, // is the target keyhash smaller than the smallest keyhash in self.key_hashes?
-    target_gt_largest_entry: bool, // is the target keyhash larger than the largest keyhash in self.key_hashes?
-    lhs_index: Field, // either the index of the key being searched for, or the index of the keyhash in self.key_hashes that is closest to keyhash (hash > lhs_index_hash)
-    rhs_index: Field, // either the index of the key being searched for, or the index of the keyhash in self.key_hashes that is closest to keyhash (hash < rhs_index_hash)
-}
-
-impl<let N: u32> SparseLookup<N> {
-    fn create(_keys: [Field; N], _values: [Field; N], _maximum: Field) -> Self {
-        let mut r: Self = SparseLookup { keys: [0; N], values: [0; N], maximum: _maximum };
-        let sorted_keys = sort_advanced(_keys, __sort_field_as_u32, assert_sorted);
-        r.keys = sorted_keys.sorted;
-        for i in 0..N {
-            r.values[i] = _values[sorted_keys.sort_indices[i]];
-        }
-        _maximum.assert_max_bit_size::<32>();
-        r
-    }
-
-    unconstrained fn search_for_key_in_map(self, target: Field) -> KeySearchResult {
-        let mut found_index: Field = 0;
-        let mut found: bool = false;
-
-        let mut lhs_maximum: Field = 0;
-        let mut rhs_minimum: Field = -1;
-        let mut lhs_maximum_index: Field = 0;
-        let mut rhs_minimum_index: Field = 0;
-        for i in 0..N {
-            let key = self.keys[i];
-            if (key == target) {
-                found_index = i as Field;
-                found = true;
-                break;
-            } else {
-                if key.lt(target) & (lhs_maximum.lt(key)) {
-                    lhs_maximum = key;
-                    lhs_maximum_index = i as Field;
-                }
-                if (target.lt(key)) & (key.lt(rhs_minimum)) {
-                    rhs_minimum = key;
-                    rhs_minimum_index = i as Field;
-                }
-            }
-        }
-        let target_lt_smallest_entry = target.lt(self.keys[0]);
-        let target_gt_largest_entry = self.keys[N - 1].lt(target);
-
-        let result_not_first_or_last =
-            !target_lt_smallest_entry & !target_gt_largest_entry & !found;
-
-        let mut lhs_index = result_not_first_or_last as Field * lhs_maximum_index;
-        let mut rhs_index = result_not_first_or_last as Field * rhs_minimum_index;
-
-        // if target_lt_smallest_entry, rhs_index = 0
-        // if target_gt_largest_entry, lhs_index = TranscriptEntries - 1
-        rhs_index = rhs_index * (1 - target_lt_smallest_entry as Field);
-
-        // we rely here on the fact that target_gt_largest_entry and result_not_first_or_last are mutually exclusive
-        lhs_index = lhs_index + target_gt_largest_entry as Field * (N as Field - 1);
-
-        // If target is FOUND, we want the following:
-        // keyhash[target_index] - 1 < hash < keyhash[target_index] + 1
-        lhs_index = lhs_index + found as Field * found_index;
-        rhs_index = rhs_index + found as Field * found_index;
-
-        KeySearchResult {
-            found,
-            target_lt_smallest_entry,
-            target_gt_largest_entry,
-            lhs_index,
-            rhs_index,
-        }
-    }
-
-    unconstrained fn __exists(self, idx: Field) -> bool {
-        let mut r: bool = false;
-        for i in 0..N {
-            if (self.keys[i] == idx) {
-                r = true;
-                break;
-            }
-        }
-        r
-    }
-
-    fn get(self, idx: Field) -> Field {
-        let search_result = unsafe { self.search_for_key_in_map(idx) };
-
-        let found = search_result.found as Field;
-
-        let target_lt_smallest_entry = search_result.target_lt_smallest_entry as Field;
-        let target_gt_largest_entry = search_result.target_gt_largest_entry as Field;
-
-        assert(((search_result.lhs_index - search_result.rhs_index) * found) == 0);
-
-        // only one of "found", "target_lt_smallest_entry", "target_gt_largest_entry" can be true
-        let exclusion_test = found + target_gt_largest_entry + target_lt_smallest_entry;
-        assert(exclusion_test * exclusion_test == exclusion_test);
-
-        let mut lhs = self.keys[search_result.lhs_index];
-        let mut rhs = self.keys[search_result.rhs_index];
-
-        // case where hash < self.key_hashes[0]
-        // 0 < hash < hashes[0]
-        lhs = lhs * (1 - target_lt_smallest_entry);
-
-        // case where hash > self.key_hashes[last]
-        // largest < x < -1
-        rhs = rhs * (1 - target_gt_largest_entry) + target_gt_largest_entry * 0x100000000;
-
-        // case where hash == self.key_hashes[found_index]
-        lhs = lhs - found;
-        rhs = rhs + found;
-
-        (idx - lhs - 1).assert_max_bit_size::<32>();
-        (rhs - idx - 1).assert_max_bit_size::<32>();
-
-        (self.maximum - idx - 1).assert_max_bit_size::<32>();
-
-        let value_index = search_result.lhs_index * found;
-
-        let value = self.values[value_index] * found;
-        value
-    }
-}
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
@@ -201,7 +55,7 @@ where
     BigNum: BigNumTrait,
 {
     pub(crate) fn empty() -> Self {
-        PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] }
+        PointTable { x: [BigNum::zero(); 16], y: [BigNum::zero(); 16] }
     }
 
     /**
@@ -215,7 +69,7 @@ where
     where
         CurveParams: CurveParamsTrait<BigNum>,
     {
-        let mut result = PointTable { x: [BigNum::new(); 16], y: [BigNum::new(); 16] };
+        let mut result = PointTable { x: [BigNum::zero(); 16], y: [BigNum::zero(); 16] };
 
         let D2 = P.double_with_hint(transcript[0]);
 
@@ -276,7 +130,7 @@ where
     }
 
     fn point_at_infinity() -> Self {
-        BigCurve { x: BigNum::new(), y: BigNum::new(), is_infinity: true }
+        BigCurve { x: BigNum::zero(), y: BigNum::zero(), is_infinity: true }
     }
 
     fn offset_generator() -> Self {
@@ -315,7 +169,7 @@ where
         // (xx + a) * x - y*y + b = 0
         // validate the provided value of `y3` is correct
         BigNum::evaluate_quadratic_expression(
-            [[xx, CurveParams::a()], [y, BigNum::new()]],
+            [[xx, CurveParams::a()], [y, BigNum::zero()]],
             [[false, false], [false, false]],
             [[x], [y]],
             [[false], [true]],
@@ -426,10 +280,10 @@ where
 
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
-        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
-        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
-        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
-        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+        x1 = BigNum::conditional_select(x1, BigNum::zero(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::zero(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::zero(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::zero(), evaluate_group_operation_predicate);
 
         // lambda * 2y - 3x * x = 0
         // or
@@ -439,14 +293,14 @@ where
         let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
         let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = BigNum::conditional_select(x1, y1.neg(), double_predicate);
-        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
         // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
-            BigNum::new(),
+            BigNum::zero(),
             x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
@@ -454,7 +308,7 @@ where
             [[lambda], [product_2_lhs_t0]],
             [[false], [false]],
             [
-                [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()],
+                [product_1_rhs_t0, product_1_rhs_t1, BigNum::zero()],
                 [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
             ],
             [[false, false, false], [true, true, true]],
@@ -488,11 +342,11 @@ where
         let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
         x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
         x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
-        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        x_out = BigNum::conditional_select(BigNum::zero(), x_out, infinity_predicate);
         let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
         y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
         y_out = BigNum::conditional_select(other.y, y_out, output_is_rhs);
-        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+        y_out = BigNum::conditional_select(BigNum::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
             ((a as Field - b as Field) * predicate as Field + b as Field) as bool
@@ -530,10 +384,10 @@ where
             !infinity_predicate & !self.is_infinity & !other.is_infinity;
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
-        x1 = BigNum::conditional_select(x1, BigNum::new(), evaluate_group_operation_predicate);
-        y1 = BigNum::conditional_select(y1, BigNum::new(), evaluate_group_operation_predicate);
-        x2 = BigNum::conditional_select(x2, BigNum::new(), evaluate_group_operation_predicate);
-        y2 = BigNum::conditional_select(y2, BigNum::new(), evaluate_group_operation_predicate);
+        x1 = BigNum::conditional_select(x1, BigNum::zero(), evaluate_group_operation_predicate);
+        y1 = BigNum::conditional_select(y1, BigNum::zero(), evaluate_group_operation_predicate);
+        x2 = BigNum::conditional_select(x2, BigNum::zero(), evaluate_group_operation_predicate);
+        y2 = BigNum::conditional_select(y2, BigNum::zero(), evaluate_group_operation_predicate);
 
         // lambda * 2y - 3x*x = 0
         // 3 x * x - lambda * 2y
@@ -546,14 +400,14 @@ where
         let product_2_lhs_t0 = BigNum::conditional_select(x1, BigNum::one(), double_predicate);
         let product_2_rhs_t0 = BigNum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = BigNum::conditional_select(x1, y1, double_predicate);
-        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::new(), double_predicate);
+        let product_2_rhs_t2 = BigNum::conditional_select(x1, BigNum::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0
         // if add:    -lambda * (x1 - x2) + 1 * (y2 + y1) = 0 => lambda * (x2 - x1) - (-y2 - y1) = 0
         let mut a_term = BigNum::conditional_select(
             CurveParams::a(),
-            BigNum::new(),
+            BigNum::zero(),
             x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
@@ -561,7 +415,7 @@ where
             [[lambda], [product_2_lhs_t0]],
             [[true], [false]],
             [
-                [product_1_rhs_t0, product_1_rhs_t1, BigNum::new()],
+                [product_1_rhs_t0, product_1_rhs_t1, BigNum::zero()],
                 [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
             ],
             [[false, false, false], [false, false, false]],
@@ -593,11 +447,11 @@ where
         let mut x_out = BigNum::conditional_select(x3, x1, evaluate_group_operation_predicate);
         x_out = BigNum::conditional_select(self.x, x_out, output_is_lhs);
         x_out = BigNum::conditional_select(other.x, x_out, output_is_rhs);
-        x_out = BigNum::conditional_select(BigNum::new(), x_out, infinity_predicate);
+        x_out = BigNum::conditional_select(BigNum::zero(), x_out, infinity_predicate);
         let mut y_out = BigNum::conditional_select(y3, y1, evaluate_group_operation_predicate);
         y_out = BigNum::conditional_select(self.y, y_out, output_is_lhs);
         y_out = BigNum::conditional_select(other.y.neg(), y_out, output_is_rhs);
-        y_out = BigNum::conditional_select(BigNum::new(), y_out, infinity_predicate);
+        y_out = BigNum::conditional_select(BigNum::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
             ((a as Field - b as Field) * predicate as Field + b as Field) as bool
@@ -710,7 +564,7 @@ where
         // validate the provided value of `lambda` is correct
         // n.b. if CurveParams::a() == 0, its inclusion shouldn't cost extra constraints...I thnk
         BigNum::evaluate_quadratic_expression(
-            [[x1, x1, x1], [y1, y1, BigNum::new()]],
+            [[x1, x1, x1], [y1, y1, BigNum::zero()]],
             [[false, false, false], [false, false, false]],
             [[x1], [lambda]],
             [[false], [true]],
@@ -813,7 +667,7 @@ where
     ) -> Self {
         // Compute a 4-bit lookup table of multiples of P
         let mut _inputs: [Self; Size] = [BigCurve::one(); Size];
-        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::new(); Size];
+        let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
         for i in 0..Size {
             _inputs[i] =
                 BigCurve::conditional_select(BigCurve::one(), points[i], points[i].is_infinity);
@@ -918,7 +772,7 @@ where
             CurveJ::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
         };
         let mut _inputs: [Self; NMuls] = [BigCurve::one(); NMuls];
-        let mut _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::new(); NMuls];
+        let mut _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::zero(); NMuls];
         for i in 0..NMuls {
             _inputs[i] = BigCurve::conditional_select(
                 BigCurve::one(),

@@ -1,4 +1,4 @@
-use dep::bignum::BigNumTrait;
+use bignum::BigNumTrait;
 
 unconstrained fn hash_to_curve_inner<Fq>(
     seedbase: Field,
@@ -87,4 +87,3 @@ where
     output_y.validate_in_range();
     (x, output_y)
 }
-

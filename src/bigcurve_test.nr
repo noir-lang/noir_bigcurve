@@ -60,9 +60,8 @@ unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: 
 }
 
 unconstrained fn get_transcript(P: BN254J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
-    let res = P.mul(scalar);
-    let transcript = res.1;
-    transcript.as_array()
+    let (_, transcript) = P.mul(scalar);
+    transcript
 }
 
 #[test]

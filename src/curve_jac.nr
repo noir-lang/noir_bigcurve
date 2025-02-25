@@ -549,7 +549,7 @@ where
     pub(crate) unconstrained fn mul<let NScalarSlices: u32>(
         self,
         scalar: ScalarField<NScalarSlices>,
-    ) -> (Self, [AffineTranscript<BigNum>]) {
+    ) -> (Self, [AffineTranscript<BigNum>; 5 * NScalarSlices + 6]) {
         let mut transcript: [JTranscript<BigNum>; NScalarSlices * 5 + 6] =
             [JTranscript::new(); NScalarSlices * 5 + 6];
 
@@ -591,7 +591,7 @@ where
         ptr += 1;
         accumulator = op.0;
 
-        let affine_transcript: [AffineTranscript<BigNum>] =
+        let affine_transcript: [AffineTranscript<BigNum>; 5 * NScalarSlices + 6] =
             AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)

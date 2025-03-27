@@ -94,7 +94,7 @@ where
      * @description if the backend has an efficient implementation of memory lookups,
      * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
      **/
-    pub(crate) fn get<CurveParams>(self, idx: u8) -> BigCurve<BigNum, CurveParams> {
+    pub(crate) fn get<CurveParams>(self, idx: u32) -> BigCurve<BigNum, CurveParams> {
         BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
     }
 }
@@ -624,8 +624,10 @@ where
 
         // Init the accumulator from the most significant scalar slice
         let mut accumulator: Self = BigCurve::offset_generator();
-        let mut accumulator =
-            accumulator.incomplete_add_with_hint(T.get(scalar.base4_slices[0]), transcript[3 + 5]);
+        let mut accumulator = accumulator.incomplete_add_with_hint(
+            T.get(scalar.base4_slices[0] as u32),
+            transcript[3 + 5],
+        );
 
         // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
         for i in 1..NScalarSlices {
@@ -634,7 +636,7 @@ where
             accumulator = accumulator.double_with_hint(transcript[6 + 5 * i]);
             accumulator = accumulator.double_with_hint(transcript[7 + 5 * i]);
             accumulator = accumulator.incomplete_add_with_hint(
-                T.get(scalar.base4_slices[i]),
+                T.get(scalar.base4_slices[i] as u32),
                 transcript[8 + 5 * i],
             );
         }
@@ -692,13 +694,13 @@ where
         // Init the accumulator from the most significant scalar slice
         let mut accumulator: Self = BigCurve::offset_generator();
         let mut accumulator = accumulator.incomplete_add_with_hint(
-            tables[0].get(scalars[0].base4_slices[0]),
+            tables[0].get(scalars[0].base4_slices[0] as u32),
             transcript[8 * Size],
         );
 
         for i in 1..Size {
             accumulator = accumulator.incomplete_add_with_hint(
-                tables[i].get(scalars[i].base4_slices[0]),
+                tables[i].get(scalars[i].base4_slices[0] as u32),
                 transcript[8 * Size + i],
             );
         }
@@ -715,7 +717,7 @@ where
 
             for j in 0..Size {
                 accumulator = accumulator.incomplete_add_with_hint(
-                    tables[j].get(scalars[j].base4_slices[i]),
+                    tables[j].get(scalars[j].base4_slices[i] as u32),
                     transcript[9 * Size + (4 + Size) * (i - 1) + 4 + j],
                 );
             }
@@ -800,12 +802,12 @@ where
         // Init the accumulator from the most significant scalar slice
         let mut accumulator: Self = BigCurve::offset_generator();
         let mut accumulator = accumulator.incomplete_add_with_hint(
-            tables[0].get(scalars[0].base4_slices[0]),
+            tables[0].get(scalars[0].base4_slices[0] as u32),
             transcript[8 * NMuls],
         );
         for i in 1..NMuls {
             accumulator = accumulator.incomplete_add_with_hint(
-                tables[i].get(scalars[i].base4_slices[0]),
+                tables[i].get(scalars[i].base4_slices[0] as u32),
                 transcript[8 * NMuls + i],
             );
         }
@@ -822,7 +824,7 @@ where
                 accumulator.double_with_hint(transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3]);
             for j in 0..NMuls {
                 accumulator = accumulator.incomplete_add_with_hint(
-                    tables[j].get(scalars[j].base4_slices[i]),
+                    tables[j].get(scalars[j].base4_slices[i] as u32),
                     transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 4 + j],
                 );
             }

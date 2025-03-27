@@ -201,7 +201,7 @@ where
     /**
      * @brief get a value out of the lookup table
      **/
-    pub(crate) unconstrained fn get<CurveParams>(self, idx: u8) -> CurveJ<BigNum, CurveParams>
+    pub(crate) unconstrained fn get<CurveParams>(self, idx: u32) -> CurveJ<BigNum, CurveParams>
     where
         CurveParams: CurveParamsTrait<BigNum>,
     {
@@ -564,7 +564,7 @@ where
         }
 
         let mut accumulator: Self = CurveJ::offset_generator();
-        let op = accumulator.incomplete_add(T.get(scalar.base4_slices[0]));
+        let op = accumulator.incomplete_add(T.get(scalar.base4_slices[0] as u32));
         transcript[ptr] = op.1;
         ptr += 1;
         accumulator = op.0;
@@ -575,7 +575,7 @@ where
                 transcript[ptr] = op.1;
                 ptr += 1;
             }
-            let op = accumulator.incomplete_add(T.get(scalar.base4_slices[i]));
+            let op = accumulator.incomplete_add(T.get(scalar.base4_slices[i] as u32));
             transcript[ptr] = op.1;
             ptr += 1;
             accumulator = op.0;
@@ -631,13 +631,13 @@ where
         }
 
         let mut accumulator: Self = CurveJ::offset_generator();
-        let op = accumulator.incomplete_add(tables[0].get(scalars[0].base4_slices[0]));
+        let op = accumulator.incomplete_add(tables[0].get(scalars[0].base4_slices[0] as u32));
         transcript[ptr] = op.1;
         ptr += 1;
         accumulator = op.0;
 
         for i in 1..Size {
-            let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0]));
+            let op = accumulator.incomplete_add(tables[i].get(scalars[i].base4_slices[0] as u32));
             transcript[ptr] = op.1;
             ptr += 1;
             accumulator = op.0;
@@ -650,7 +650,8 @@ where
                 ptr += 1;
             }
             for j in 0..Size {
-                let op = accumulator.incomplete_add(tables[j].get(scalars[j].base4_slices[i]));
+                let op =
+                    accumulator.incomplete_add(tables[j].get(scalars[j].base4_slices[i] as u32));
                 transcript[ptr] = op.1;
                 ptr += 1;
                 accumulator = op.0;

@@ -1,9 +1,9 @@
-use bignum::params::BigNumParams;
-use bignum::params::BigNumParamsGetter;
-use bignum::bignum::BigNum;
 use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
+use bignum::bignum::BigNum;
+use bignum::params::BigNumParams;
+use bignum::params::BigNumParamsGetter;
 
 // ==== Params (can be moved to bignum later on) ====
 
@@ -15,17 +15,24 @@ impl BigNumParamsGetter<5, 521> for Secp521r1_Fq_Params {
     }
 }
 
-global Secp521r1_Fq_PARAMS: BigNumParams<5, 521> = BigNumParams::new(
-    true,
-    [
+global Secp521r1_Fq_PARAMS: BigNumParams<5, 521> = BigNumParams {
+    has_multiplicative_inverse: true,
+    modulus: [
         0xffffffffffffffffffffffffffffff,
         0xffffffffffffffffffffffffffffff,
         0xffffffffffffffffffffffffffffff,
         0xffffffffffffffffffffffffffffff,
         0x01ffffffffff,
     ],
-    [0x10, 0x0, 0x0, 0x0, 0x200000000000],
-);
+    double_modulus: [
+        0x01fffffffffffffffffffffffffffffe,
+        0x01fffffffffffffffffffffffffffffe,
+        0x01fffffffffffffffffffffffffffffe,
+        0x01fffffffffffffffffffffffffffffe,
+        0x03fffffffffe,
+    ],
+    redc_param: [0x10, 0x0, 0x0, 0x0, 0x200000000000],
+};
 
 pub struct Secp521r1_Fr_Params {}
 
@@ -35,23 +42,30 @@ impl BigNumParamsGetter<5, 521> for Secp521r1_Fr_Params {
     }
 }
 
-global Secp521r1_Fr_PARAMS: BigNumParams<5, 521> = BigNumParams::new(
-    true,
-    [
+global Secp521r1_Fr_PARAMS: BigNumParams<5, 521> = BigNumParams {
+    has_multiplicative_inverse: true,
+    modulus: [
         0xb5c9b8899c47aebb6fb71e91386409,
         0x8783bf2f966b7fcc0148f709a5d03b,
         0xfffffffffffffffffffffffffa5186,
         0xffffffffffffffffffffffffffffff,
         0x01ffffffffff,
     ],
-    [
+    double_modulus: [
+        0x016b937113388f5d76df6e3d2270c812,
+        0x010f077e5f2cd6ff980291ee134ba076,
+        0x01fffffffffffffffffffffffff4a30c,
+        0x01fffffffffffffffffffffffffffffe,
+        0x03fffffffffe,
+    ],
+    redc_param: [
         0xa36477663b851449048e16ec79bf70,
         0x87c40d069948033feb708f65a2fc44,
         0x5ae797,
         0x0,
         0x200000000000,
     ],
-);
+};
 pub type Secp521r1 = BigCurve<BigNum<5, 521, Secp521r1_Fq_Params>, Secp521r1_Params>;
 pub type Secp521r1Scalar = ScalarField<SECP521r1_SCALAR_SLICES>;
 pub type Secp521r1Fq = BigNum<5, 521, Secp521r1_Fq_Params>;
@@ -161,17 +175,16 @@ impl CurveParamsTrait<BigNum<5, 521, Secp521r1_Fq_Params>> for Secp521r1_Params 
     }
 }
 
-
 mod test {
 
+    use crate::curves::secp521r1::Secp521r1_Fr_Params;
     use crate::curves::secp521r1::Secp521r1Scalar;
     use crate::scalar_field::{ScalarField, ScalarFieldTrait};
     use dep::bignum::{BigNum, BigNumTrait};
-    use crate::curves::secp521r1::Secp521r1_Fr_Params;
 
     #[test]
     fn test_secp521r1_bits() {
-        let x: BigNum<5, 521, Secp521r1_Fr_Params> = BigNum::new();
+        let x: BigNum<5, 521, Secp521r1_Fr_Params> = BigNum::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

@@ -1,9 +1,9 @@
-use bignum::params::BigNumParams;
-use bignum::params::BigNumParamsGetter;
-use bignum::bignum::BigNum;
 use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
+use bignum::bignum::BigNum;
+use bignum::params::BigNumParams;
+use bignum::params::BigNumParamsGetter;
 
 // ==== Params (can be moved to bignum later on) ====
 
@@ -15,23 +15,30 @@ impl BigNumParamsGetter<5, 512> for BrainpoolP512t1_Fq_Params {
     }
 }
 
-global BrainpoolP512t1_Fq_PARAMS: BigNumParams<5, 512> = BigNumParams::new(
-    true,
-    [
+global BrainpoolP512t1_Fq_PARAMS: BigNumParams<5, 512> = BigNumParams {
+    has_multiplicative_inverse: true,
+    modulus: [
         0x81ff2f2d82c68528aa6056583a48f3,
         0x9b009bc66842aecda12ae6a380e628,
         0xb3b3c9d20ed6639cca703308717d4d,
         0xdbe9c48b3fd4e6ae33c9fc07cb308d,
         0xaadd9db8,
     ],
-    [
+    double_modulus: [
+        0x0103fe5e5b058d0a5154c0acb07491e6,
+        0x013601378cd0855d9b4255cd4701cc50,
+        0x01676793a41dacc73994e06610e2fa9a,
+        0x01b7d389167fa9cd5c6793f80f96611a,
+        0x0155bb3b70,
+    ],
+    redc_param: [
         0x621c4603556d117e2cf84e911e8d90,
         0xb38823152c5e47d93034e73ea8c71d,
         0xcc44ef09666ad8f2f5bf92f542ff2,
         0x6daeb8a15d5ea2f03461e1e8373af6,
         0x17f8d7f4ed,
     ],
-);
+};
 
 pub struct BrainpoolP512t1_Fr_Params {}
 
@@ -41,23 +48,30 @@ impl BigNumParamsGetter<5, 512> for BrainpoolP512t1_Fr_Params {
     }
 }
 
-global BrainpoolP512t1_Fr_PARAMS: BigNumParams<5, 512> = BigNumParams::new(
-    true,
-    [
+global BrainpoolP512t1_Fr_PARAMS: BigNumParams<5, 512> = BigNumParams {
+    has_multiplicative_inverse: true,
+    modulus: [
         0xb1d381085ddaddb58796829ca90069,
         0x5c414ca92619418661197fac10471d,
         0xb3b3c9d20ed6639cca70330870553e,
         0xdbe9c48b3fd4e6ae33c9fc07cb308d,
         0xaadd9db8,
     ],
-    [
+    double_modulus: [
+        0x0163a70210bbb5bb6b0f2d05395200d2,
+        0x01b88299524c32830cc232ff58208e3a,
+        0x01676793a41dacc73994e06610e0aa7b,
+        0x01b7d389167fa9cd5c6793f80f96611a,
+        0x0155bb3b70,
+    ],
+    redc_param: [
         0xf0d9015d5c4ce2fafac64db57db370,
         0xc61a235d449ff38f5f59ee47100ea,
         0xcc44ef09666ad8f2f5bf92f7db947,
         0x6daeb8a15d5ea2f03461e1e8373af6,
         0x17f8d7f4ed,
     ],
-);
+};
 
 pub type BrainpoolP512t1 = BigCurve<BigNum<5, 512, BrainpoolP512t1_Fq_Params>, BrainpoolP512t1_Params>;
 pub type BrainpoolP512t1Scalar = ScalarField<BRAINPOOLP512T1_SCALAR_SLICES>;
@@ -170,14 +184,14 @@ impl CurveParamsTrait<BigNum<5, 512, BrainpoolP512t1_Fq_Params>> for BrainpoolP5
 
 mod test {
 
+    use crate::curves::brainpoolP512t1::BrainpoolP512t1_Fr_Params;
     use crate::curves::brainpoolP512t1::BrainpoolP512t1Scalar;
     use crate::scalar_field::{ScalarField, ScalarFieldTrait};
     use dep::bignum::{BigNum, BigNumTrait};
-    use crate::curves::brainpoolP512t1::BrainpoolP512t1_Fr_Params;
 
     #[test]
     fn test_brainpoolP512t1_bits() {
-        let x: BigNum<5, 512, BrainpoolP512t1_Fr_Params> = BigNum::new();
+        let x: BigNum<5, 512, BrainpoolP512t1_Fr_Params> = BigNum::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

@@ -179,7 +179,7 @@ pub trait ScalarFieldTrait {
     where
         BigNum: BigNumTrait;
     fn new() -> Self;
-    fn get(self, idx: u64) -> u8;
+    fn get(self, idx: u32) -> u8;
     fn len(self) -> u32;
 }
 impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
@@ -219,7 +219,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         BigNum: BigNumTrait,
     {
         let mut result = BigNum::zero();
-        let mut count: u64 = 0;
+        let mut count: u32 = 0;
         {
             let mut acc: u128 = 0;
             let mut last_bits = (result.modulus_bits() % 120) as u64;
@@ -257,7 +257,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
-    fn get(self, idx: u64) -> u8 {
+    fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }
 }

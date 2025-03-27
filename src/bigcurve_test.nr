@@ -1,7 +1,7 @@
 use std::ops::{Add, Neg, Sub};
 
-use dep::bignum::{BigNum, BigNumTrait};
-use dep::bignum::fields::bn254Fq::BN254_Fq_Params;
+use bignum::{BigNum, BigNumTrait};
+use bignum::fields::bn254Fq::BN254_Fq_Params;
 
 use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac;
@@ -10,7 +10,7 @@ use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
 use crate::curves::bls12_377::{BLS12_377, BLS12_377Fr, BLS12_377Scalar};
 use crate::curves::bls12_381::{BLS12_381, BLS12_381Fr, BLS12_381Scalar};
-use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
+use crate::curves::bn254::{BN254, BN254Fq, BN254Params, BN254Scalar};
 use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
 use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
 use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
@@ -33,8 +33,8 @@ type Fq = BigNum<3, 254, BN254_Fq_Params>;
 
 type BN254J = CurveJ<Fq, BN254Params>;
 
-fn main(x: Field) {
-    let mut foo: [Field; 12] = [0; 12];
+fn main(x: u128) {
+    let mut foo: [u128; 12] = [0; 12];
     foo[0] = x;
     for i in 1..12 {
         foo[i] = foo[i - 1] * x;
@@ -45,16 +45,16 @@ fn main(x: Field) {
         is_infinity: false,
     };
 
-    let scalar: ScalarField<64> = ScalarField::from(x); // p - 2 ?
+    let scalar: ScalarField<64> = ScalarField::from(x as Field); // p - 2 ?
     let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
     // 30768
     // 31020
     let mut A = P;
     for i in 0..101 {
         for j in 0..3 {
-            std::as_witness(transcript[i].lambda.limbs[j]);
-            std::as_witness(transcript[i].x3.limbs[j]);
-            std::as_witness(transcript[i].y3.limbs[j]);
+            std::as_witness(transcript[i].lambda.limbs[j] as Field);
+            std::as_witness(transcript[i].x3.limbs[j] as Field);
+            std::as_witness(transcript[i].y3.limbs[j] as Field);
         }
         A = A.double_with_hint(transcript[i]);
     }
@@ -67,9 +67,8 @@ unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: 
 }
 
 unconstrained fn get_transcript(P: BN254J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
-    let res = P.mul(scalar);
-    let transcript = res.1;
-    transcript.as_array()
+    let (_, transcript) = P.mul(scalar);
+    transcript
 }
 
 #[test]
@@ -93,7 +92,7 @@ fn test_mul() {
         },
         is_infinity: false,
     };
-    expected.y = BigNum::new() - expected.y;
+    expected.y = BigNum::zero() - expected.y;
     assert(result.x == expected.x);
     assert(result.y == expected.y);
 }
@@ -434,7 +433,7 @@ fn test_make_table() {
             transcript = transcript.push_back(T.transcript[i]);
         }
 
-        let mut inverses: [Fq; 8] = [BigNum::new(); 8];
+        let mut inverses: [Fq; 8] = [BigNum::zero(); 8];
 
         for i in 0..8 {
             inverses[i] = transcript[i].z3;
@@ -637,7 +636,7 @@ fn test_vesta_offset_generators() {
 
 #[test]
 fn test_bls12_377_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_377Fr::new();
+    let x = BLS12_377Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BLS12_377Scalar::zero();
@@ -647,7 +646,7 @@ fn test_bls12_377_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_bls12_381_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_381Fr::new();
+    let x = BLS12_381Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BLS12_381Scalar::zero();
@@ -657,7 +656,7 @@ fn test_bls12_381_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_bn254_num_scalar_slices_in_scalar_field() {
-    let x = BigNum::<3, 254, BN254_Fq_Params>::new();
+    let x = BN254Fq::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BN254Scalar::zero();
@@ -667,7 +666,7 @@ fn test_bn254_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT4_753Fr::new();
+    let x = MNT4_753Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = MNT4_753Scalar::zero();
@@ -677,7 +676,7 @@ fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT6_753Fr::new();
+    let x = MNT6_753Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = MNT6_753Scalar::zero();
@@ -687,7 +686,7 @@ fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_pallas_num_scalar_slices_in_scalar_field() {
-    let x = PallasFr::new();
+    let x = PallasFr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = PallasScalar::zero();
@@ -697,7 +696,7 @@ fn test_pallas_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp256k1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256k1Fr::new();
+    let x = Secp256k1Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp256k1Scalar::zero();
@@ -707,7 +706,7 @@ fn test_secp256k1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp256r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256r1Fr::new();
+    let x = Secp256r1Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp256r1Scalar::zero();
@@ -717,7 +716,7 @@ fn test_secp256r1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp384r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp384r1Fr::new();
+    let x = Secp384r1Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp384r1Scalar::zero();
@@ -797,7 +796,7 @@ fn test_brainpoolP512t1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_vesta_num_scalar_slices_in_scalar_field() {
-    let x = VestaFr::new();
+    let x = VestaFr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = VestaScalar::zero();
@@ -926,7 +925,7 @@ fn test_vesta_hash_to_curve() {
 
 #[test]
 fn test_bls12_377_msm() {
-    let mut four = BLS12_377Fr::new();
+    let mut four = BLS12_377Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = BLS12_377Fr::modulus() - four;
     let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
@@ -944,7 +943,7 @@ fn test_bls12_377_msm() {
 
 #[test]
 fn test_bls12_381_msm() {
-    let mut four = BLS12_381Fr::new();
+    let mut four = BLS12_381Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = BLS12_381Fr::modulus() - four;
     let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
@@ -962,7 +961,7 @@ fn test_bls12_381_msm() {
 
 #[test]
 fn test_bn254_msm() {
-    let mut four = BigNum::<3, 254, BN254_Fq_Params>::new();
+    let mut four = BN254Fq::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = BigNum::modulus() - four;
     let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
@@ -980,7 +979,7 @@ fn test_bn254_msm() {
 
 #[test]
 fn test_mnt4_753_msm() {
-    let mut four = MNT4_753Fr::new();
+    let mut four = MNT4_753Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = MNT4_753Fr::modulus() - four;
     let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
@@ -998,7 +997,7 @@ fn test_mnt4_753_msm() {
 
 #[test]
 fn test_mnt6_753_msm() {
-    let mut four = MNT6_753Fr::new();
+    let mut four = MNT6_753Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = MNT6_753Fr::modulus() - four;
     let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
@@ -1016,7 +1015,7 @@ fn test_mnt6_753_msm() {
 
 #[test]
 fn test_pallas_msm() {
-    let mut four = PallasFr::new();
+    let mut four = PallasFr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = PallasFr::modulus() - four;
     let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
@@ -1034,7 +1033,7 @@ fn test_pallas_msm() {
 
 #[test]
 fn test_secp256k1_msm() {
-    let mut four = Secp256k1Fr::new();
+    let mut four = Secp256k1Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = Secp256k1Fr::modulus() - four;
     let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
@@ -1052,7 +1051,7 @@ fn test_secp256k1_msm() {
 
 #[test]
 fn test_secp256r1_msm() {
-    let mut four = Secp256r1Fr::new();
+    let mut four = Secp256r1Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = Secp256r1Fr::modulus() - four;
     let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
@@ -1070,7 +1069,7 @@ fn test_secp256r1_msm() {
 
 #[test]
 fn test_secp384r1_msm() {
-    let mut four = Secp384r1Fr::new();
+    let mut four = Secp384r1Fr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = Secp384r1Fr::modulus() - four;
     let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
@@ -1214,7 +1213,7 @@ fn test_brainpoolP512t1_msm() {
 
 #[test]
 fn test_vesta_msm() {
-    let mut four = VestaFr::new();
+    let mut four = VestaFr::zero();
     four.limbs[0] = 4;
     let p_minus_4_fr = VestaFr::modulus() - four;
     let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);

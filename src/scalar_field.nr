@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-use dep::bignum::BigNumTrait;
+use bignum::BigNum;
+use bignum::BigNumTrait;
 
 /**
  * @brief ScalarField represents a scalar multiplier as a sequence of 4-bit slices
@@ -45,9 +45,9 @@ where
 {
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [Field] = x.get_limbs_slice();
+    let x: [u128] = x.get_limbs_slice();
     for i in 0..x.len() {
-        nibbles[i] = x[i].to_le_radix::<30>(16);
+        nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
@@ -218,10 +218,10 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     where
         BigNum: BigNumTrait,
     {
-        let mut result = BigNum::new();
+        let mut result = BigNum::zero();
         let mut count: u64 = 0;
         {
-            let mut acc = 0;
+            let mut acc: u128 = 0;
             let mut last_bits = (result.modulus_bits() % 120) as u64;
             if (last_bits == 0) {
                 last_bits = 120;
@@ -229,19 +229,19 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
             let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
-                acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
+                acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
                 count = count + 1;
             }
             result.set_limb(result.num_limbs() - 1, acc);
         }
         for i in 1..result.num_limbs() {
-            let mut acc: Field = 0;
+            let mut acc: u128 = 0;
             for _ in 0..30 {
                 acc = acc * 16;
-                acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
+                acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
                 count = count + 1;
             }
-            if acc.lt(0x1000000000000000000000000000000) == false {
+            if acc >= 0x1000000000000000000000000000000 {
                 acc += 0x1000000000000000000000000000000;
                 result.set_limb(
                     result.num_limbs() - i,
@@ -250,7 +250,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
             }
             result.set_limb(result.num_limbs() - 1 - i, acc);
         }
-        result.set_limb(0, result.get_limb(0) - self.skew as Field);
+        result.set_limb(0, result.get_limb(0) - self.skew as u128);
         result
     }
 
@@ -261,4 +261,3 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         self.base4_slices[idx]
     }
 }
-

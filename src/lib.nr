@@ -13,6 +13,7 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
+use bignum::params::BigNumParams;
 use scalar_field::ScalarFieldTrait;
 
 /**
@@ -33,6 +34,14 @@ where
     fn one() -> [BigNum; 2];
     fn b() -> BigNum;
     fn a() -> BigNum;
+}
+
+// this is mainly used for the BLS12_377 curve
+pub trait COMPRESS<BigNum>
+where
+    BigNum: BigNumTrait,
+{
+    fn compress(self) -> ([bool; 3], BigNum);
 }
 
 /**

@@ -1,7 +1,9 @@
 use crate::BigCurve;
+use crate::COMPRESS;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
+use bignum::BigNumTrait;
 use bignum::fields::bls12_377Fq::BLS12_377_Fq_Params;
 use bignum::fields::bls12_377Fr::BLS12_377_Fr_Params;
 
@@ -93,5 +95,19 @@ mod test {
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == BLS12_377_SCALAR_SLICES);
+    }
+}
+
+impl COMPRESS<BLS12_377Fq> for BLS12_377 {
+    fn compress(self) -> ([bool; 3], BLS12_377Fq) {
+        let x = self.x;
+        // check whether y is positive or negative. we compare with (modulus -1)/2 for this.
+        let middle = ((-BLS12_377Fq::from(1)) / (BLS12_377Fq::one() + BLS12_377Fq::one()));
+        let y = self.y;
+        let is_positive = y <= middle;
+        let is_infinity = self.is_infinity;
+        let is_compressed = true;
+        let flags = [is_infinity, is_positive, is_compressed];
+        (flags, x)
     }
 }

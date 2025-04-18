@@ -6,3 +6,4 @@ compiler_version = ">=1.0.0"
 
 [dependencies]
 bignum = {tag = "v0.6.0", git = "https://github.com/noir-lang/noir-bignum"}
+poseidon = { git = "https://github.com/noir-lang/poseidon", tag = "v0.1.0" }

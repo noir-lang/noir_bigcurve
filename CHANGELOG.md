@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/noir-lang/noir_bigcurve/compare/v0.7.0...v0.7.1) (2025-04-18)
+
+
+### Bug Fixes
+
+* Update to use poseidon library ([#44](https://github.com/noir-lang/noir_bigcurve/issues/44)) ([b12d659](https://github.com/noir-lang/noir_bigcurve/commit/b12d6594c650f08829463251c6c0064dc9a955c6))
+
 ## [0.7.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.6.0...v0.7.0) (2025-02-25)
 
 

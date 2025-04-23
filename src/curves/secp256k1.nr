@@ -2,64 +2,74 @@ use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
-use bignum::fields::secp256k1Fq::Secp256k1_Fq_Params;
-use bignum::fields::secp256k1Fr::Secp256k1_Fr_Params;
 
-pub type Secp256k1Fq = BigNum<3, 256, Secp256k1_Fq_Params>;
-pub type Secp256k1Fr = BigNum<3, 256, Secp256k1_Fr_Params>;
+pub use bignum::{Secp256k1_Fq, Secp256k1_Fr};
 
 global SECP256k1_SCALAR_SLICES: u32 = 65;
 pub struct Secp256k1_Params {}
 
-impl CurveParamsTrait<Secp256k1Fq> for Secp256k1_Params {
-    fn a() -> Secp256k1Fq {
-        Secp256k1Fq { limbs: [0x00, 0x00, 0x00] }
+impl CurveParamsTrait<Secp256k1_Fq> for Secp256k1_Params {
+    fn a() -> Secp256k1_Fq {
+        Secp256k1_Fq::from_limbs([0x00, 0x00, 0x00])
     }
-    fn b() -> Secp256k1Fq {
-        Secp256k1Fq { limbs: [0x07, 0x00, 0x00] }
+    fn b() -> Secp256k1_Fq {
+        Secp256k1_Fq::from_limbs([0x07, 0x00, 0x00])
     }
-    fn one() -> [Secp256k1Fq; 2] {
+    fn one() -> [Secp256k1_Fq; 2] {
         [
-            Secp256k1Fq {
-                limbs: [0x9bfcdb2dce28d959f2815b16f81798, 0x667ef9dcbbac55a06295ce870b0702, 0x79be],
-            },
-            Secp256k1Fq {
-                limbs: [0x17b448a68554199c47d08ffb10d4b8, 0xda7726a3c4655da4fbfc0e1108a8fd, 0x483a],
-            },
+            Secp256k1_Fq::from_limbs([
+                0x9bfcdb2dce28d959f2815b16f81798,
+                0x667ef9dcbbac55a06295ce870b0702,
+                0x79be,
+            ]),
+            Secp256k1_Fq::from_limbs([
+                0x17b448a68554199c47d08ffb10d4b8,
+                0xda7726a3c4655da4fbfc0e1108a8fd,
+                0x483a,
+            ]),
         ]
     }
-    fn offset_generator() -> [Secp256k1Fq; 2] {
+    fn offset_generator() -> [Secp256k1_Fq; 2] {
         [
-            Secp256k1Fq {
-                limbs: [0x7f497cc0b274831d60a9a05d29677e, 0x08726557bf1dd4a0bfdc80ba0f6f13, 0x9046],
-            },
-            Secp256k1Fq {
-                limbs: [0xfc449b9f63f4ec1c94bd9e3d802229, 0x63b03856445a4b7d349c9a184f81ac, 0x8d48],
-            },
+            Secp256k1_Fq::from_limbs([
+                0x7f497cc0b274831d60a9a05d29677e,
+                0x08726557bf1dd4a0bfdc80ba0f6f13,
+                0x9046,
+            ]),
+            Secp256k1_Fq::from_limbs([
+                0xfc449b9f63f4ec1c94bd9e3d802229,
+                0x63b03856445a4b7d349c9a184f81ac,
+                0x8d48,
+            ]),
         ]
     }
-    fn offset_generator_final() -> [Secp256k1Fq; 2] {
+    fn offset_generator_final() -> [Secp256k1_Fq; 2] {
         [
-            Secp256k1Fq {
-                limbs: [0x36e6c375bf85dd5b9f64e908eedd44, 0xddca5c990b1b1000dfc199cb21c0e9, 0xd913],
-            },
-            Secp256k1Fq {
-                limbs: [0xf863897dd8147d74af6c9b62d49be6, 0xc1388d9280f314b0acd7fb4ce979b9, 0x2bf7],
-            },
+            Secp256k1_Fq::from_limbs([
+                0x36e6c375bf85dd5b9f64e908eedd44,
+                0xddca5c990b1b1000dfc199cb21c0e9,
+                0xd913,
+            ]),
+            Secp256k1_Fq::from_limbs([
+                0xf863897dd8147d74af6c9b62d49be6,
+                0xc1388d9280f314b0acd7fb4ce979b9,
+                0x2bf7,
+            ]),
         ]
     }
 }
 
-pub type Secp256k1 = BigCurve<Secp256k1Fq, Secp256k1_Params>;
+pub type Secp256k1 = BigCurve<Secp256k1_Fq, Secp256k1_Params>;
 pub type Secp256k1Scalar = ScalarField<SECP256k1_SCALAR_SLICES>;
 
 mod test {
-    use super::{SECP256k1_SCALAR_SLICES, Secp256k1Fr};
-    use bignum::BigNumTrait;
+    use super::SECP256k1_SCALAR_SLICES;
+    use bignum::BigNum;
+    use bignum::Secp256k1_Fq;
 
     #[test]
     fn test_secp256k1_bits() {
-        let x = Secp256k1Fr::zero();
+        let x = Secp256k1_Fq::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;

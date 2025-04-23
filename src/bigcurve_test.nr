@@ -1,30 +1,37 @@
 use std::ops::{Add, Neg, Sub};
 
-use bignum::{BigNum, BigNumTrait};
-use bignum::fields::bn254Fq::BN254_Fq_Params;
+use bignum::BigNum;
 
 use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377Fr, BLS12_377Scalar};
-use crate::curves::bls12_381::{BLS12_381, BLS12_381Fr, BLS12_381Scalar};
-use crate::curves::bn254::{BN254, BN254Fq, BN254Params, BN254Scalar};
-use crate::curves::mnt4_753::{MNT4_753, MNT4_753Fr, MNT4_753Scalar};
-use crate::curves::mnt6_753::{MNT6_753, MNT6_753Fr, MNT6_753Scalar};
-use crate::curves::pallas::{Pallas, PallasFr, PallasScalar};
-use crate::curves::secp256k1::{Secp256k1, Secp256k1Fr, Secp256k1Scalar};
-use crate::curves::secp256r1::{Secp256r1, Secp256r1Fr, Secp256r1Scalar};
-use crate::curves::secp384r1::{Secp384r1, Secp384r1Fr, Secp384r1Scalar};
-use crate::curves::vesta::{Vesta, VestaFr, VestaScalar};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377Scalar};
+use crate::curves::bls12_381::{BLS12_381, BLS12_381Scalar};
+use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
+use crate::curves::mnt4_753::{MNT4_753, MNT4_753Scalar};
+use crate::curves::mnt6_753::{MNT6_753, MNT6_753Scalar};
+use crate::curves::pallas::{Pallas, PallasScalar};
+use crate::curves::secp256k1::{Secp256k1, Secp256k1Scalar};
+use crate::curves::secp256r1::{Secp256r1, Secp256r1Scalar};
+use crate::curves::secp384r1::{Secp384r1, Secp384r1Scalar};
+use crate::curves::vesta::{Vesta, VestaScalar};
 use crate::PointTable;
 use crate::scalar_field::{ScalarField, ScalarFieldTrait};
-use super::curves::mnt6_753::MNT6_753Fq;
 
-type Fq = BigNum<3, 254, BN254_Fq_Params>;
+use bignum::BLS12_377_Fr;
+use bignum::BLS12_381_Fr;
+use bignum::BN254_Fq;
+use bignum::{MNT4_753_Fq, MNT4_753_Fr};
+use bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use bignum::Pallas_Fr;
+use bignum::Secp256k1_Fr;
+use bignum::Secp256r1_Fr;
+use bignum::Secp384r1_Fr;
+use bignum::Vesta_Fr;
 
-type BN254J = CurveJ<Fq, BN254Params>;
+type BN254J = CurveJ<BN254_Fq, BN254Params>;
 
 fn main(x: u128) {
     let mut foo: [u128; 12] = [0; 12];
@@ -33,8 +40,8 @@ fn main(x: u128) {
         foo[i] = foo[i - 1] * x;
     }
     let P: BN254 = BigCurve {
-        x: BigNum { limbs: [foo[0], foo[1], foo[2]] },
-        y: BigNum { limbs: [foo[3], foo[4], foo[5]] },
+        x: BN254_Fq::from_limbs([foo[0], foo[1], foo[2]]),
+        y: BN254_Fq::from_limbs([foo[3], foo[4], foo[5]]),
         is_infinity: false,
     };
 
@@ -59,7 +66,10 @@ unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: 
     Q.eq(s.0)
 }
 
-unconstrained fn get_transcript(P: BN254J, scalar: ScalarField<64>) -> [AffineTranscript<Fq>; 326] {
+unconstrained fn get_transcript(
+    P: BN254J,
+    scalar: ScalarField<64>,
+) -> [AffineTranscript<BN254_Fq>; 326] {
     let (_, transcript) = P.mul(scalar);
     transcript
 }
@@ -77,12 +87,16 @@ fn test_mul() {
 
     // -2
     let mut expected: BN254 = BigCurve {
-        x: BigNum {
-            limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306],
-        },
-        y: BigNum {
-            limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed],
-        },
+        x: BN254_Fq::from_limbs([
+            0x7816a916871ca8d3c208c16d87cfd3,
+            0x44e72e131a029b85045b68181585d9,
+            0x0306,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+            0x738c0e0a7c92e7845f96b2ae9c0a68,
+            0x15ed,
+        ]),
         is_infinity: false,
     };
     expected.y = BigNum::zero() - expected.y;
@@ -93,21 +107,29 @@ fn test_mul() {
 #[test]
 fn test_offset_foo() {
     let P = BigCurve {
-        x: BigNum {
-            limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1],
-        },
-        y: BigNum {
-            limbs: [0x6e4553aa3ae998fcd27ca8a17188ef, 0xb3193f7f0a731913174831ca905feb, 0x21ff],
-        },
+        x: BN254_Fq::from_limbs([
+            0x0b672a3489895d47157f096e077348,
+            0x29f5f5b786660171ae9ad36f6db594,
+            0x15f1,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0x6e4553aa3ae998fcd27ca8a17188ef,
+            0xb3193f7f0a731913174831ca905feb,
+            0x21ff,
+        ]),
         is_infinity: false,
     };
     let Q = BigCurve {
-        x: BigNum {
-            limbs: [0x0b672a3489895d47157f096e077348, 0x29f5f5b786660171ae9ad36f6db594, 0x15f1],
-        },
-        y: BigNum {
-            limbs: [0x6e4553aa3ae998fcd27ca8a17188ef, 0xb3193f7f0a731913174831ca905feb, 0x21ff],
-        },
+        x: BN254_Fq::from_limbs([
+            0x0b672a3489895d47157f096e077348,
+            0x29f5f5b786660171ae9ad36f6db594,
+            0x15f1,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0x6e4553aa3ae998fcd27ca8a17188ef,
+            0xb3193f7f0a731913174831ca905feb,
+            0x21ff,
+        ]),
         is_infinity: false,
     };
 
@@ -156,12 +178,16 @@ fn test_mul_jac() {
 unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     let One: BN254J = CurveJ::one();
     let Two: BN254J = CurveJ {
-        x: BigNum {
-            limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306],
-        },
-        y: BigNum {
-            limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed],
-        },
+        x: BN254_Fq::from_limbs([
+            0x7816a916871ca8d3c208c16d87cfd3,
+            0x44e72e131a029b85045b68181585d9,
+            0x0306,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+            0x738c0e0a7c92e7845f96b2ae9c0a68,
+            0x15ed,
+        ]),
         z: BigNum::one(),
         is_infinity: false,
     };
@@ -251,7 +277,7 @@ fn test_double_with_hint() {
         let x3 = X3.__mul(ZZ);
         let y3 = Y3.__mul(ZZZ);
 
-        let transcript: AffineTranscript<Fq> = AffineTranscript { lambda, x3, y3 };
+        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine = P_affine.double_with_hint(transcript);
 
         assert(P2_affine.x == x3);
@@ -266,12 +292,16 @@ fn test_incomplete_add_with_hint() {
 
         // Q = 2P
         let Q_affine: BN254 = BigCurve {
-            x: BigNum {
-                limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306],
-            },
-            y: BigNum {
-                limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed],
-            },
+            x: BN254_Fq::from_limbs([
+                0x7816a916871ca8d3c208c16d87cfd3,
+                0x44e72e131a029b85045b68181585d9,
+                0x0306,
+            ]),
+            y: BN254_Fq::from_limbs([
+                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+                0x738c0e0a7c92e7845f96b2ae9c0a68,
+                0x15ed,
+            ]),
             is_infinity: false,
         };
         let Q = CurveJ::from(Q_affine);
@@ -291,7 +321,7 @@ fn test_incomplete_add_with_hint() {
         let x3 = X3.__mul(ZZ);
         let y3 = Y3.__mul(ZZZ);
 
-        let transcript: AffineTranscript<Fq> = AffineTranscript { lambda, x3, y3 };
+        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine = P_affine.incomplete_add_with_hint(Q_affine, transcript);
 
         assert(P2_affine.x == x3);
@@ -312,12 +342,16 @@ fn test_add() {
 
         // Q = 2P
         let Q: BN254 = BigCurve {
-            x: BigNum {
-                limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306],
-            },
-            y: BigNum {
-                limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed],
-            },
+            x: BN254_Fq::from_limbs([
+                0x7816a916871ca8d3c208c16d87cfd3,
+                0x44e72e131a029b85045b68181585d9,
+                0x0306,
+            ]),
+            y: BN254_Fq::from_limbs([
+                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+                0x738c0e0a7c92e7845f96b2ae9c0a68,
+                0x15ed,
+            ]),
             is_infinity: false,
         };
 
@@ -367,12 +401,16 @@ fn test_sub() {
 
         // Q = 2P
         let Q: BN254 = BigCurve {
-            x: BigNum {
-                limbs: [0x7816a916871ca8d3c208c16d87cfd3, 0x44e72e131a029b85045b68181585d9, 0x0306],
-            },
-            y: BigNum {
-                limbs: [0xa6a449e3538fc7ff3ebf7a5a18a2c4, 0x738c0e0a7c92e7845f96b2ae9c0a68, 0x15ed],
-            },
+            x: BN254_Fq::from_limbs([
+                0x7816a916871ca8d3c208c16d87cfd3,
+                0x44e72e131a029b85045b68181585d9,
+                0x0306,
+            ]),
+            y: BN254_Fq::from_limbs([
+                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+                0x738c0e0a7c92e7845f96b2ae9c0a68,
+                0x15ed,
+            ]),
             is_infinity: false,
         };
 
@@ -420,21 +458,21 @@ fn test_make_table() {
     unsafe {
         let P: BN254J = CurveJ::one();
 
-        let mut transcript: [JTranscript<Fq>] = &[];
-        let T: curve_jac::PointTable<Fq> = curve_jac::PointTable::new(P);
+        let mut transcript: [JTranscript<BN254_Fq>] = &[];
+        let T: curve_jac::PointTable<BN254_Fq> = curve_jac::PointTable::new(P);
         for i in 0..8 {
             transcript = transcript.push_back(T.transcript[i]);
         }
 
-        let mut inverses: [Fq; 8] = [BigNum::zero(); 8];
+        let mut inverses: [BN254_Fq; 8] = [BN254_Fq::zero(); 8];
 
         for i in 0..8 {
             inverses[i] = transcript[i].z3;
         }
 
-        inverses = BigNum::__batch_invert(inverses);
+        inverses = bignum::bignum::batch_invert(inverses);
 
-        let mut affine_transcript: [AffineTranscript<Fq>; 8] = [AffineTranscript::new(); 8];
+        let mut affine_transcript: [AffineTranscript<BN254_Fq>; 8] = [AffineTranscript::new(); 8];
         for i in 0..8 {
             let z_inv = inverses[i];
 
@@ -448,7 +486,7 @@ fn test_make_table() {
 
         let P_affine: BN254 = BigCurve::one();
 
-        let affine_point_table: PointTable<Fq> =
+        let affine_point_table: PointTable<BN254_Fq> =
             PointTable::new_with_hint(P_affine, affine_transcript);
 
         for i in 0..8 {
@@ -461,7 +499,7 @@ fn test_make_table() {
 #[test]
 fn test_bls12_377_offset_generators() {
     let one = BLS12_377::one();
-    let negone = BLS12_377Fr::one().neg();
+    let negone = BLS12_377_Fr::one().neg();
     let scalar = BLS12_377Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -471,7 +509,7 @@ fn test_bls12_377_offset_generators() {
 #[test]
 fn test_bls12_381_offset_generators() {
     let one = BLS12_381::one();
-    let negone = BLS12_381Fr::one().neg();
+    let negone = BLS12_381_Fr::one().neg();
     let scalar = BLS12_381Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -490,7 +528,7 @@ fn test_bn254_offset_generators() {
 #[test]
 fn test_mnt4_753_offset_generators() {
     let one = MNT4_753::one();
-    let negone = MNT4_753Fr::one().neg();
+    let negone = MNT4_753_Fr::one().neg();
     let scalar = MNT4_753Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -500,7 +538,7 @@ fn test_mnt4_753_offset_generators() {
 #[test]
 fn test_mnt6_753_offset_generators() {
     let one = MNT6_753::one();
-    let negone = MNT6_753Fr::one().neg();
+    let negone = MNT6_753_Fr::one().neg();
     let scalar = MNT6_753Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -510,7 +548,7 @@ fn test_mnt6_753_offset_generators() {
 #[test]
 fn test_pallas_offset_generators() {
     let one = Pallas::one();
-    let negone = PallasFr::one().neg();
+    let negone = Pallas_Fr::one().neg();
     let scalar = PallasScalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -520,7 +558,7 @@ fn test_pallas_offset_generators() {
 #[test]
 fn test_secp256k1_offset_generators() {
     let one = Secp256k1::one();
-    let negone = Secp256k1Fr::one().neg();
+    let negone = Secp256k1_Fr::one().neg();
     let scalar = Secp256k1Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -530,7 +568,7 @@ fn test_secp256k1_offset_generators() {
 #[test]
 fn test_secp256r1_offset_generators() {
     let one = Secp256r1::one();
-    let negone = Secp256r1Fr::one().neg();
+    let negone = Secp256r1_Fr::one().neg();
     let scalar = Secp256r1Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -540,7 +578,7 @@ fn test_secp256r1_offset_generators() {
 #[test]
 fn test_secp384r1_offset_generators() {
     let one = Secp384r1::one();
-    let negone = Secp384r1Fr::one().neg();
+    let negone = Secp384r1_Fr::one().neg();
     let scalar = Secp384r1Scalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -550,7 +588,7 @@ fn test_secp384r1_offset_generators() {
 #[test]
 fn test_vesta_offset_generators() {
     let one = Vesta::one();
-    let negone = VestaFr::one().neg();
+    let negone = Vesta_Fr::one().neg();
     let scalar = VestaScalar::from_bignum(negone);
     let final = one.mul(scalar);
 
@@ -559,7 +597,7 @@ fn test_vesta_offset_generators() {
 
 #[test]
 fn test_bls12_377_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_377Fr::zero();
+    let x = BLS12_377_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BLS12_377Scalar::zero();
@@ -569,7 +607,7 @@ fn test_bls12_377_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_bls12_381_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_381Fr::zero();
+    let x = BLS12_381_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BLS12_381Scalar::zero();
@@ -579,7 +617,7 @@ fn test_bls12_381_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_bn254_num_scalar_slices_in_scalar_field() {
-    let x = BN254Fq::zero();
+    let x = BN254_Fq::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = BN254Scalar::zero();
@@ -589,7 +627,7 @@ fn test_bn254_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT4_753Fr::zero();
+    let x = MNT4_753_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = MNT4_753Scalar::zero();
@@ -599,7 +637,7 @@ fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT6_753Fr::zero();
+    let x = MNT6_753_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = MNT6_753Scalar::zero();
@@ -609,7 +647,7 @@ fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_pallas_num_scalar_slices_in_scalar_field() {
-    let x = PallasFr::zero();
+    let x = Pallas_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = PallasScalar::zero();
@@ -619,7 +657,7 @@ fn test_pallas_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp256k1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256k1Fr::zero();
+    let x = Secp256k1_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp256k1Scalar::zero();
@@ -629,7 +667,7 @@ fn test_secp256k1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp256r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256r1Fr::zero();
+    let x = Secp256r1_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp256r1Scalar::zero();
@@ -639,7 +677,7 @@ fn test_secp256r1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_secp384r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp384r1Fr::zero();
+    let x = Secp384r1_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = Secp384r1Scalar::zero();
@@ -649,7 +687,7 @@ fn test_secp384r1_num_scalar_slices_in_scalar_field() {
 
 #[test]
 fn test_vesta_num_scalar_slices_in_scalar_field() {
-    let x = VestaFr::zero();
+    let x = Vesta_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
     let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
     let scalar = VestaScalar::zero();
@@ -729,11 +767,11 @@ fn test_vesta_hash_to_curve() {
 
 #[test]
 fn test_bls12_377_msm() {
-    let mut four = BLS12_377Fr::zero();
+    let mut four = BLS12_377_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = BLS12_377Fr::modulus() - four;
+    let p_minus_4_fr = BLS12_377_Fr::modulus() - four;
     let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BLS12_377Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
     let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = BLS12_377::one();
@@ -747,11 +785,11 @@ fn test_bls12_377_msm() {
 
 #[test]
 fn test_bls12_381_msm() {
-    let mut four = BLS12_381Fr::zero();
+    let mut four = BLS12_381_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = BLS12_381Fr::modulus() - four;
+    let p_minus_4_fr = BLS12_381_Fr::modulus() - four;
     let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BLS12_381Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - BLS12_381_Fr::one();
     let p_minus_5 = BLS12_381Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = BLS12_381::one();
@@ -765,11 +803,11 @@ fn test_bls12_381_msm() {
 
 #[test]
 fn test_bn254_msm() {
-    let mut four = BN254Fq::zero();
+    let mut four = BN254_Fq::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = BigNum::modulus() - four;
+    let p_minus_4_fr = BN254_Fq::modulus() - four;
     let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BigNum::one();
+    let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
     let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = BN254::one();
@@ -783,11 +821,11 @@ fn test_bn254_msm() {
 
 #[test]
 fn test_mnt4_753_msm() {
-    let mut four = MNT4_753Fr::zero();
+    let mut four = MNT4_753_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = MNT4_753Fr::modulus() - four;
+    let p_minus_4_fr = MNT4_753_Fr::modulus() - four;
     let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - MNT4_753Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - MNT4_753_Fr::one();
     let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = MNT4_753::one();
@@ -801,11 +839,11 @@ fn test_mnt4_753_msm() {
 
 #[test]
 fn test_mnt6_753_msm() {
-    let mut four = MNT6_753Fr::zero();
+    let mut four = MNT6_753_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = MNT6_753Fr::modulus() - four;
+    let p_minus_4_fr = MNT6_753_Fr::modulus() - four;
     let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - MNT6_753Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - MNT6_753_Fr::one();
     let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = MNT6_753::one();
@@ -819,11 +857,11 @@ fn test_mnt6_753_msm() {
 
 #[test]
 fn test_pallas_msm() {
-    let mut four = PallasFr::zero();
+    let mut four = Pallas_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = PallasFr::modulus() - four;
+    let p_minus_4_fr = Pallas_Fr::modulus() - four;
     let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - PallasFr::one();
+    let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
     let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = Pallas::one();
@@ -837,11 +875,11 @@ fn test_pallas_msm() {
 
 #[test]
 fn test_secp256k1_msm() {
-    let mut four = Secp256k1Fr::zero();
+    let mut four = Secp256k1_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = Secp256k1Fr::modulus() - four;
+    let p_minus_4_fr = Secp256k1_Fr::modulus() - four;
     let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp256k1Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - Secp256k1_Fr::one();
     let p_minus_5 = Secp256k1Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = Secp256k1::one();
@@ -855,11 +893,11 @@ fn test_secp256k1_msm() {
 
 #[test]
 fn test_secp256r1_msm() {
-    let mut four = Secp256r1Fr::zero();
+    let mut four = Secp256r1_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = Secp256r1Fr::modulus() - four;
+    let p_minus_4_fr = Secp256r1_Fr::modulus() - four;
     let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp256r1Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - Secp256r1_Fr::one();
     let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = Secp256r1::one();
@@ -873,11 +911,11 @@ fn test_secp256r1_msm() {
 
 #[test]
 fn test_secp384r1_msm() {
-    let mut four = Secp384r1Fr::zero();
+    let mut four = Secp384r1_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = Secp384r1Fr::modulus() - four;
+    let p_minus_4_fr = Secp384r1_Fr::modulus() - four;
     let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp384r1Fr::one();
+    let p_minus_5_fr = p_minus_4_fr - Secp384r1_Fr::one();
     let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = Secp384r1::one();
@@ -891,11 +929,11 @@ fn test_secp384r1_msm() {
 
 #[test]
 fn test_vesta_msm() {
-    let mut four = VestaFr::zero();
+    let mut four = Vesta_Fr::zero();
     four.limbs[0] = 4;
-    let p_minus_4_fr = VestaFr::modulus() - four;
+    let p_minus_4_fr = Vesta_Fr::modulus() - four;
     let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - VestaFr::one();
+    let p_minus_5_fr = p_minus_4_fr - Vesta_Fr::one();
     let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
     let a = Vesta::one();
@@ -910,59 +948,51 @@ fn test_vesta_msm() {
 #[test]
 fn test_bigcurve_sub_with_hint() {
     let accumulator: MNT6_753 = BigCurve {
-        x: BigNum {
-            limbs: [
-                0x5b6ad7b65e3a86239c2efbdb300b8d,
-                0x7d06f1a94609f8e4eb48c998d1571d,
-                0x95a74f11f2fb5be7544da5c184e38d,
-                0x600f8f2fdcd5e802342ebe03c3787f,
-                0xc3fa8f3f017c7aed50e1a14b78f3b3,
-                0xe7f3b2638fa13f65670c15eb006e99,
-                0x016389a6fb,
-            ],
-        },
-        y: BigNum {
-            limbs: [
-                0x42eb137506b02f7665ebbe0211b768,
-                0x814148c3996475176b11c4db1d356a,
-                0xf97e6cd350259b5456471a2237553f,
-                0x5c822035f3f7c21fc2e6f9aac5945a,
-                0xa319d0923fc0ac9db23b819dcb7371,
-                0xa4186459f74d57db479c998a5db03a,
-                0x7f824db1,
-            ],
-        },
+        x: MNT6_753_Fq::from_limbs([
+            0x5b6ad7b65e3a86239c2efbdb300b8d,
+            0x7d06f1a94609f8e4eb48c998d1571d,
+            0x95a74f11f2fb5be7544da5c184e38d,
+            0x600f8f2fdcd5e802342ebe03c3787f,
+            0xc3fa8f3f017c7aed50e1a14b78f3b3,
+            0xe7f3b2638fa13f65670c15eb006e99,
+            0x016389a6fb,
+        ]),
+        y: MNT6_753_Fq::from_limbs([
+            0x42eb137506b02f7665ebbe0211b768,
+            0x814148c3996475176b11c4db1d356a,
+            0xf97e6cd350259b5456471a2237553f,
+            0x5c822035f3f7c21fc2e6f9aac5945a,
+            0xa319d0923fc0ac9db23b819dcb7371,
+            0xa4186459f74d57db479c998a5db03a,
+            0x7f824db1,
+        ]),
         is_infinity: false,
     };
     let offset_generator: MNT6_753 = BigCurve {
-        x: BigNum {
-            limbs: [
-                0x5b6ad7b65e3a86239c2efbdb300b8d,
-                0x7d06f1a94609f8e4eb48c998d1571d,
-                0x95a74f11f2fb5be7544da5c184e38d,
-                0x600f8f2fdcd5e802342ebe03c3787f,
-                0xc3fa8f3f017c7aed50e1a14b78f3b3,
-                0xe7f3b2638fa13f65670c15eb006e99,
-                0x016389a6fb,
-            ],
-        },
-        y: BigNum {
-            limbs: [
-                0x42eb137506b02f7665ebbe0211b768,
-                0x814148c3996475176b11c4db1d356a,
-                0xf97e6cd350259b5456471a2237553f,
-                0x5c822035f3f7c21fc2e6f9aac5945a,
-                0xa319d0923fc0ac9db23b819dcb7371,
-                0xa4186459f74d57db479c998a5db03a,
-                0x7f824db1,
-            ],
-        },
+        x: MNT6_753_Fq::from_limbs([
+            0x5b6ad7b65e3a86239c2efbdb300b8d,
+            0x7d06f1a94609f8e4eb48c998d1571d,
+            0x95a74f11f2fb5be7544da5c184e38d,
+            0x600f8f2fdcd5e802342ebe03c3787f,
+            0xc3fa8f3f017c7aed50e1a14b78f3b3,
+            0xe7f3b2638fa13f65670c15eb006e99,
+            0x016389a6fb,
+        ]),
+        y: MNT6_753_Fq::from_limbs([
+            0x42eb137506b02f7665ebbe0211b768,
+            0x814148c3996475176b11c4db1d356a,
+            0xf97e6cd350259b5456471a2237553f,
+            0x5c822035f3f7c21fc2e6f9aac5945a,
+            0xa319d0923fc0ac9db23b819dcb7371,
+            0xa4186459f74d57db479c998a5db03a,
+            0x7f824db1,
+        ]),
         is_infinity: false,
     };
-    let transcript: AffineTranscript<MNT6_753Fq> = AffineTranscript {
-        lambda: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
-        x3: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
-        y3: BigNum { limbs: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
+    let transcript: AffineTranscript<MNT6_753_Fq> = AffineTranscript {
+        lambda: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        x3: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        y3: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
     };
     let result = accumulator.sub_with_hint(offset_generator, transcript);
     assert(result.is_infinity);

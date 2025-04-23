@@ -381,22 +381,22 @@ where
         // set input operands to 0!
         x1 = bignum::bignum::conditional_select(
             x1,
-            BigNum::zero(),
+            B::zero(),
             evaluate_group_operation_predicate,
         );
         y1 = bignum::bignum::conditional_select(
             y1,
-            BigNum::zero(),
+            B::zero(),
             evaluate_group_operation_predicate,
         );
         x2 = bignum::bignum::conditional_select(
             x2,
-            BigNum::zero(),
+            B::zero(),
             evaluate_group_operation_predicate,
         );
         y2 = bignum::bignum::conditional_select(
             y2,
-            BigNum::zero(),
+            B::zero(),
             evaluate_group_operation_predicate,
         );
 
@@ -409,18 +409,18 @@ where
         let product_1_rhs_t0 = bignum::bignum::conditional_select(y1, x2.neg(), double_predicate);
         let product_1_rhs_t1 = bignum::bignum::conditional_select(y1, x1, double_predicate);
         let product_2_lhs_t0 =
-            bignum::bignum::conditional_select(x1, BigNum::one(), double_predicate);
+            bignum::bignum::conditional_select(x1, B::one(), double_predicate);
         let product_2_rhs_t0 = bignum::bignum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = bignum::bignum::conditional_select(x1, y1, double_predicate);
         let product_2_rhs_t2 =
-            bignum::bignum::conditional_select(x1, BigNum::zero(), double_predicate);
+            bignum::bignum::conditional_select(x1, B::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0
         // if add:    -lambda * (x1 - x2) + 1 * (y2 + y1) = 0 => lambda * (x2 - x1) - (-y2 - y1) = 0
         let mut a_term = bignum::bignum::conditional_select(
             CurveParams::a(),
-            BigNum::zero(),
+            B::zero(),
             x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
         );
 
@@ -428,7 +428,7 @@ where
             [[lambda], [product_2_lhs_t0]],
             [[true], [false]],
             [
-                [product_1_rhs_t0, product_1_rhs_t1, BigNum::zero()],
+                [product_1_rhs_t0, product_1_rhs_t1, B::zero()],
                 [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
             ],
             [[false, false, false], [false, false, false]],
@@ -461,12 +461,12 @@ where
             bignum::bignum::conditional_select(x3, x1, evaluate_group_operation_predicate);
         x_out = bignum::bignum::conditional_select(self.x, x_out, output_is_lhs);
         x_out = bignum::bignum::conditional_select(other.x, x_out, output_is_rhs);
-        x_out = bignum::bignum::conditional_select(BigNum::zero(), x_out, infinity_predicate);
+        x_out = bignum::bignum::conditional_select(B::zero(), x_out, infinity_predicate);
         let mut y_out =
             bignum::bignum::conditional_select(y3, y1, evaluate_group_operation_predicate);
         y_out = bignum::bignum::conditional_select(self.y, y_out, output_is_lhs);
         y_out = bignum::bignum::conditional_select(other.y.neg(), y_out, output_is_rhs);
-        y_out = bignum::bignum::conditional_select(BigNum::zero(), y_out, infinity_predicate);
+        y_out = bignum::bignum::conditional_select(B::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
             ((a as Field - b as Field) * predicate as Field + b as Field) as bool

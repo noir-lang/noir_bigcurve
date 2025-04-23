@@ -53,7 +53,6 @@ pub type Vesta = BigCurve<Vesta_Fq, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 
 mod test {
-
     use super::VESTA_SCALAR_SLICES;
     use bignum::BigNum;
     use bignum::Vesta_Fq;

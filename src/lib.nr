@@ -379,26 +379,10 @@ where
             !infinity_predicate & !self.is_infinity & !other.is_infinity;
         // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
         // set input operands to 0!
-        x1 = bignum::bignum::conditional_select(
-            x1,
-            B::zero(),
-            evaluate_group_operation_predicate,
-        );
-        y1 = bignum::bignum::conditional_select(
-            y1,
-            B::zero(),
-            evaluate_group_operation_predicate,
-        );
-        x2 = bignum::bignum::conditional_select(
-            x2,
-            B::zero(),
-            evaluate_group_operation_predicate,
-        );
-        y2 = bignum::bignum::conditional_select(
-            y2,
-            B::zero(),
-            evaluate_group_operation_predicate,
-        );
+        x1 = bignum::bignum::conditional_select(x1, B::zero(), evaluate_group_operation_predicate);
+        y1 = bignum::bignum::conditional_select(y1, B::zero(), evaluate_group_operation_predicate);
+        x2 = bignum::bignum::conditional_select(x2, B::zero(), evaluate_group_operation_predicate);
+        y2 = bignum::bignum::conditional_select(y2, B::zero(), evaluate_group_operation_predicate);
 
         // lambda * 2y - 3x*x = 0
         // 3 x * x - lambda * 2y
@@ -408,12 +392,10 @@ where
         // 3 * x * x - lambda * 2 * y
         let product_1_rhs_t0 = bignum::bignum::conditional_select(y1, x2.neg(), double_predicate);
         let product_1_rhs_t1 = bignum::bignum::conditional_select(y1, x1, double_predicate);
-        let product_2_lhs_t0 =
-            bignum::bignum::conditional_select(x1, B::one(), double_predicate);
+        let product_2_lhs_t0 = bignum::bignum::conditional_select(x1, B::one(), double_predicate);
         let product_2_rhs_t0 = bignum::bignum::conditional_select(x1, y2, double_predicate);
         let product_2_rhs_t1 = bignum::bignum::conditional_select(x1, y1, double_predicate);
-        let product_2_rhs_t2 =
-            bignum::bignum::conditional_select(x1, B::zero(), double_predicate);
+        let product_2_rhs_t2 = bignum::bignum::conditional_select(x1, B::zero(), double_predicate);
 
         // validate the provided value of `lambda` is correct
         // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0

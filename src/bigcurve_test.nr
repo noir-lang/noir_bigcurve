@@ -23,7 +23,7 @@ use crate::scalar_field::{ScalarField, ScalarFieldTrait};
 use bignum::BLS12_377_Fr;
 use bignum::BLS12_381_Fr;
 use bignum::BN254_Fq;
-use bignum::{MNT4_753_Fr};
+use bignum::MNT4_753_Fr;
 use bignum::{MNT6_753_Fq, MNT6_753_Fr};
 use bignum::Pallas_Fr;
 use bignum::Secp256k1_Fr;

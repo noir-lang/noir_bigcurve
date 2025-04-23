@@ -7,14 +7,18 @@ pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
 pub struct Secp256r1_Params {}
 impl CurveParamsTrait<Secp256r1_Fq> for Secp256r1_Params {
     fn a() -> Secp256r1_Fq {
-        Secp256r1_Fq {
-            limbs: [0xfffffffffffffffffffffffc, 0xffff00000001000000000000000000, 0xffff],
-        }
+        Secp256r1_Fq::from_limbs([
+            0xfffffffffffffffffffffffc,
+            0xffff00000001000000000000000000,
+            0xffff,
+        ])
     }
     fn b() -> Secp256r1_Fq {
-        Secp256r1_Fq {
-            limbs: [0x1d06b0cc53b0f63bce3c3e27d2604b, 0x35d8aa3a93e7b3ebbd55769886bc65, 0x5ac6],
-        }
+        Secp256r1_Fq::from_limbs([
+            0x1d06b0cc53b0f63bce3c3e27d2604b,
+            0x35d8aa3a93e7b3ebbd55769886bc65,
+            0x5ac6,
+        ])
     }
     fn one() -> [Secp256r1_Fq; 2] {
         [

@@ -23,7 +23,7 @@ use crate::scalar_field::{ScalarField, ScalarFieldTrait};
 use bignum::BLS12_377_Fr;
 use bignum::BLS12_381_Fr;
 use bignum::BN254_Fq;
-use bignum::{MNT4_753_Fq, MNT4_753_Fr};
+use bignum::{MNT4_753_Fr};
 use bignum::{MNT6_753_Fq, MNT6_753_Fr};
 use bignum::Pallas_Fr;
 use bignum::Secp256k1_Fr;
@@ -52,9 +52,9 @@ fn main(x: u128) {
     let mut A = P;
     for i in 0..101 {
         for j in 0..3 {
-            std::as_witness(transcript[i].lambda.limbs[j] as Field);
-            std::as_witness(transcript[i].x3.limbs[j] as Field);
-            std::as_witness(transcript[i].y3.limbs[j] as Field);
+            std::as_witness(transcript[i].lambda.get_limb(j) as Field);
+            std::as_witness(transcript[i].x3.get_limb(j) as Field);
+            std::as_witness(transcript[i].y3.get_limb(j) as Field);
         }
         A = A.double_with_hint(transcript[i]);
     }
@@ -767,8 +767,7 @@ fn test_vesta_hash_to_curve() {
 
 #[test]
 fn test_bls12_377_msm() {
-    let mut four = BLS12_377_Fr::zero();
-    four.limbs[0] = 4;
+    let four = BLS12_377_Fr::from(4);
     let p_minus_4_fr = BLS12_377_Fr::modulus() - four;
     let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
@@ -785,8 +784,7 @@ fn test_bls12_377_msm() {
 
 #[test]
 fn test_bls12_381_msm() {
-    let mut four = BLS12_381_Fr::zero();
-    four.limbs[0] = 4;
+    let four = BLS12_381_Fr::from(4);
     let p_minus_4_fr = BLS12_381_Fr::modulus() - four;
     let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - BLS12_381_Fr::one();
@@ -803,8 +801,7 @@ fn test_bls12_381_msm() {
 
 #[test]
 fn test_bn254_msm() {
-    let mut four = BN254_Fq::zero();
-    four.limbs[0] = 4;
+    let four = BN254_Fq::from(4);
     let p_minus_4_fr = BN254_Fq::modulus() - four;
     let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
@@ -821,8 +818,7 @@ fn test_bn254_msm() {
 
 #[test]
 fn test_mnt4_753_msm() {
-    let mut four = MNT4_753_Fr::zero();
-    four.limbs[0] = 4;
+    let mut four = MNT4_753_Fr::from(4);
     let p_minus_4_fr = MNT4_753_Fr::modulus() - four;
     let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - MNT4_753_Fr::one();
@@ -839,8 +835,8 @@ fn test_mnt4_753_msm() {
 
 #[test]
 fn test_mnt6_753_msm() {
-    let mut four = MNT6_753_Fr::zero();
-    four.limbs[0] = 4;
+    let mut four = MNT6_753_Fr::from(4);
+
     let p_minus_4_fr = MNT6_753_Fr::modulus() - four;
     let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - MNT6_753_Fr::one();
@@ -857,8 +853,7 @@ fn test_mnt6_753_msm() {
 
 #[test]
 fn test_pallas_msm() {
-    let mut four = Pallas_Fr::zero();
-    four.limbs[0] = 4;
+    let mut four = Pallas_Fr::from(4);
     let p_minus_4_fr = Pallas_Fr::modulus() - four;
     let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
@@ -875,8 +870,7 @@ fn test_pallas_msm() {
 
 #[test]
 fn test_secp256k1_msm() {
-    let mut four = Secp256k1_Fr::zero();
-    four.limbs[0] = 4;
+    let four = Secp256k1_Fr::from(4);
     let p_minus_4_fr = Secp256k1_Fr::modulus() - four;
     let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - Secp256k1_Fr::one();
@@ -893,8 +887,7 @@ fn test_secp256k1_msm() {
 
 #[test]
 fn test_secp256r1_msm() {
-    let mut four = Secp256r1_Fr::zero();
-    four.limbs[0] = 4;
+    let four = Secp256r1_Fr::from(4);
     let p_minus_4_fr = Secp256r1_Fr::modulus() - four;
     let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - Secp256r1_Fr::one();
@@ -911,8 +904,7 @@ fn test_secp256r1_msm() {
 
 #[test]
 fn test_secp384r1_msm() {
-    let mut four = Secp384r1_Fr::zero();
-    four.limbs[0] = 4;
+    let four = Secp384r1_Fr::from(4);
     let p_minus_4_fr = Secp384r1_Fr::modulus() - four;
     let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - Secp384r1_Fr::one();
@@ -929,8 +921,7 @@ fn test_secp384r1_msm() {
 
 #[test]
 fn test_vesta_msm() {
-    let mut four = Vesta_Fr::zero();
-    four.limbs[0] = 4;
+    let four = Vesta_Fr::from(4);
     let p_minus_4_fr = Vesta_Fr::modulus() - four;
     let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - Vesta_Fr::one();

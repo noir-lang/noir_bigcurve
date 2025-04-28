@@ -1,4 +1,4 @@
-use bignum::BigNumTrait;
+use bignum::BigNum;
 
 unconstrained fn hash_to_curve_inner<Fq>(
     seedbase: Field,
@@ -7,7 +7,7 @@ unconstrained fn hash_to_curve_inner<Fq>(
     b: Fq,
 ) -> (Fq, Fq, Field)
 where
-    Fq: BigNumTrait,
+    Fq: BigNum,
 {
     let seedhash = poseidon::poseidon2::Poseidon2::hash([seedbase, seed_counter], 2);
     // TODO: assert in field?
@@ -39,7 +39,7 @@ unconstrained fn __hash_to_curve_witgen<Fq, let SeedBytes: u32>(
     b: Fq,
 ) -> (Fq, Fq, Field)
 where
-    Fq: BigNumTrait,
+    Fq: BigNum,
 {
     let hashed_seed = poseidon_hash_bytes(seed);
     hash_to_curve_inner(hashed_seed, 0, a, b)
@@ -63,7 +63,7 @@ fn poseidon_hash_bytes<let SeedBytes: u32>(seed: [u8; SeedBytes]) -> Field {
 }
 pub fn hash_to_curve<Fq, let SeedBytes: u32>(seed: [u8; SeedBytes], a: Fq, b: Fq) -> (Fq, Fq)
 where
-    Fq: BigNumTrait,
+    Fq: BigNum,
 {
     let (_, y, salt) = unsafe { __hash_to_curve_witgen(seed, a, b) };
     let outer_hash: Field = poseidon_hash_bytes(seed);
@@ -79,7 +79,7 @@ where
     let parity_flag = (inner_hash[0] & 1) == 1;
 
     let negated_y = y.neg();
-    let output_y = Fq::conditional_select(y, negated_y, parity_flag);
+    let output_y = bignum::bignum::conditional_select(y, negated_y, parity_flag);
 
     x.validate_in_field();
     x.validate_in_range();

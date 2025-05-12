@@ -767,7 +767,8 @@ fn test_vesta_hash_to_curve() {
 
 #[test]
 fn test_bls12_377_msm() {
-    let four = BLS12_377_Fr::from(4);
+    let mut four = BLS12_377_Fr::zero();
+    four.set_limb(0, 4);
     let p_minus_4_fr = BLS12_377_Fr::modulus() - four;
     let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
     let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();

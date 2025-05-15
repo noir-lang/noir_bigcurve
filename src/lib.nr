@@ -1,4 +1,4 @@
-pub(crate) mod scalar_field;
+pub mod scalar_field;
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
@@ -92,7 +92,7 @@ impl<B: BigNum> PointTable<B> {
     }
 }
 
-trait BigCurveTrait {
+pub trait BigCurveTrait {
     fn neg(self) -> Self;
     fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
@@ -173,7 +173,7 @@ where
 
     /// 64 * 5 = 320
     // Expensive witness generation! Avoid if possible
-    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+    pub fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
         let transcript: [AffineTranscript<B>; (NScalarSlices * 5) + 6] =
             unsafe { BigCurve::get_mul_transcript(self, scalar) };
 

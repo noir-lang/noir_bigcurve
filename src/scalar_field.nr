@@ -263,7 +263,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
 }
 
 impl<let N: u32> ScalarField<N> {
-    fn from_bignum<B>(x: B) -> Self
+    pub fn from_bignum<B>(x: B) -> Self
     where
         B: BigNum,
     {

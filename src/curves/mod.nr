@@ -1,7 +1,7 @@
 pub(crate) mod pallas;
 pub(crate) mod vesta;
 pub(crate) mod bls12_377;
-pub(crate) mod bls12_381;
+pub mod bls12_381;
 pub(crate) mod secp256k1;
 pub(crate) mod secp256r1;
 pub(crate) mod secp384r1;

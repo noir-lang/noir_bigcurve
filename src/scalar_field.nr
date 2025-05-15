@@ -182,7 +182,7 @@ pub trait ScalarFieldTrait {
     fn len(self) -> u32;
 }
 
-impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
+pub impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
 
     fn len(_: Self) -> u32 {
         N

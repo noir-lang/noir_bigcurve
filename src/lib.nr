@@ -23,7 +23,7 @@ pub struct BigCurve<B, CurveParams> {
     pub is_infinity: bool,
 }
 
-trait CurveParamsTrait<B: BigNum> {
+pub trait CurveParamsTrait<B: BigNum> {
     fn offset_generator() -> [B; 2];
     fn offset_generator_final() -> [B; 2];
     fn one() -> [B; 2];

@@ -311,6 +311,11 @@ where
 
         // x3 = lambda * lambda - x2 - x1
         // if double, then x2 = x1 so we good
+        // TODO(MW): TEMPORARY - some nargo executes in a-p fail if these logs don't exist
+        // There is definitely a better solution I haven't thought of
+        println("x3");
+        println(x3);
+        println(lambda * lambda - x2 - x1);
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -321,6 +326,9 @@ where
         );
 
         // y3 = lambda * (x1 - x3) - y1
+        println("y3");
+        println(y3);
+        println(lambda * (x1 - x3) - y1);
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],

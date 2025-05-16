@@ -5,17 +5,16 @@ use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 
 use bignum::BigNum;
-use bignum::BN254_Fq;
 use bignum::BLS12_377_Fq;
 use bignum::BLS12_381_Fq;
-use bignum::Secp256k1_Fr;
-use bignum::Secp256r1_Fr;
-use bignum::Secp384r1_Fr;
+use bignum::BN254_Fq;
 use bignum::MNT4_753_Fq;
 use bignum::MNT6_753_Fq;
 use bignum::Pallas_Fq;
+use bignum::Secp256k1_Fr;
+use bignum::Secp256r1_Fr;
+use bignum::Secp384r1_Fr;
 use bignum::Vesta_Fq;
-
 
 pub struct BLS377PartialCurveParams {}
 
@@ -27,22 +26,18 @@ impl CurveParamsTrait<BLS12_377_Fq> for BLS377PartialCurveParams {
         BLS12_377_Fq::one()
     }
     fn one() -> [BLS12_377_Fq; 2] {
-        let y = BLS12_377_Fq::from_limbs(
-            [
-                0xfe3d3634a9591afd82de55559c8ea6,
-                0xb348ca3e52d96d182ad44fb82305c2,
-                0x69c5102eff1f674f5d30afeec4bd7f,
-                0x01914a,
-            ],
-        );
-        let x = BLS12_377_Fq::from_limbs(
-             [
-                0x481512ffcd394eeab9b16eb21be9ef,
-                0x1e2caa9d41bb188282c8bd37cb5cd5,
-                0xdefe740a67c8fc6225bf87ff548595,
-                0x008848,
-            ],
-        );
+        let y = BLS12_377_Fq::from_limbs([
+            0xfe3d3634a9591afd82de55559c8ea6,
+            0xb348ca3e52d96d182ad44fb82305c2,
+            0x69c5102eff1f674f5d30afeec4bd7f,
+            0x01914a,
+        ]);
+        let x = BLS12_377_Fq::from_limbs([
+            0x481512ffcd394eeab9b16eb21be9ef,
+            0x1e2caa9d41bb188282c8bd37cb5cd5,
+            0xdefe740a67c8fc6225bf87ff548595,
+            0x008848,
+        ]);
         [x, y]
     }
 
@@ -67,20 +62,18 @@ impl CurveParamsTrait<BLS12_381_Fq> for BLS381PartialCurveParams {
     }
 
     fn one() -> [BLS12_381_Fq; 2] {
-        let y = BLS12_381_Fq::from_limbs( [
-                0x3CC744A2888AE40CAA232946C5E7E,
-                0xE095D5D00AF600DB18CB2C04B3EDD0,
-                0x81E3AAA0F1A09E30ED741D8AE4FCF5,
-                0x08B3F4,
-            ],
-        );
-        let x = BLS12_381_Fq::from_limbs( [
-                0x55E83FF97A1AEFFB3AF00ADB22C6B,
-                0x8C4F9774B905A14E3A3F171BAC586C,
-                0xA73197D7942695638C4FA9AC0FC368,
-                0x17F1D3,
-            ],
-        );
+        let y = BLS12_381_Fq::from_limbs([
+            0x3CC744A2888AE40CAA232946C5E7E,
+            0xE095D5D00AF600DB18CB2C04B3EDD0,
+            0x81E3AAA0F1A09E30ED741D8AE4FCF5,
+            0x08B3F4,
+        ]);
+        let x = BLS12_381_Fq::from_limbs([
+            0x55E83FF97A1AEFFB3AF00ADB22C6B,
+            0x8C4F9774B905A14E3A3F171BAC586C,
+            0xA73197D7942695638C4FA9AC0FC368,
+            0x17F1D3,
+        ]);
         [x, y]
     }
 
@@ -122,19 +115,31 @@ pub struct Curve25519PartialCurveParams {}
 pub struct Secp256r1PartialCurveParams {}
 impl CurveParamsTrait<Secp256r1_Fr> for Secp256r1PartialCurveParams {
     fn a() -> Secp256r1_Fr {
-        Secp256r1_Fr::from_limbs( [0x000000fffffffffffffffffffffffc, 0xffff00000001000000000000000000, 0xffff],
-    )
+        Secp256r1_Fr::from_limbs([
+            0x000000fffffffffffffffffffffffc,
+            0xffff00000001000000000000000000,
+            0xffff,
+        ])
     }
     fn b() -> Secp256r1_Fr {
-        Secp256r1_Fr::from_limbs( [0x1d06b0cc53b0f63bce3c3e27d2604b, 0x35d8aa3a93e7b3ebbd55769886bc65, 0x5ac6],
-    )
+        Secp256r1_Fr::from_limbs([
+            0x1d06b0cc53b0f63bce3c3e27d2604b,
+            0x35d8aa3a93e7b3ebbd55769886bc65,
+            0x5ac6,
+        ])
     }
 
     fn one() -> [Secp256r1_Fr; 2] {
-        let y = Secp256r1_Fr::from_limbs( [0xce33576b315ececbb6406837bf51f5, 0x42e2fe1a7f9b8ee7eb4a7c0f9e162b, 0x4fe3],
-        );
-        let x = Secp256r1_Fr::from_limbs( [0x037d812deb33a0f4a13945d898c296, 0xd1f2e12c4247f8bce6e563a440f277, 0x6b17],
-        );
+        let y = Secp256r1_Fr::from_limbs([
+            0xce33576b315ececbb6406837bf51f5,
+            0x42e2fe1a7f9b8ee7eb4a7c0f9e162b,
+            0x4fe3,
+        ]);
+        let x = Secp256r1_Fr::from_limbs([
+            0x037d812deb33a0f4a13945d898c296,
+            0xd1f2e12c4247f8bce6e563a440f277,
+            0x6b17,
+        ]);
         [x, y]
     }
 
@@ -150,31 +155,32 @@ impl CurveParamsTrait<Secp256r1_Fr> for Secp256r1PartialCurveParams {
 pub struct Secp384r1PartialCurveParams {}
 impl CurveParamsTrait<Secp384r1_Fr> for Secp384r1PartialCurveParams {
     fn a() -> Secp384r1_Fr {
-        let x: Secp384r1_Fr = Secp384r1_Fr::from_limbs([3, 0, 0, 0] );
+        let x: Secp384r1_Fr = Secp384r1_Fr::from_limbs([3, 0, 0, 0]);
         x.neg()
     }
     fn b() -> Secp384r1_Fr {
-        Secp384r1_Fr::from_limbs(
-            [0x56398D82ED19D2A85C8EDD3EC2AEF, 0x9C6EFE8141120314088F5013875AC6, 0xA7E23EE7E4988E056BE3F82D19181D,0xB3312F]
-        )
+        Secp384r1_Fr::from_limbs([
+            0x56398D82ED19D2A85C8EDD3EC2AEF,
+            0x9C6EFE8141120314088F5013875AC6,
+            0xA7E23EE7E4988E056BE3F82D19181D,
+            0xB3312F,
+        ])
     }
 
     fn one() -> [Secp384r1_Fr; 2] {
-        let mut y: Secp384r1_Fr = Secp384r1_Fr::from_limbs( [
-                0x60B1CE1D7E819D7A431D7C90EA0E5,
-                0x1DBD289A147CE9DA3113B5F0B8C00A,
-                0x4A96262C6F5D9E98BF9292DC29F8F4,
-                0x3617DE,
-            ],
-        );
+        let mut y: Secp384r1_Fr = Secp384r1_Fr::from_limbs([
+            0x60B1CE1D7E819D7A431D7C90EA0E5,
+            0x1DBD289A147CE9DA3113B5F0B8C00A,
+            0x4A96262C6F5D9E98BF9292DC29F8F4,
+            0x3617DE,
+        ]);
 
-        let mut x: Secp384r1_Fr = Secp384r1_Fr::from_limbs( [
-                0x02F25DBF55296C3A545E3872760AB,
-                0x3B628BA79B9859F741E082542A3855,
-                0x22BE8B05378EB1C71EF320AD746E1D,
-                0xAA87CA,
-            ],
-        );
+        let mut x: Secp384r1_Fr = Secp384r1_Fr::from_limbs([
+            0x02F25DBF55296C3A545E3872760AB,
+            0x3B628BA79B9859F741E082542A3855,
+            0x22BE8B05378EB1C71EF320AD746E1D,
+            0xAA87CA,
+        ]);
         [x, y]
     }
 
@@ -197,10 +203,16 @@ impl CurveParamsTrait<Secp256k1_Fr> for Secp256k1PartialCurveParams {
     }
 
     fn one() -> [Secp256k1_Fr; 2] {
-        let  y = Secp256k1_Fr::from_limbs( [0x17b448a68554199c47d08ffb10d4b8, 0xda7726a3c4655da4fbfc0e1108a8fd, 0x483a],
-        );
-        let  x = Secp256k1_Fr::from_limbs( [0x9bfcdb2dce28d959f2815b16f81798, 0x667ef9dcbbac55a06295ce870b0702, 0x79be],
-        );
+        let y = Secp256k1_Fr::from_limbs([
+            0x17b448a68554199c47d08ffb10d4b8,
+            0xda7726a3c4655da4fbfc0e1108a8fd,
+            0x483a,
+        ]);
+        let x = Secp256k1_Fr::from_limbs([
+            0x9bfcdb2dce28d959f2815b16f81798,
+            0x667ef9dcbbac55a06295ce870b0702,
+            0x79be,
+        ]);
         [x, y]
     }
 
@@ -219,40 +231,37 @@ impl CurveParamsTrait<MNT4_753_Fq> for Mnt4PartialCurveParams {
         MNT4_753_Fq::from_limbs([2, 0, 0, 0, 0, 0, 0])
     }
     fn b() -> MNT4_753_Fq {
-        MNT4_753_Fq::from_limbs( [
-                0xAD26545E06372009C9A0491678EF4,
-                0x773111C36C8B1B4E8F1ECE940EF9EA,
-                0xC3D8BB21C8D68BB8CFB9DB4B8C8FBA,
-                0xA92C78DC537E51A16703EC9855C77F,
-                0x051C596560835DF0C9E50A5B59B882,
-                0xC9DCAE7A016AC5D7748D3313CD8E39,
-                0x01373684A8,
-            ],
-        )
+        MNT4_753_Fq::from_limbs([
+            0xAD26545E06372009C9A0491678EF4,
+            0x773111C36C8B1B4E8F1ECE940EF9EA,
+            0xC3D8BB21C8D68BB8CFB9DB4B8C8FBA,
+            0xA92C78DC537E51A16703EC9855C77F,
+            0x051C596560835DF0C9E50A5B59B882,
+            0xC9DCAE7A016AC5D7748D3313CD8E39,
+            0x01373684A8,
+        ])
     }
 
     fn one() -> [MNT4_753_Fq; 2] {
-        let y = MNT4_753_Fq::from_limbs( [
-                0x031EA99CFF05E05EC3BE2E4A05058,
-                0x23036DB8FB990A342449CAEB92FA6B,
-                0x5DEA57EF53EE29157BDF1B741AEBD4,
-                0xEE5599DD7C3DFA4100284833115AEC,
-                0x7FDDCDEA19CB10B2BF61F37AE2C456,
-                0x26E257B175AE94DEB9E10ABA4BA72F,
-                0x4AB64735,
-            ],
-        );
+        let y = MNT4_753_Fq::from_limbs([
+            0x031EA99CFF05E05EC3BE2E4A05058,
+            0x23036DB8FB990A342449CAEB92FA6B,
+            0x5DEA57EF53EE29157BDF1B741AEBD4,
+            0xEE5599DD7C3DFA4100284833115AEC,
+            0x7FDDCDEA19CB10B2BF61F37AE2C456,
+            0x26E257B175AE94DEB9E10ABA4BA72F,
+            0x4AB64735,
+        ]);
 
-        let x = MNT4_753_Fq::from_limbs( [
-                0xC2AB23BE1C24740AF0FDEB3B7F181,
-                0xFEFF338DD73A5A7EEECFBCE7CF95D3,
-                0x463D98A4EA009D57AAD9716F708885,
-                0x6D1EF781D1DE4FFB1F806B314C5AD3,
-                0xEFA5546444D40C82D6A271F1A43862,
-                0x450BB76A02D86DAAFFBAEB69995EB9,
-                0x542F1DAD,
-            ],
-        );
+        let x = MNT4_753_Fq::from_limbs([
+            0xC2AB23BE1C24740AF0FDEB3B7F181,
+            0xFEFF338DD73A5A7EEECFBCE7CF95D3,
+            0x463D98A4EA009D57AAD9716F708885,
+            0x6D1EF781D1DE4FFB1F806B314C5AD3,
+            0xEFA5546444D40C82D6A271F1A43862,
+            0x450BB76A02D86DAAFFBAEB69995EB9,
+            0x542F1DAD,
+        ]);
         [x, y]
     }
 
@@ -271,40 +280,37 @@ impl CurveParamsTrait<MNT6_753_Fq> for Mnt6PartialCurveParams {
         MNT6_753_Fq::from_limbs([11, 0, 0, 0, 0, 0, 0])
     }
     fn b() -> MNT6_753_Fq {
-        MNT6_753_Fq::from_limbs( [
-                0xBA7505B6FCF2485540B13DFC8468A,
-                0xF9A80A95F401867C4E80F4747FDE5A,
-                0x0FCF2C43D7BF847957C34CCA1E3585,
-                0xB7985993F62F03B22A9A3C737A1A1E,
-                0xBB64B2BB01B10E60A5D5DFE0A25714,
-                0x0863C79D56446237CE2E1468D14AE9,
-                0x7DA285E7,
-            ],
-        )
+        MNT6_753_Fq::from_limbs([
+            0xBA7505B6FCF2485540B13DFC8468A,
+            0xF9A80A95F401867C4E80F4747FDE5A,
+            0x0FCF2C43D7BF847957C34CCA1E3585,
+            0xB7985993F62F03B22A9A3C737A1A1E,
+            0xBB64B2BB01B10E60A5D5DFE0A25714,
+            0x0863C79D56446237CE2E1468D14AE9,
+            0x7DA285E7,
+        ])
     }
 
     fn one() -> [MNT6_753_Fq; 2] {
-        let y = MNT6_753_Fq::from_limbs( [
-                0x521DF9855687139F0C51754C0CC49,
-                0x4D9992F5CBF4B2CC4C42EFF9A5A6C4,
-                0x0DC7A593CCE5A792E94D0020C335B7,
-                0x4C7A18ED9C4BD3C7ED0FFB31C57E61,
-                0x2A3585BDD6D7722C6C07D7873BB02D,
-                0x6E2EB3FCA70DC1063BAC3455180120,
-                0x128C02FFF,
-            ],
-        );
+        let y = MNT6_753_Fq::from_limbs([
+            0x521DF9855687139F0C51754C0CC49,
+            0x4D9992F5CBF4B2CC4C42EFF9A5A6C4,
+            0x0DC7A593CCE5A792E94D0020C335B7,
+            0x4C7A18ED9C4BD3C7ED0FFB31C57E61,
+            0x2A3585BDD6D7722C6C07D7873BB02D,
+            0x6E2EB3FCA70DC1063BAC3455180120,
+            0x128C02FFF,
+        ]);
 
-        let x = MNT6_753_Fq::from_limbs( [
-                0x329A6FEFA9A1F3F7A1FBD93A7BFB8,
-                0x1ACBF7DA60895B8B3D9D442C4C4123,
-                0xE5E3C57B6DF120CEE3CD9D867E66D1,
-                0x0C0D5FC5E818771B931F1D5BDD069C,
-                0x131C2437E884C4997FD1DCB409367D,
-                0x6E831147412CFB1002284F30338088,
-                0x255F8E87,
-            ],
-        );
+        let x = MNT6_753_Fq::from_limbs([
+            0x329A6FEFA9A1F3F7A1FBD93A7BFB8,
+            0x1ACBF7DA60895B8B3D9D442C4C4123,
+            0xE5E3C57B6DF120CEE3CD9D867E66D1,
+            0x0C0D5FC5E818771B931F1D5BDD069C,
+            0x131C2437E884C4997FD1DCB409367D,
+            0x6E831147412CFB1002284F30338088,
+            0x255F8E87,
+        ]);
         [x, y]
     }
 
@@ -327,7 +333,7 @@ impl CurveParamsTrait<BN254_Fq> for BN254PartialCurveParams {
     }
 
     fn one() -> [BN254_Fq; 2] {
-        let mut y: BN254_Fq = BN254_Fq::from_limbs( [2, 0, 0] );
+        let mut y: BN254_Fq = BN254_Fq::from_limbs([2, 0, 0]);
 
         let mut x: BN254_Fq = BN254_Fq::one();
         [x, y]
@@ -377,7 +383,7 @@ impl CurveParamsTrait<Vesta_Fq> for VestaPartialCurveParams {
     }
 
     fn one() -> [Vesta_Fq; 2] {
-        let y = Vesta_Fq::from_limbs( [2, 0, 0] );
+        let y = Vesta_Fq::from_limbs([2, 0, 0]);
 
         let x = Vesta_Fq::one().neg();
         [x, y]

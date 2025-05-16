@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.7.0...v0.8.0) (2025-05-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump to bignum v0.7.1 ([#46](https://github.com/noir-lang/noir_bigcurve/issues/46))
+
+### Features
+
+* Bump to bignum v0.7.1 ([#46](https://github.com/noir-lang/noir_bigcurve/issues/46)) ([c0b3997](https://github.com/noir-lang/noir_bigcurve/commit/c0b3997f986a0724fa14cfe4645c376a8e84a243))
+
+
+### Bug Fixes
+
+* Update to use poseidon library ([#44](https://github.com/noir-lang/noir_bigcurve/issues/44)) ([b12d659](https://github.com/noir-lang/noir_bigcurve/commit/b12d6594c650f08829463251c6c0064dc9a955c6))
+
 ## [0.7.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.6.0...v0.7.0) (2025-02-25)
 
 

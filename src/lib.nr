@@ -173,7 +173,7 @@ where
 
     /// 64 * 5 = 320
     // Expensive witness generation! Avoid if possible
-    pub fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+    fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
         let transcript: [AffineTranscript<B>; (NScalarSlices * 5) + 6] =
             unsafe { BigCurve::get_mul_transcript(self, scalar) };
 
@@ -426,6 +426,12 @@ where
             [false],
         );
 
+        // x3 = lambda * lambda - x2 - x1
+        // TODO(MW): TEMPORARY - some nargo executes in a-p fail if these logs don't exist
+        // There is definitely a better solution I haven't thought of
+        println("x3");
+        println(x3);
+        println(lambda * lambda - x2 - x1);
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -436,6 +442,9 @@ where
         );
 
         // y3 = lambda * (x1 - x3) - y1
+        println("y3");
+        println(y3);
+        println(lambda * (x1 - x3) - y1);
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],

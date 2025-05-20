@@ -210,9 +210,9 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
 
-    //     // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
-    //     Self { base4_slices: slices, skew }
-    // }
+        // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
+        Self { base4_slices: slices, skew }
+    }
 
     fn into_bignum<B>(self) -> B
     where
@@ -259,18 +259,5 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     }
     fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
-    }
-}
-
-impl<let N: u32> ScalarField<N> {
-    pub fn from_bignum<B>(x: B) -> Self
-    where
-        B: BigNum,
-    {
-        x.validate_in_field();
-        let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
-
-        // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
-        Self { base4_slices: slices, skew }
     }
 }

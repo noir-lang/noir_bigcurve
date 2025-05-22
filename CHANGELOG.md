@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.8.0...v0.9.0) (2025-05-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump bignum to 0.7.2 ([#47](https://github.com/noir-lang/noir_bigcurve/issues/47))
+
+### Features
+
+* Bump bignum to 0.7.2 ([#47](https://github.com/noir-lang/noir_bigcurve/issues/47)) ([1eaae46](https://github.com/noir-lang/noir_bigcurve/commit/1eaae46ca270a340f57399232e3710730632c03e))
+
 ## [0.8.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.7.0...v0.8.0) (2025-05-16)
 
 

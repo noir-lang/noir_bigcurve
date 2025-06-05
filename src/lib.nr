@@ -310,10 +310,6 @@ where
 
         // x3 = lambda * lambda - x2 - x1
         // if double, then x2 = x1 so we good
-        // TODO(MW): TEMPORARY - some nargo executes in a-p fail if these checks don't exist
-        // There is definitely a better solution I haven't thought of
-        let x3_check = lambda * lambda - x2 - x1;
-        assert_eq(x3_check, x3, "Temporary check failed");
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -324,8 +320,6 @@ where
         );
 
         // y3 = lambda * (x1 - x3) - y1
-        let y3_check = lambda * (x1 - x3) - y1;
-        assert_eq(y3_check, y3, "Temporary check failed");
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -423,11 +417,6 @@ where
             [false],
         );
 
-        // x3 = lambda * lambda - x2 - x1
-        // TODO(MW): TEMPORARY - some nargo executes in a-p fail if these checks don't exist
-        // There is definitely a better solution I haven't thought of
-        let x3_check = lambda * lambda - x2 - x1;
-        assert_eq(x3_check, x3, "Temporary check failed");
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -438,8 +427,6 @@ where
         );
 
         // y3 = lambda * (x1 - x3) - y1
-        let y3_check = lambda * (x1 - x3) - y1;
-        assert_eq(y3_check, y3, "Temporary check failed");
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],

@@ -1,6 +1,8 @@
-use crate::BigCurve;
+use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
+use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 
 pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
@@ -64,8 +66,14 @@ impl CurveParamsTrait<BLS12_377_Fq> for BLS12_377_Params {
     }
 }
 
-pub type BLS12_377 = BigCurve<BLS12_377_Fq, BLS12_377_Params>;
 pub type BLS12_377Scalar = ScalarField<BLS12_377_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BLS12_377_Fq }, quote { BLS12_377_Params })]
+pub struct BLS12_377 {
+    pub x: BLS12_377_Fq,
+    pub y: BLS12_377_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use super::BLS12_377_SCALAR_SLICES;

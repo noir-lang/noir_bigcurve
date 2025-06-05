@@ -898,3 +898,184 @@ where
         coords_equal | infinity
     }
 }
+
+pub(crate) comptime fn derive_curve_impl(
+    struct_def: TypeDefinition,
+    field_type: Quoted,
+    params_type: Quoted,
+) -> Quoted {
+    let typ = struct_def.as_type();
+    quote {
+        impl crate::BigCurveTrait for $typ {
+            fn neg(self) -> Self {
+                $typ { 
+                    x: self.x, 
+                    y: std::ops::Neg::neg(self.y), 
+                    is_infinity: self.is_infinity 
+                }
+            }
+
+            fn point_at_infinity() -> Self {
+                $typ { 
+                    x: $field_type::zero(), 
+                    y: $field_type::zero(), 
+                    is_infinity: true 
+                }
+            }
+
+            fn offset_generator() -> Self {
+                let result = $params_type::offset_generator();
+                $typ { 
+                    x: result[0], 
+                    y: result[1], 
+                    is_infinity: false 
+                }
+            }
+
+            fn offset_generator_final() -> Self {
+                let result = $params_type::offset_generator_final();
+                $typ { 
+                    x: result[0], 
+                    y: result[1], 
+                    is_infinity: false 
+                }
+            }
+
+            fn one() -> Self {
+                let result = $params_type::one();
+                $typ { 
+                    x: result[0], 
+                    y: result[1], 
+                    is_infinity: false 
+                }
+            }
+
+            fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
+                let x = bignum::bignum::conditional_select(lhs.x, rhs.x, predicate);
+                let y = bignum::bignum::conditional_select(lhs.y, rhs.y, predicate);
+                let is_infinity = (
+                    (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
+                        + rhs.is_infinity as Field
+                ) != 0;
+                $typ { x, y, is_infinity }
+            }
+
+            fn validate_on_curve(self) {
+                // if is point at infinity, we're on the curve.
+                // In this case just sub in a valid point for the x/y coordinates we are about to test
+                let one: Self = Self::one();
+                let x: $field_type = bignum::bignum::conditional_select(one.x, self.x, self.is_infinity);
+                let y: $field_type = bignum::bignum::conditional_select(one.y, self.y, self.is_infinity);
+                let xx = std::ops::Mul::mul(x, x);
+                //  xxx - yy + ax + b = 0
+                // (xx + a) * x - y*y + b = 0
+                // validate the provided value of `y3` is correct
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[xx, $params_type::a()], [y, $field_type::zero()]],
+                    [[false, false], [false, false]],
+                    [[x], [y]],
+                    [[false], [true]],
+                    [$params_type::b()],
+                    [false],
+                );
+            }
+
+            fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
+                let transcript: [AffineTranscript<$field_type>; (NScalarSlices * 5) + 6] =
+                    unsafe { Self::get_mul_transcript(self, scalar) };
+                self.mul_with_hint(scalar, transcript)
+            }
+
+            fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
+                let r = hash_to_curve::<$field_type, N>(seed, $params_type::a(), $params_type::b());
+                $typ { x: r.0, y: r.1, is_infinity: false }
+            }
+        }
+
+        impl $typ {
+            fn mul_with_hint<let NScalarSlices: u32>(
+                self,
+                scalar: ScalarField<NScalarSlices>,
+                transcript: [AffineTranscript<$field_type>; (NScalarSlices * 5) + 6],
+            ) -> Self {
+                // Convert to BigCurve for compatibility with existing code
+                let big_curve: crate::BigCurve<$field_type, $params_type> = crate::BigCurve {
+                    x: self.x,
+                    y: self.y,
+                    is_infinity: self.is_infinity,
+                };
+                
+                // Use existing implementation
+                let result = big_curve.mul_with_hint(scalar, transcript);
+                
+                // Convert back to concrete type
+                $typ {
+                    x: result.x,
+                    y: result.y,
+                    is_infinity: result.is_infinity,
+                }
+            }
+
+            unconstrained fn get_mul_transcript<let NScalarSlices: u32>(
+                P: Self,
+                scalar: ScalarField<NScalarSlices>,
+            ) -> [AffineTranscript<$field_type>; 6 + NScalarSlices * 5] {
+                // Convert to BigCurve for compatibility
+                let big_curve: crate::BigCurve<$field_type, $params_type> = crate::BigCurve {
+                    x: P.x,
+                    y: P.y,
+                    is_infinity: P.is_infinity,
+                };
+                crate::curve_jac::CurveJ::from(big_curve).mul(scalar).1
+            }
+
+            pub fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+                mul_points: [Self; NMuls],
+                mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+                add_points: [Self; NAdds],
+            ) -> Self {
+                // Convert to BigCurve for compatibility
+                let mut big_curve_points: [crate::BigCurve<$field_type, $params_type>; NMuls] = [crate::BigCurveTrait::one(); NMuls];
+                let mut big_curve_add_points: [crate::BigCurve<$field_type, $params_type>; NAdds] = [crate::BigCurveTrait::one(); NAdds];
+                
+                for i in 0..NMuls {
+                    big_curve_points[i] = crate::BigCurve {
+                        x: mul_points[i].x,
+                        y: mul_points[i].y,
+                        is_infinity: mul_points[i].is_infinity,
+                    };
+                }
+                
+                for i in 0..NAdds {
+                    big_curve_add_points[i] = crate::BigCurve {
+                        x: add_points[i].x,
+                        y: add_points[i].y,
+                        is_infinity: add_points[i].is_infinity,
+                    };
+                }
+
+                let result = crate::BigCurve::evaluate_linear_expression(
+                    big_curve_points,
+                    mul_scalars,
+                    big_curve_add_points,
+                );
+
+                // Convert back to concrete type
+                $typ {
+                    x: result.x,
+                    y: result.y,
+                    is_infinity: result.is_infinity,
+                }
+            }
+        }
+
+        impl std::cmp::Eq for $typ {
+            fn eq(self, other: Self) -> bool {
+                let coords_equal =
+                    self.x.eq(other.x) & self.y.eq(other.y) & !self.is_infinity & !other.is_infinity;
+                let infinity = self.is_infinity & other.is_infinity;
+                coords_equal | infinity
+            }
+        }
+    }
+}

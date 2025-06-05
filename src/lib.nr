@@ -144,10 +144,9 @@ where
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
         let x = bignum::bignum::conditional_select(lhs.x, rhs.x, predicate);
         let y = bignum::bignum::conditional_select(lhs.y, rhs.y, predicate);
-        let is_infinity = (
-            (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
-                + rhs.is_infinity as Field
-        ) as bool;
+        let is_infinity = (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
+            + rhs.is_infinity as Field;
+        let is_infinity = is_infinity != 0;
         BigCurve { x, y, is_infinity }
     }
 
@@ -350,7 +349,7 @@ where
         y_out = bignum::bignum::conditional_select(B::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
-            ((a as Field - b as Field) * predicate as Field + b as Field) as bool
+            ((a as Field - b as Field) * predicate as Field + b as Field) != 0
         };
 
         let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
@@ -464,7 +463,7 @@ where
         y_out = bignum::bignum::conditional_select(B::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
-            ((a as Field - b as Field) * predicate as Field + b as Field) as bool
+            ((a as Field - b as Field) * predicate as Field + b as Field) != 0
         };
 
         let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);

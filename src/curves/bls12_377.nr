@@ -5,7 +5,7 @@ use bignum::BigNum;
 
 pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
 
-global BLS12_377_SCALAR_SLICES: u32 = 64;
+pub global BLS12_377_SCALAR_SLICES: u32 = 64;
 pub struct BLS12_377_Params {}
 impl CurveParamsTrait<BLS12_377_Fq> for BLS12_377_Params {
     fn a() -> BLS12_377_Fq {

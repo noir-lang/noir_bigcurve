@@ -5,7 +5,7 @@ use bignum::BigNum;
 
 pub use bignum::{Secp256k1_Fq, Secp256k1_Fr};
 
-global SECP256k1_SCALAR_SLICES: u32 = 65;
+pub global SECP256k1_SCALAR_SLICES: u32 = 65;
 pub struct Secp256k1_Params {}
 
 impl CurveParamsTrait<Secp256k1_Fq> for Secp256k1_Params {

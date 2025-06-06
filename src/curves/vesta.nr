@@ -1,6 +1,8 @@
-use crate::BigCurve;
+use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
+use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 pub use bignum::{Vesta_Fq, Vesta_Fr};
 
@@ -49,8 +51,14 @@ impl CurveParamsTrait<Vesta_Fq> for Vesta_Params {
 }
 
 pub global VESTA_SCALAR_SLICES: u32 = 64;
-pub type Vesta = BigCurve<Vesta_Fq, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { Vesta_Fq }, quote { Vesta_Params })]
+pub struct Vesta {
+    pub x: Vesta_Fq,
+    pub y: Vesta_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use super::VESTA_SCALAR_SLICES;

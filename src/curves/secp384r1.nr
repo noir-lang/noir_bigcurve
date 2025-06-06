@@ -1,6 +1,8 @@
-use crate::BigCurve;
+use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
+use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 
 pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
@@ -74,8 +76,14 @@ impl CurveParamsTrait<Secp384r1_Fq> for Secp384r1_Params {
 }
 
 pub global SECP384r1_SCALAR_SLICES: u32 = 97;
-pub type Secp384r1 = BigCurve<Secp384r1_Fq, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { Secp384r1_Fq }, quote { Secp384r1_Params })]
+pub struct Secp384r1 {
+    pub x: Secp384r1_Fq,
+    pub y: Secp384r1_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
 

@@ -1,4 +1,4 @@
-pub(crate) mod scalar_field;
+pub mod scalar_field;
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
@@ -23,7 +23,7 @@ pub struct BigCurve<B, CurveParams> {
     pub is_infinity: bool,
 }
 
-trait CurveParamsTrait<B: BigNum> {
+pub trait CurveParamsTrait<B: BigNum> {
     fn offset_generator() -> [B; 2];
     fn offset_generator_final() -> [B; 2];
     fn one() -> [B; 2];
@@ -92,7 +92,7 @@ impl<B: BigNum> PointTable<B> {
     }
 }
 
-trait BigCurveTrait {
+pub trait BigCurveTrait {
     fn neg(self) -> Self;
     fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
@@ -417,6 +417,7 @@ where
             [false],
         );
 
+        // x3 = lambda * lambda - x2 - x1
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],

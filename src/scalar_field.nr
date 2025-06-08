@@ -168,28 +168,13 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
     }
 }
 
-pub trait ScalarFieldTrait {
-    fn zero() -> Self;
-    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    fn from_bignum<B>(x: B) -> Self
-    where
-        B: BigNum;
-    fn into_bignum<B>(self) -> B
-    where
-        B: BigNum;
-    fn new() -> Self;
-    fn get(self, idx: u32) -> u8;
-    fn len(self) -> u32;
-}
-
-impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
-
+impl<let N: u32> ScalarField<N> {
     fn len(_: Self) -> u32 {
         N
     }
+
     fn zero() -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: true };
-
         result.base4_slices[0] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
         result
     }
@@ -209,7 +194,6 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
-
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
         Self { base4_slices: slices, skew }
     }
@@ -257,6 +241,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
+
     fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }

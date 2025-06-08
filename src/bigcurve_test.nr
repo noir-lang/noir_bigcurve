@@ -18,7 +18,7 @@ use crate::curves::secp256r1::{Secp256r1, Secp256r1Scalar};
 use crate::curves::secp384r1::{Secp384r1, Secp384r1Scalar};
 use crate::curves::vesta::{Vesta, VestaScalar};
 use crate::PointTable;
-use crate::scalar_field::{ScalarField, ScalarFieldTrait};
+use crate::scalar_field::ScalarField;
 
 use bignum::BLS12_377_Fr;
 use bignum::BLS12_381_Fr;

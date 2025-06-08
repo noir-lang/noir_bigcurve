@@ -12,8 +12,6 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-use scalar_field::ScalarFieldTrait;
-
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/

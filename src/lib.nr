@@ -899,13 +899,183 @@ where
     }
 }
 
-pub(crate) comptime fn derive_curve_impl(
+pub(crate) comptime fn derive_curve_impl<B: BigNum>(
     struct_def: TypeDefinition,
     field_type: Quoted,
     params_type: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
     quote {
+        impl $typ {
+            /**
+     * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
+     * @description Only uses incomplete formulae.
+     * With our use of offset generators, an HONEST PROVER should never need to handle edge cases.
+     * Therefore we can sacrifice completeness for cheap soundness. Instead of handling edge cases,
+     * we simply assert that they do not exist by validating x2 != x1
+     * @note This method minimizes the number of calls to `evaluate_quadratic_expression`,
+     * which is NOT the same as minimizing the number of multiplications.
+     * The expensive operation in BigNum is the modular reduction.
+     * e.g. (a * b + c * d = e mod p) is not much more expensive than (a * b = c mod p)
+     **/
+            fn incomplete_add_with_hint(self, other: Self, transcript: AffineTranscript<$field_type>) -> Self {
+                let x1: $field_type = self.x;
+                let y1: $field_type = self.y;
+                let x2: $field_type = other.x;   
+                let y2: $field_type = other.y;
+                let lambda: $field_type = transcript.lambda;
+                let x3: $field_type = transcript.x3;
+                let y3: $field_type = transcript.y3;
+
+                // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+                x3.validate_in_range();
+                y3.validate_in_range();
+                lambda.validate_in_range();
+
+                // no incomplete Weierstrass shenanigans here
+                x1.assert_is_not_equal(x2);
+
+                // validate the provided value of `lambda` is correct
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda]],
+                    [[false]],
+                    [[x2, x1]],
+                    [[false, true]],
+                    [y2, y1],
+                    [true, false],
+                );
+
+                // validate the provided value of `x3` is correct
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda]],
+                    [[false]],
+                    [[lambda]],
+                    [[false]],
+                    [x3, x2, x1],
+                    [true, true, true],
+                );
+
+                // validate the provided value of `y3` is correct
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda]],
+                    [[false]],
+                    [[x3, x1]],
+                    [[false, true]],
+                    [y3, y1],
+                    [false, false],
+                );
+
+                $typ { x: x3, y: y3, is_infinity: false }
+            }
+            fn add_with_hint(self, other: Self, transcript: AffineTranscript<$field_type>) -> Self {
+                let mut x1: $field_type = self.x;
+                let mut y1: $field_type = self.y; 
+                let mut x2: $field_type = other.x;
+                let mut y2: $field_type = other.y;
+                let lambda: $field_type = transcript.lambda;
+                let x3: $field_type = transcript.x3;
+                let y3: $field_type = transcript.y3;
+
+                // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+                x3.validate_in_range();
+                y3.validate_in_range();
+                lambda.validate_in_range();
+
+                // TODO: we can probably optimize this boolean flag jenga mess
+                let x_equal_predicate = x2.eq(x1);
+                let y_equal_predicate = y2.eq(y1);
+                let double_predicate = x_equal_predicate | (self.is_infinity | other.is_infinity); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
+                let infinity_predicate =
+                    (x_equal_predicate & !y_equal_predicate) | (self.is_infinity & other.is_infinity);
+                let evaluate_group_operation_predicate: bool =
+                    !infinity_predicate & !self.is_infinity & !other.is_infinity;
+
+                // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
+                // set input operands to 0!
+                x1 = bignum::bignum::conditional_select(x1, $field_type::zero(), evaluate_group_operation_predicate);
+                y1 = bignum::bignum::conditional_select(y1, $field_type::zero(), evaluate_group_operation_predicate);
+                x2 = bignum::bignum::conditional_select(x2, $field_type::zero(), evaluate_group_operation_predicate);
+                y2 = bignum::bignum::conditional_select(y2, $field_type::zero(), evaluate_group_operation_predicate);
+
+                // lambda * 2y - 3x * x = 0
+                // or
+                // lambda * (x2 - x1) - (y2 - y1) = 0
+                let product_1_rhs_t0 = bignum::bignum::conditional_select(y1, x2, double_predicate);
+                let product_1_rhs_t1 = bignum::bignum::conditional_select(y1, x1.neg(), double_predicate);
+                let product_2_lhs_t0 = bignum::bignum::conditional_select(x1, $field_type::one(), double_predicate);
+                let product_2_rhs_t0 = bignum::bignum::conditional_select(x1, y2, double_predicate);
+                let product_2_rhs_t1 = bignum::bignum::conditional_select(x1, y1.neg(), double_predicate);
+                let product_2_rhs_t2 = bignum::bignum::conditional_select(x1, $field_type::zero(), double_predicate);
+
+                // validate the provided value of `lambda` is correct
+                // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
+                // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
+                let mut a_term = bignum::bignum::conditional_select(
+                    $params_type::a(),
+                    $field_type::zero(),
+                    x_equal_predicate & y_equal_predicate & !self.is_infinity & !other.is_infinity,
+                );
+
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda], [product_2_lhs_t0]],
+                    [[false], [false]],
+                    [
+                        [product_1_rhs_t0, product_1_rhs_t1, $field_type::zero()],
+                        [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
+                    ],
+                    [[false, false, false], [true, true, true]],
+                    [a_term],
+                    [true],
+                );
+
+                // x3 = lambda * lambda - x2 - x1
+                // if double, then x2 = x1 so we good
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda]],
+                    [[false]],
+                    [[lambda]],
+                    [[false]],
+                    [x3, x2, x1],
+                    [true, true, true],
+                );
+
+                // y3 = lambda * (x1 - x3) - y1
+                bignum::bignum::evaluate_quadratic_expression(
+                    [[lambda]],
+                    [[false]],
+                    [[x3, x1]],
+                    [[false, true]],
+                    [y3, y1],
+                    [false, false],
+                );
+
+                let output_is_lhs = other.is_infinity & !self.is_infinity;
+                let output_is_rhs = self.is_infinity & !other.is_infinity;
+                let mut x_out =
+                    bignum::bignum::conditional_select(x3, x1, evaluate_group_operation_predicate);
+                x_out = bignum::bignum::conditional_select(self.x, x_out, output_is_lhs);
+                x_out = bignum::bignum::conditional_select(other.x, x_out, output_is_rhs);
+                x_out = bignum::bignum::conditional_select($field_type::zero(), x_out, infinity_predicate);
+                let mut y_out =
+                    bignum::bignum::conditional_select(y3, y1, evaluate_group_operation_predicate);
+                y_out = bignum::bignum::conditional_select(self.y, y_out, output_is_lhs);
+                y_out = bignum::bignum::conditional_select(other.y, y_out, output_is_rhs);
+                y_out = bignum::bignum::conditional_select($field_type::zero(), y_out, infinity_predicate);
+
+                let conditional_select = |a: bool, b: bool, predicate: bool| {
+                    ((a as Field - b as Field) * predicate as Field + b as Field) as bool
+                };
+
+                let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
+                infinity_out = conditional_select(true, infinity_out, infinity_predicate);
+                infinity_out = conditional_select(self.is_infinity, infinity_out, output_is_lhs);
+                infinity_out = conditional_select(other.is_infinity, infinity_out, output_is_rhs);
+
+                let result: Self = $typ { x: x_out, y: y_out, is_infinity: infinity_out };
+                result
+            }
+
+        }
         impl crate::BigCurveTrait for $typ {
             fn neg(self) -> Self {
                 $typ { 

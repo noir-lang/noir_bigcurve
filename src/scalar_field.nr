@@ -1,5 +1,4 @@
 use bignum::BigNum;
-use bignum::BigNumTrait;
 
 /**
  * @brief ScalarField represents a scalar multiplier as a sequence of 4-bit slices
@@ -39,13 +38,13 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     (result, skew)
 }
 
-unconstrained fn get_wnaf_slices2<let N: u32, BigNum>(x: BigNum) -> ([u8; N], bool)
+unconstrained fn get_wnaf_slices2<let N: u32, B>(x: B) -> ([u8; N], bool)
 where
-    BigNum: BigNumTrait,
+    B: BigNum,
 {
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [u128] = x.get_limbs_slice();
+    let x: [u128] = x.get_limbs().as_slice();
     for i in 0..x.len() {
         nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
     }
@@ -172,16 +171,17 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 pub trait ScalarFieldTrait {
     fn zero() -> Self;
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    fn from_bignum<BigNum>(x: BigNum) -> Self
+    fn from_bignum<B>(x: B) -> Self
     where
-        BigNum: BigNumTrait;
-    fn into_bignum<BigNum>(self) -> BigNum
+        B: BigNum;
+    fn into_bignum<B>(self) -> B
     where
-        BigNum: BigNumTrait;
+        B: BigNum;
     fn new() -> Self;
-    fn get(self, idx: u64) -> u8;
+    fn get(self, idx: u32) -> u8;
     fn len(self) -> u32;
 }
+
 impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
 
     fn len(_: Self) -> u32 {
@@ -202,10 +202,10 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         result
     }
 
-    // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNumTrait due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<BigNum>(x: BigNum) -> Self
+    // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNum due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
+    fn from_bignum<B>(x: B) -> Self
     where
-        BigNum: BigNumTrait,
+        B: BigNum,
     {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
@@ -214,12 +214,12 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         Self { base4_slices: slices, skew }
     }
 
-    fn into_bignum<BigNum>(self) -> BigNum
+    fn into_bignum<B>(self) -> B
     where
-        BigNum: BigNumTrait,
+        B: BigNum,
     {
-        let mut result = BigNum::zero();
-        let mut count: u64 = 0;
+        let mut result = B::zero();
+        let mut count: u32 = 0;
         {
             let mut acc: u128 = 0;
             let mut last_bits = (result.modulus_bits() % 120) as u64;
@@ -257,7 +257,7 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
-    fn get(self, idx: u64) -> u8 {
+    fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }
 }

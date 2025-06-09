@@ -4,7 +4,7 @@ use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
 
-global MNT6_753_SCALAR_SLICES: u32 = 189;
+pub global MNT6_753_SCALAR_SLICES: u32 = 189;
 pub struct MNT6_753_Params {}
 impl CurveParamsTrait<MNT6_753_Fq> for MNT6_753_Params {
     fn a() -> MNT6_753_Fq {

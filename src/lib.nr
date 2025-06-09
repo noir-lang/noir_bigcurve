@@ -1,4 +1,4 @@
-pub(crate) mod scalar_field;
+pub mod scalar_field;
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
@@ -21,7 +21,7 @@ pub struct BigCurve<B, CurveParams> {
     pub is_infinity: bool,
 }
 
-trait CurveParamsTrait<B: BigNum> {
+pub trait CurveParamsTrait<B: BigNum> {
     fn offset_generator() -> [B; 2];
     fn offset_generator_final() -> [B; 2];
     fn one() -> [B; 2];
@@ -81,10 +81,9 @@ where
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
         let x = bignum::bignum::conditional_select(lhs.x, rhs.x, predicate);
         let y = bignum::bignum::conditional_select(lhs.y, rhs.y, predicate);
-        let is_infinity = (
-            (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
-                + rhs.is_infinity as Field
-        ) as bool;
+        let is_infinity = (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
+            + rhs.is_infinity as Field;
+        let is_infinity = is_infinity != 0;
         BigCurve { x, y, is_infinity }
     }
 
@@ -281,7 +280,7 @@ where
         y_out = bignum::bignum::conditional_select(B::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
-            ((a as Field - b as Field) * predicate as Field + b as Field) as bool
+            ((a as Field - b as Field) * predicate as Field + b as Field) != 0
         };
 
         let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
@@ -355,6 +354,7 @@ where
             [false],
         );
 
+        // x3 = lambda * lambda - x2 - x1
         bignum::bignum::evaluate_quadratic_expression(
             [[lambda]],
             [[false]],
@@ -388,7 +388,7 @@ where
         y_out = bignum::bignum::conditional_select(B::zero(), y_out, infinity_predicate);
 
         let conditional_select = |a: bool, b: bool, predicate: bool| {
-            ((a as Field - b as Field) * predicate as Field + b as Field) as bool
+            ((a as Field - b as Field) * predicate as Field + b as Field) != 0
         };
 
         let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);

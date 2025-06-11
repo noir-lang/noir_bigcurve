@@ -509,51 +509,10 @@ where
     println("}}");
 }
 
-unconstrained fn verify_offset_generators<Fq, Curve>(cofactor: Field)
-where
-    Fq: BigNum,
-    Curve: CurveParamsTrait<Fq>,
-{
-    // For each curve, compute the offset generators and verify they match the ones in the curve parameters
-    let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
-
-    // we only need well-defined parameters for a and b, for hash_to_curve to work
-    // (no offset gneerators needed)
-    let g: BigCurve<Fq, Curve> = BigCurve::hash_to_curve(seed);
-
-    let g_init: CurveJ<Fq, Curve> = CurveJ { x: g.x, y: g.y, z: Fq::one(), is_infinity: false };
-    let mut gen = g_init;
-
-    let cofactor_bits: [u1; 128] = cofactor.to_be_bits();
-    let mut it: u32 = 0;
-    for i in 0..128 {
-        if (cofactor_bits[i] == 1) {
-            it = i + 1;
-            break;
-        }
-    }
-
-    for i in it..128 {
-        gen = gen.dbl().0;
-        if (cofactor_bits[i] == 1) {
-            gen = gen.incomplete_add(g_init).0;
-        }
-    }
-    let mut genz = gen.z;
-    genz = genz.__invmod();
-    let zz = genz.__mul(genz);
-    let zzz = zz.__mul(genz);
-    let computed_initial = [gen.x.__mul(zz), gen.y.__mul(zzz)];
-    // Verify against the values in the curve parameters
-    let expected_initial = Curve::offset_generator();
-    println(f"expected_initial: {expected_initial}");
-    println(f"computed_initial: {computed_initial}");
-    assert_eq(computed_initial[0], expected_initial[0], "Initial offset generator x mismatch");
-    assert_eq(computed_initial[1], expected_initial[1], "Initial offset generator y mismatch");
-}
-
 #[test]
 fn test_compute_and_print_offset_generators() {
+
+
     unsafe {
         compute_and_print_offset_generators::<BN254_Fq, BN254PartialCurveParams, _, _, 64>(
             3,
@@ -584,26 +543,137 @@ fn test_compute_and_print_offset_generators() {
     }
 }
 
-#[test]
-unconstrained fn test_verify_offset_generators() {
-    // BN254 cofactor is 1
-    verify_offset_generators::<BN254_Fq, BN254PartialCurveParams>(1);
-    // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
-    // verify_offset_generators::<BLS12_377_Fq, BLS377PartialCurveParams>(0x170b5d44300000000000000000000000);
-    // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
-    // verify_offset_generators::<BLS12_381_Fq, BLS381PartialCurveParams>(0x396C8C005555E1568C00AAAB0000AAAB);
-    // MNT4-753 cofactor is 1
-    // verify_offset_generators::<MNT4_753_Fq, Mnt4PartialCurveParams>(1);
-    // MNT6-753 cofactor is 1
-    // verify_offset_generators::<MNT6_753_Fq, Mnt6PartialCurveParams>(1);
-    // Pallas cofactor is 1
-    // verify_offset_generators::<Pallas_Fq, PallasPartialCurveParams>(1);
-    // Secp256k1 cofactor is 1
-    // verify_offset_generators::<Secp256k1_Fr, Secp256k1PartialCurveParams>(1);
-    // Secp256r1 cofactor is 1
-    // verify_offset_generators::<Secp256r1_Fr, Secp256r1PartialCurveParams>(1);
-    // Secp384r1 cofactor is 1
-    // verify_offset_generators::<Secp384r1_Fr, Secp384r1PartialCurveParams>(1);
-    // Vesta cofactor is 1
-    // verify_offset_generators::<Vesta_Fq, VestaPartialCurveParams>(1);
+mod tests {
+    use bignum::BigNum;
+    use bignum::BLS12_377_Fq;
+    use bignum::BLS12_381_Fq;
+    use bignum::BN254_Fq;
+    use bignum::MNT4_753_Fq;
+    use bignum::MNT6_753_Fq;
+    use bignum::Pallas_Fq;
+    use bignum::Secp256k1_Fr;
+    use bignum::Secp256r1_Fr;
+    use bignum::Secp384r1_Fr;
+    use bignum::Vesta_Fq;
+
+    use crate::{BigCurve, BigCurveTrait, CurveParamsTrait, curve_jac::CurveJ};
+
+    use super::Secp256k1PartialCurveParams;
+    use super::Secp256r1PartialCurveParams;
+    use super::Secp384r1PartialCurveParams;
+    use super::BLS377PartialCurveParams;
+    use super::BLS381PartialCurveParams;
+    use super::BN254PartialCurveParams;
+    use super::Mnt4PartialCurveParams;
+    use super::Mnt6PartialCurveParams;
+    use super::PallasPartialCurveParams;
+    use super::VestaPartialCurveParams;
+    
+    unconstrained fn verify_offset_generators<Fq, Curve>(cofactor: Field)
+    where
+        Fq: BigNum,
+        Curve: CurveParamsTrait<Fq>,
+    {
+        // For each curve, compute the offset generators and verify they match the ones in the curve parameters
+        let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
+
+        // we only need well-defined parameters for a and b, for hash_to_curve to work
+        // (no offset gneerators needed)
+        let g: BigCurve<Fq, Curve> = BigCurve::hash_to_curve(seed);
+
+        let g_init: CurveJ<Fq, Curve> = CurveJ { x: g.x, y: g.y, z: Fq::one(), is_infinity: false };
+        let mut gen = g_init;
+
+        let cofactor_bits: [u1; 128] = cofactor.to_be_bits();
+        let mut it: u32 = 0;
+        for i in 0..128 {
+            if (cofactor_bits[i] == 1) {
+                it = i + 1;
+                break;
+            }
+        }
+
+        for i in it..128 {
+            gen = gen.dbl().0;
+            if (cofactor_bits[i] == 1) {
+                gen = gen.incomplete_add(g_init).0;
+            }
+        }
+        let mut genz = gen.z;
+        genz = genz.__invmod();
+        let zz = genz.__mul(genz);
+        let zzz = zz.__mul(genz);
+        let computed_initial = [gen.x.__mul(zz), gen.y.__mul(zzz)];
+        // Verify against the values in the curve parameters
+        let expected_initial = Curve::offset_generator();
+        println(f"expected_initial: {expected_initial}");
+        println(f"computed_initial: {computed_initial}");
+        assert_eq(computed_initial[0], expected_initial[0], "Initial offset generator x mismatch");
+        assert_eq(computed_initial[1], expected_initial[1], "Initial offset generator y mismatch");
+    }
+
+    #[test]
+    unconstrained fn verify_bn254_offset_generators() {
+        // BN254 cofactor is 1
+        verify_offset_generators::<BN254_Fq, BN254PartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_bls12_377_offset_generators() {
+        // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
+        verify_offset_generators::<BLS12_377_Fq, BLS377PartialCurveParams>(
+            0x170b5d44300000000000000000000000,
+        );
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_bls12_381_offset_generators() {
+        // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
+        verify_offset_generators::<BLS12_381_Fq, BLS381PartialCurveParams>(
+            0x396C8C005555E1568C00AAAB0000AAAB,
+        );
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_mnt4_753_offset_generators() {
+        // MNT4-753 cofactor is 1
+        verify_offset_generators::<MNT4_753_Fq, Mnt4PartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_mnt6_753_offset_generators() {
+        // MNT6-753 cofactor is 1
+        verify_offset_generators::<MNT6_753_Fq, Mnt6PartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_pallas_offset_generators() {
+        // Pallas cofactor is 1
+        verify_offset_generators::<Pallas_Fq, PallasPartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_secp256k1_offset_generators() {
+        // Secp256k1 cofactor is 1
+        verify_offset_generators::<Secp256k1_Fr, Secp256k1PartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_secp256r1_offset_generators() {
+        // Secp256r1 cofactor is 1
+        verify_offset_generators::<Secp256r1_Fr, Secp256r1PartialCurveParams>(1);
+    }
+    
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_secp384r1_offset_generators() {
+        // Secp384r1 cofactor is 1
+        verify_offset_generators::<Secp384r1_Fr, Secp384r1PartialCurveParams>(1);
+    }
+
+    #[test(should_fail_with = "generator does not exist!")]
+    unconstrained fn verify_vesta_offset_generators() {
+        // Vesta cofactor is 1
+        verify_offset_generators::<Vesta_Fq, VestaPartialCurveParams>(1);
+    }
+
 }

@@ -12,8 +12,6 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-use scalar_field::ScalarFieldTrait;
-
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
  **/
@@ -31,68 +29,7 @@ pub trait CurveParamsTrait<B: BigNum> {
     fn a() -> B;
 }
 
-/**
- * @brief A lookup table we use when performing scalar multiplications.
- * @description We slice scalar multiplier into 4 bit chunks represented
- * in windowed non-adjacent form ([-15, -13, ..., 15])
- * We compute a table of point multiples that map to the 4-bit WNAF values T = ([-15[P], -13[P], ..., 15[P]])
- * We set an accumulator to equal T[most significant WNAF slice]
- * We then iterate over our remaining bit slices (starting with most significant slice)
- * For each iteration `i` we double the accumulator 4 times and then add `T[slice[i]]` into the accumulator.
- * For small multiscalar multiplications (i.e. <512 points) this produces the minimal number of addition operations.
- **/
-struct PointTable<B> {
-    x: [B; 16],
-    y: [B; 16],
-}
-
-impl<B: BigNum> PointTable<B> {
-    pub(crate) fn empty() -> Self {
-        PointTable { x: [B::zero(); 16], y: [B::zero(); 16] }
-    }
-
-    /**
-     * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
-     * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
-     **/
-    pub(crate) fn new_with_hint<CurveParams>(
-        P: BigCurve<B, CurveParams>,
-        transcript: [AffineTranscript<B>; 8],
-    ) -> Self
-    where
-        CurveParams: CurveParamsTrait<B>,
-    {
-        let mut result = PointTable { x: [B::zero(); 16], y: [B::zero(); 16] };
-
-        let D2 = P.double_with_hint(transcript[0]);
-
-        result.x[8] = P.x;
-        result.y[8] = P.y;
-        result.x[7] = P.x;
-        result.y[7] = (P.y.neg());
-
-        let mut A = P;
-        for i in 1..8 {
-            A = D2.incomplete_add_with_hint(A, transcript[i]);
-            result.x[8 + i] = A.x;
-            result.y[8 + i] = A.y;
-            result.x[7 - i] = A.x;
-            result.y[7 - i] = (A.y.neg());
-        }
-        result
-    }
-
-    /**
-     * @brief get a value out of the lookup table
-     * @description if the backend has an efficient implementation of memory lookups,
-     * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
-     **/
-    pub(crate) fn get<CurveParams>(self, idx: u32) -> BigCurve<B, CurveParams> {
-        BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
-    }
-}
-
-pub trait BigCurveTrait {
+trait BigCurveTrait {
     fn neg(self) -> Self;
     fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
@@ -896,5 +833,66 @@ where
             self.x.eq(other.x) & self.y.eq(other.y) & !self.is_infinity & !other.is_infinity;
         let infinity = self.is_infinity & other.is_infinity;
         coords_equal | infinity
+    }
+}
+
+/**
+ * @brief A lookup table we use when performing scalar multiplications.
+ * @description We slice scalar multiplier into 4 bit chunks represented
+ * in windowed non-adjacent form ([-15, -13, ..., 15])
+ * We compute a table of point multiples that map to the 4-bit WNAF values T = ([-15[P], -13[P], ..., 15[P]])
+ * We set an accumulator to equal T[most significant WNAF slice]
+ * We then iterate over our remaining bit slices (starting with most significant slice)
+ * For each iteration `i` we double the accumulator 4 times and then add `T[slice[i]]` into the accumulator.
+ * For small multiscalar multiplications (i.e. <512 points) this produces the minimal number of addition operations.
+ **/
+struct PointTable<B> {
+    x: [B; 16],
+    y: [B; 16],
+}
+
+impl<B: BigNum> PointTable<B> {
+    pub(crate) fn empty() -> Self {
+        PointTable { x: [B::zero(); 16], y: [B::zero(); 16] }
+    }
+
+    /**
+     * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
+     * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
+     **/
+    pub(crate) fn new_with_hint<CurveParams>(
+        P: BigCurve<B, CurveParams>,
+        transcript: [AffineTranscript<B>; 8],
+    ) -> Self
+    where
+        CurveParams: CurveParamsTrait<B>,
+    {
+        let mut result = PointTable { x: [B::zero(); 16], y: [B::zero(); 16] };
+
+        let D2 = P.double_with_hint(transcript[0]);
+
+        result.x[8] = P.x;
+        result.y[8] = P.y;
+        result.x[7] = P.x;
+        result.y[7] = (P.y.neg());
+
+        let mut A = P;
+        for i in 1..8 {
+            A = D2.incomplete_add_with_hint(A, transcript[i]);
+            result.x[8 + i] = A.x;
+            result.y[8 + i] = A.y;
+            result.x[7 - i] = A.x;
+            result.y[7 - i] = (A.y.neg());
+        }
+        result
+    }
+
+    /**
+     * @brief get a value out of the lookup table
+     * @description if the backend has an efficient implementation of memory lookups,
+     * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
+     **/
+    pub(crate) fn get<CurveParams>(self, idx: u32) -> BigCurve<B, CurveParams> {
+        BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
     }
 }

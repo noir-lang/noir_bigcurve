@@ -53,7 +53,7 @@ pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 
 mod test {
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Scalar};

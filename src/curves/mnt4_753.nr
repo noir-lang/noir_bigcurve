@@ -96,7 +96,7 @@ mod test {
     use bignum::{BigNum, MNT4_753_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
 
     use super::MNT4_753;
     use super::MNT4_753_SCALAR_SLICES;

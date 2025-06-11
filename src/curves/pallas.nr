@@ -58,7 +58,7 @@ mod test {
     use bignum::{BigNum, Pallas_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
 
     use super::{Pallas, PALLAS_SCALAR_SLICES, PallasScalar};
 

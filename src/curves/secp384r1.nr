@@ -81,7 +81,7 @@ mod test {
     use bignum::{BigNum, Secp384r1_Fq, Secp384r1_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
     use super::Secp384r1;
     use super::SECP384r1_SCALAR_SLICES;
     use super::Secp384r1Scalar;

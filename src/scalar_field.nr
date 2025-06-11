@@ -168,33 +168,18 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
     }
 }
 
-pub trait ScalarFieldTrait {
-    fn zero() -> Self;
-    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-    fn from_bignum<B>(x: B) -> Self
-    where
-        B: BigNum;
-    fn into_bignum<B>(self) -> B
-    where
-        B: BigNum;
-    fn new() -> Self;
-    fn get(self, idx: u32) -> u8;
-    fn len(self) -> u32;
-}
-
-impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
-
-    fn len(_: Self) -> u32 {
+impl<let N: u32> ScalarField<N> {
+    pub fn len(_: Self) -> u32 {
         N
     }
-    fn zero() -> Self {
-        let mut result: Self = ScalarField { base4_slices: [0; N], skew: true };
 
+    pub fn zero() -> Self {
+        let mut result: Self = ScalarField { base4_slices: [0; N], skew: true };
         result.base4_slices[0] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
         result
     }
 
-    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
+    pub fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
         let mut result = rhs;
         if (predicate) {
             result = lhs;
@@ -203,18 +188,17 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNum due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
-    fn from_bignum<B>(x: B) -> Self
+    pub fn from_bignum<B>(x: B) -> Self
     where
         B: BigNum,
     {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
-
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
         Self { base4_slices: slices, skew }
     }
 
-    fn into_bignum<B>(self) -> B
+    pub fn into_bignum<B>(self) -> B
     where
         B: BigNum,
     {
@@ -254,10 +238,11 @@ impl<let N: u32> ScalarFieldTrait for ScalarField<N> {
         result
     }
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
-    fn get(self, idx: u32) -> u8 {
+
+    pub fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }
 }

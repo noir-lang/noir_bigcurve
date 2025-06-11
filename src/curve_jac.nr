@@ -2,7 +2,8 @@ use bignum::BigNum;
 
 use crate::BigCurve;
 use crate::CurveParamsTrait;
-use crate::scalar_field::{ScalarField, ScalarFieldTrait};
+use crate::scalar_field::ScalarField;
+
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
 /// 
 /// # Representation

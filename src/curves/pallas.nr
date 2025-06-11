@@ -55,12 +55,12 @@ pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, Pallas_Fr, Pallas_Fq};
+    use bignum::{BigNum, Pallas_Fq, Pallas_Fr};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
 
-    use super::{Pallas, PALLAS_SCALAR_SLICES, PallasScalar, Pallas_Params};
+    use super::{Pallas, Pallas_Params, PALLAS_SCALAR_SLICES, PallasScalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {

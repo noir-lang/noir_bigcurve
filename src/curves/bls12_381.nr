@@ -67,13 +67,13 @@ pub type BLS12_381 = BigCurve<BLS12_381_Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, BLS12_381_Fr, BLS12_381_Fq};
+    use bignum::{BigNum, BLS12_381_Fq, BLS12_381_Fr};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
 
-    use super::{BLS12_381, BLS12_381Scalar,BLS12_381_SCALAR_SLICES, BLS12_381_Params};
-    
+    use super::{BLS12_381, BLS12_381_Params, BLS12_381_SCALAR_SLICES, BLS12_381Scalar};
+
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
         let x = BLS12_381_Fr::zero();

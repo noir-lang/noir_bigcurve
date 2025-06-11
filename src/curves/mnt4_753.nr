@@ -93,7 +93,7 @@ pub type MNT4_753 = BigCurve<MNT4_753_Fq, MNT4_753_Params>;
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, MNT4_753_Fr, MNT4_753_Fq};
+    use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;

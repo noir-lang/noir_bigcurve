@@ -75,9 +75,7 @@ mod test {
 
     use crate::BigCurveTrait;
 
-    use super::{
-        Secp256r1,  Secp256r1_Params, SECP256r1_SCALAR_SLICES, Secp256r1Scalar,
-    };
+    use super::{Secp256r1, Secp256r1_Params, SECP256r1_SCALAR_SLICES, Secp256r1Scalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {

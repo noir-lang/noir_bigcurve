@@ -83,7 +83,7 @@ mod test {
 
     use crate::BigCurveTrait;
     use super::Secp384r1;
-    use super::{Secp384r1_Params};
+    use super::Secp384r1_Params;
     use super::SECP384r1_SCALAR_SLICES;
     use super::Secp384r1Scalar;
 

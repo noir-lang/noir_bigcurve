@@ -1372,7 +1372,7 @@ pub(crate) comptime fn derive_curve_impl(
                 let scalar: ScalarField<NScalarSlices> =
                     crate::scalar_field::ScalarFieldTrait::conditional_select(crate::scalar_field::ScalarFieldTrait::zero(), scalar, self.is_infinity);
 
-                let T: crate::PointTable<$field_type> = crate::PointTable::new_with_hint(
+                let T: crate::PointTable<$field_type> = crate::PointTable::new_with_hint::<$params_type>(
                     input,
                     [
                         transcript[0],

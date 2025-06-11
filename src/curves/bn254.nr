@@ -1,4 +1,5 @@
 use crate::BigCurve;
+use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 
@@ -48,6 +49,7 @@ impl CurveParamsTrait<BN254_Fq> for BN254Params {
 
 pub global BN254_SCALAR_SLICES: u32 = 64;
 pub type BN254 = BigCurve<BN254_Fq, BN254Params>;
+pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 
 mod test {

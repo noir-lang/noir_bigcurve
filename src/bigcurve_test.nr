@@ -5,17 +5,14 @@ use bignum::BigNum;
 use crate::BigCurveTrait;
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
-use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
-use crate::curves::bn254::{BN254, BN254Params};
+use crate::curves::bn254::{BN254, BN254J, BN254Params};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::PointTable;
 use crate::scalar_field::ScalarField;
 
 use bignum::BN254_Fq;
 use bignum::MNT6_753_Fq;
-
-type BN254J = CurveJ<BN254_Fq, BN254Params>;
 
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
     let s = (P.mul(scalar));
@@ -38,7 +35,7 @@ fn test_mul() {
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
     ); // p - 2
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
 
@@ -101,7 +98,7 @@ fn test_mul_by_0() {
     let scalar: ScalarField<64> = ScalarField::from(0); // p - 2
     let foo: Field = ScalarField::into(scalar);
     assert(foo == 0);
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
     assert(result.is_infinity == true);
@@ -114,7 +111,7 @@ fn test_mul_a_point_at_infinity() {
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
     ); // p - 2
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
     assert(result.is_infinity == true);
@@ -123,7 +120,7 @@ fn test_mul_a_point_at_infinity() {
 #[test]
 fn test_mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P: BN254J = CurveJ::one();
+    let P = BN254J::one();
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 
@@ -133,8 +130,8 @@ fn test_mul_jac() {
 }
 
 unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
-    let One: BN254J = CurveJ::one();
-    let Two: BN254J = CurveJ {
+    let One = BN254J::one();
+    let Two = BN254J {
         x: BN254_Fq::from_limbs([
             0x7816a916871ca8d3c208c16d87cfd3,
             0x44e72e131a029b85045b68181585d9,
@@ -148,7 +145,7 @@ unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
         z: BigNum::one(),
         is_infinity: false,
     };
-    let result = CurveJ::msm([One, Two.neg()], scalars);
+    let result = BN254J::msm([One, Two.neg()], scalars);
     let expected = Two.neg();
     assert(result.0 == expected);
 }
@@ -167,7 +164,7 @@ fn test_msm_jac() {
 
 #[test]
 fn test_add_dbl() {
-    let P: BN254J = CurveJ::one();
+    let P = BN254J::one();
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
     let rhs = unsafe { P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
     assert(lhs == rhs);
@@ -176,7 +173,7 @@ fn test_add_dbl() {
 #[test]
 fn test_transcript() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let P2 = P.dbl();
 
@@ -216,7 +213,7 @@ fn test_transcript() {
 #[test]
 fn test_double_with_hint() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let P2 = P.dbl();
 
@@ -245,7 +242,7 @@ fn test_double_with_hint() {
 #[test]
 fn test_incomplete_add_with_hint() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         // Q = 2P
         let Q_affine = BN254 {
@@ -261,7 +258,7 @@ fn test_incomplete_add_with_hint() {
             ]),
             is_infinity: false,
         };
-        let Q = CurveJ::from(Q_affine);
+        let Q = BN254J::from(Q_affine);
         let R = P.incomplete_add(Q);
 
         let P_affine = BN254::one();
@@ -284,7 +281,7 @@ fn test_incomplete_add_with_hint() {
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
 
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let lhs = P.dbl().0.dbl().0;
         let rhs = P.dbl().0.incomplete_add(P).0.incomplete_add(P).0;
@@ -312,10 +309,10 @@ fn test_add() {
             is_infinity: false,
         };
 
-        let result = CurveJ::from(P.add(Q));
+        let result = BN254J::from(P.add(Q));
 
-        let P_j = CurveJ::from(P);
-        let Q_j = CurveJ::from(Q);
+        let P_j = BN254J::from(P);
+        let Q_j = BN254J::from(Q);
         let expected = P_j.add(Q_j).0;
 
         assert(result.eq(expected));
@@ -323,30 +320,30 @@ fn test_add() {
         // doubling
         let Q = BN254::one();
 
-        let result = CurveJ::from(P.add(Q));
+        let result = BN254J::from(P.add(Q));
         let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
         let Q = P.neg();
-        let result = CurveJ::from(P.add(Q));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(P.add(Q));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
 
         // lhs infinity
         let P = BN254::point_at_infinity();
-        let result = CurveJ::from(P.add(Q));
-        let expected = CurveJ::from(Q);
+        let result = BN254J::from(P.add(Q));
+        let expected = BN254J::from(Q);
         assert(result.eq(expected));
 
         // rhs infinity
-        let result = CurveJ::from(Q.add(P));
+        let result = BN254J::from(Q.add(P));
         assert(result.eq(expected));
 
         // both infinity
         let Q = BN254::point_at_infinity();
-        let result = CurveJ::from(Q.add(P));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(Q.add(P));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
 }
@@ -371,10 +368,10 @@ fn test_sub() {
             is_infinity: false,
         };
 
-        let result = CurveJ::from(P.sub(Q));
+        let result = BN254J::from(P.sub(Q));
 
-        let P_j = CurveJ::from(P);
-        let Q_j = CurveJ::from(Q);
+        let P_j = BN254J::from(P);
+        let Q_j = BN254J::from(Q);
         let expected = P_j.sub(Q_j).0;
 
         assert(result.eq(expected));
@@ -382,30 +379,30 @@ fn test_sub() {
         // doubling
         let Q = BN254::one();
 
-        let result = CurveJ::from(P.sub(Q.neg()));
+        let result = BN254J::from(P.sub(Q.neg()));
         let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
-        let result = CurveJ::from(P.sub(Q));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(P.sub(Q));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
 
         // lhs infinity
         let P = BN254::point_at_infinity();
-        let result = CurveJ::from(P.sub(Q));
-        let expected = CurveJ::from(Q.neg());
+        let result = BN254J::from(P.sub(Q));
+        let expected = BN254J::from(Q.neg());
         assert(result.eq(expected));
 
         // rhs infinity
-        let result = CurveJ::from(Q.sub(P));
+        let result = BN254J::from(Q.sub(P));
         let expected = expected.neg();
         assert(result.eq(expected));
 
         // both infinity
         let Q = BN254::point_at_infinity();
-        let result = CurveJ::from(Q.sub(P));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(Q.sub(P));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
 }
@@ -413,7 +410,7 @@ fn test_sub() {
 #[test]
 fn test_make_table() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P: BN254J = BN254J::one();
 
         let mut transcript: [JTranscript<BN254_Fq>] = &[];
         let T: curve_jac::PointTable<BN254_Fq> = curve_jac::PointTable::new(P);

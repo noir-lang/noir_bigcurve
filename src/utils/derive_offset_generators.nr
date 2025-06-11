@@ -86,32 +86,6 @@ impl CurveParamsTrait<BLS12_381_Fq> for BLS381PartialCurveParams {
     }
 }
 
-pub struct Curve25519PartialCurveParams {}
-// impl CurveParamsTrait<ED25519BN> for Curve25519PartialCurveParams {
-//     fn a() -> ED25519BN {
-//         BigNum { limbs: [486662, 0, 0] }
-//     }
-//     fn b() -> ED25519BN {
-//         BigNum { limbs: [1, 0, 0] }
-//     }
-
-//     fn one() -> [ED25519BN; 2] {
-//         let mut y: ED25519BN = BigNum::from_limbs( [0x3d4d7e6d7c61b229e9c5a27eced3d9, 0x19a1b8a086b4e01edd2c7748d14c92, 0x20ae],
-//         );
-
-//         let mut x: ED25519BN = BigNum { limbs: [9, 0, 0] };
-//         [x, y]
-//     }
-
-//     fn offset_generator_final() -> [ED25519BN; 2] {
-//         panic(f"generator does not exist!")
-//     }
-
-//     fn offset_generator() -> [ED25519BN; 2] {
-//         panic(f"generator does not exist!")
-//     }
-// }
-
 pub struct Secp256r1PartialCurveParams {}
 impl CurveParamsTrait<Secp256r1_Fr> for Secp256r1PartialCurveParams {
     fn a() -> Secp256r1_Fr {

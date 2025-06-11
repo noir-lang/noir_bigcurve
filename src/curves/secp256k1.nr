@@ -66,7 +66,7 @@ mod test {
     use bignum::{BigNum, Secp256k1_Fq, Secp256k1_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
 
     use super::{Secp256k1, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
 

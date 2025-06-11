@@ -56,7 +56,7 @@ mod test {
     use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
     use super::{Vesta, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]

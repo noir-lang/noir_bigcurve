@@ -70,7 +70,7 @@ mod test {
     use bignum::{BigNum, BLS12_381_Fr};
     use std::ops::Neg;
 
-    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use crate::BigCurveTrait;
 
     use super::BLS12_381;
     use super::BLS12_381_SCALAR_SLICES;

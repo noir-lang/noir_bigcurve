@@ -68,10 +68,10 @@ mod test {
 
     use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
 
-    use super::{SECP256k1_SCALAR_SLICES, Secp256k1, Secp256k1Scalar};
+    use super::{Secp256k1, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
 
     #[test]
-    fn test_secp256k1_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = Secp256k1_Fq::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
@@ -80,7 +80,7 @@ mod test {
     }
 
     #[test]
-    fn test_secp256k1_offset_generators() {
+    fn test_offset_generators() {
         let one = Secp256k1::one();
         let negone = Secp256k1_Fr::one().neg();
         let scalar = Secp256k1Scalar::from_bignum(negone);
@@ -89,4 +89,28 @@ mod test {
         assert(final.eq(one.neg()));
     }
 
+    #[test]
+    fn test_hash_to_curve() {
+        let r = Secp256k1::hash_to_curve("hello world".as_bytes());
+
+        r.validate_on_curve();
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = Secp256k1_Fr::from(4);
+        let p_minus_4_fr = Secp256k1_Fr::modulus() - four;
+        let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - Secp256k1_Fr::one();
+        let p_minus_5 = Secp256k1Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = Secp256k1::one();
+        let b = a.neg();
+        let mut points = [a, b];
+
+        let result =
+            Secp256k1::evaluate_linear_expression(points, scalars, [Secp256k1::one().neg()]);
+
+        assert(result.is_infinity);
+    }
 }

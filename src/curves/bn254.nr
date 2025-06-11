@@ -53,7 +53,6 @@ pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 mod test {
     use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
     use bignum::{BigNum, BN254_Fq};
-    use std::ops::Neg;
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Scalar};
 
@@ -67,11 +66,35 @@ mod test {
     }
 
     #[test]
-    fn test_bn254_offset_generators() {
+    fn test_offset_generators() {
         let one = BN254::one();
         let scalar = BN254Scalar::from(-1);
         let final = one.mul(scalar);
 
         assert(final.eq(one.neg()));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = BN254::hash_to_curve("hello world".as_bytes());
+
+        r.validate_on_curve();
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = BN254_Fq::from(4);
+        let p_minus_4_fr = BN254_Fq::modulus() - four;
+        let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
+        let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = BN254::one();
+        let b = a.neg();
+        let mut points = [a, b];
+
+        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+
+        assert(result.is_infinity);
     }
 }

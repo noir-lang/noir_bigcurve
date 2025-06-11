@@ -103,7 +103,7 @@ mod test {
     use super::MNT4_753Scalar;
 
     #[test]
-    fn test_mnt4_753_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = MNT4_753_Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
@@ -112,7 +112,7 @@ mod test {
     }
 
     #[test]
-    fn test_mnt4_753_offset_generators() {
+    fn test_offset_generators() {
         let one = MNT4_753::one();
         let negone = MNT4_753_Fr::one().neg();
         let scalar = MNT4_753Scalar::from_bignum(negone);
@@ -120,5 +120,28 @@ mod test {
 
         assert(final.eq(one.neg()));
     }
-    
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = MNT4_753::hash_to_curve("hello world".as_bytes());
+
+        r.validate_on_curve();
+    }
+
+    #[test]
+    fn test_msm() {
+        let mut four = MNT4_753_Fr::from(4);
+        let p_minus_4_fr = MNT4_753_Fr::modulus() - four;
+        let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - MNT4_753_Fr::one();
+        let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = MNT4_753::one();
+        let b = a.neg();
+        let mut points = [a, b];
+
+        let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
+
+        assert(result.is_infinity);
+    }
 }

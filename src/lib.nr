@@ -12,9 +12,7 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-/**
- * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
- **/
+/// Implements an elliptic curve over a prime field that is not the circuit's native field.
 pub struct BigCurve<B, CurveParams> {
     pub x: B,
     pub y: B,
@@ -29,15 +27,34 @@ pub trait CurveParamsTrait<B: BigNum> {
     fn a() -> B;
 }
 
-trait BigCurveTrait {
+pub trait BigCurveTrait {
+    /// Returns the negation of the point (i.e., the additive inverse on the curve).
     fn neg(self) -> Self;
+
+    /// Returns the point at infinity (the identity element of the curve group).
     fn point_at_infinity() -> Self;
+
+    /// Returns a generator point offset by a fixed value (implementation-specific).
     fn offset_generator() -> Self;
+
+    /// Returns the final offset generator point (implementation-specific).
     fn offset_generator_final() -> Self;
+
+    /// Returns the canonical generator point of the curve.
     fn one() -> Self;
+
+    /// Conditionally selects between `lhs` and `rhs` based on the boolean `predicate`.
+    ///
+    /// Returns `lhs` if `predicate` is false, otherwise returns `rhs`.
     fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
+
+    /// Validates that the point lies on the curve. May panic or fail if invalid.
     fn validate_on_curve(self);
+
+    /// Multiplies the point by a scalar value, returning the resulting point.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
+
+    /// Hashes the provided `seed` to a point on the curve.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 }
 
@@ -52,9 +69,6 @@ where
         BigCurve { x: r.0, y: r.1, is_infinity: false }
     }
 
-    /**
-    * @brief negate a point
-    **/
     fn neg(self) -> Self {
         BigCurve { x: self.x, y: self.y.neg(), is_infinity: self.is_infinity }
     }
@@ -123,17 +137,15 @@ where
     B: BigNum,
 {
 
-    /**
-     * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
-     * @description Only uses incomplete formulae.
-     * With our use of offset generators, an HONEST PROVER should never need to handle edge cases.
-     * Therefore we can sacrifice completeness for cheap soundness. Instead of handling edge cases,
-     * we simply assert that they do not exist by validating x2 != x1
-     * @note This method minimizes the number of calls to `evaluate_quadratic_expression`,
-     * which is NOT the same as minimizing the number of multiplications.
-     * The expensive operation in BigNum is the modular reduction.
-     * e.g. (a * b + c * d = e mod p) is not much more expensive than (a * b = c mod p)
-     **/
+    /// Adds two points together using an `AffineTranscript` that contains inverses and output witnesses.
+    ///
+    /// Only incomplete formulae are used. With the use of offset generators, an honest prover should never
+    /// need to handle edge cases. Therefore, completeness is sacrificed for cheap soundness: instead of
+    /// handling edge cases, the function asserts that they do not exist by validating `x2 != x1`.
+    ///
+    /// This method minimizes the number of calls to `evaluate_quadratic_expression`, which is not the same
+    /// as minimizing the number of multiplications. The expensive operation in `BigNum` is the modular
+    /// reduction. For example, `(a * b + c * d = e mod p)` is not much more expensive than `(a * b = c mod p)`.
     fn incomplete_add_with_hint(self, other: Self, transcript: AffineTranscript<B>) -> Self {
         let x1: B = self.x;
         let y1: B = self.y;
@@ -472,11 +484,10 @@ where
         result
     }
 
-    /**
-     * @brief Double a point, using an AffineTranscript that contains inverses and output witnesses
-     * @note This method minimizes the number of calls to `evalute_quadratic_expression`,
-     * which is NOT the same as minimizing the number of multiplications.
-     **/
+    /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
+    ///
+    /// This method is optimized to minimize the number of calls to `evaluate_quadratic_expression`,
+    /// which is not necessarily the same as minimizing the number of multiplications.
     fn double_with_hint(self, transcript: AffineTranscript<B>) -> Self {
         let x1: B = self.x;
         let y1: B = self.y;
@@ -525,9 +536,20 @@ where
         BigCurve { x: x3, y: y3, is_infinity: false }
     }
 
-    /**
-     * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
-     **/
+    /// Performs an ECC scalar multiplication using an [AffineTranscript] generated via unconstrained functions.
+    ///
+    /// # Arguments
+    ///
+    /// * `transcript` - The affine transcript used for the operation.
+    /// * `scalar` - The scalar value to multiply with the elliptic curve point.
+    ///
+    /// # Returns
+    ///
+    /// The result of the scalar multiplication as an elliptic curve point.
+    ///
+    /// # Note
+    ///
+    /// This function assumes the transcript is generated using unconstrained functions.
     fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32>(
         self,
         scalar: ScalarField<NScalarSlices>,
@@ -821,9 +843,6 @@ where
     }
 }
 
-/**
- * @brief are two Affine points equal?
- **/
 impl<B, CurveParams> std::cmp::Eq for BigCurve<B, CurveParams>
 where
     B: BigNum,
@@ -836,16 +855,16 @@ where
     }
 }
 
-/**
- * @brief A lookup table we use when performing scalar multiplications.
- * @description We slice scalar multiplier into 4 bit chunks represented
- * in windowed non-adjacent form ([-15, -13, ..., 15])
- * We compute a table of point multiples that map to the 4-bit WNAF values T = ([-15[P], -13[P], ..., 15[P]])
- * We set an accumulator to equal T[most significant WNAF slice]
- * We then iterate over our remaining bit slices (starting with most significant slice)
- * For each iteration `i` we double the accumulator 4 times and then add `T[slice[i]]` into the accumulator.
- * For small multiscalar multiplications (i.e. <512 points) this produces the minimal number of addition operations.
- **/
+/// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
+///
+/// The scalar multiplier is sliced into 4-bit chunks, each represented in WNAF (values in the range [-15, -13, ..., 15]).
+/// A table `T` is computed containing point multiples corresponding to these 4-bit WNAF values: `T = ([-15[P], -13[P], ..., 15[P]])`.
+///
+/// The accumulator is initialized with `T[most significant WNAF slice]`.
+/// For each remaining slice (starting from the most significant), the accumulator is doubled 4 times,
+/// then `T[slice[i]]` is added to the accumulator.
+///
+/// For small multiscalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
 struct PointTable<B> {
     x: [B; 16],
     y: [B; 16],
@@ -856,10 +875,16 @@ impl<B: BigNum> PointTable<B> {
         PointTable { x: [B::zero(); 16], y: [B::zero(); 16] }
     }
 
-    /**
-     * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
-     * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
-     **/
+    /// Constructs a `PointTable` from an input point and an `AffineTranscript` containing the required modular inverses.
+    ///
+    /// # Arguments
+    ///
+    /// * `point` - The input point to be used for constructing the table.
+    /// * `transcript` - An `AffineTranscript` object that holds the necessary modular inverses.
+    ///
+    /// # Details
+    ///
+    /// See [`CurveJ::mul`] for an example of how `AffineTranscript` objects are generated and used.
     pub(crate) fn new_with_hint<CurveParams>(
         P: BigCurve<B, CurveParams>,
         transcript: [AffineTranscript<B>; 8],
@@ -887,11 +912,11 @@ impl<B: BigNum> PointTable<B> {
         result
     }
 
-    /**
-     * @brief get a value out of the lookup table
-     * @description if the backend has an efficient implementation of memory lookups,
-     * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
-     **/
+    /// Retrieves a value from the lookup table.
+    ///
+    /// If the backend supports efficient memory lookups, this operation can be highly efficient.
+    /// For example, using the barretenberg backend, lookups on 256-bit curves may require only
+    /// around 12 constraints.
     pub(crate) fn get<CurveParams>(self, idx: u32) -> BigCurve<B, CurveParams> {
         BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
     }

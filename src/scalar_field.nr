@@ -1,18 +1,23 @@
 use bignum::BigNum;
 
-/**
- * @brief ScalarField represents a scalar multiplier as a sequence of 4-bit slices
- * @details There is nuance to ScalarField, because twisted edwards curves generally have prime group orders that easily fit into a Field
- *          We can therefore obtain cheap conversions by simply summing up the bit slices and validate they equal the input scalar
- *          However...when converting arbitrary field elements (i.e. scalars that are multiples of a TE curve group order),
- *          we must perform additional checks when converting into 4-bit slices, as we must validate that the sum of the slices is smaller than the Field modulus (when evaluated over the integers)
- *          This is expensive and we would rather not do it! therefore ScalarField<N> is flexible.
- *          ScalarField<63> enables cheap bitslice converions for scalar multipliers that must be <2^{252}
- *          ScalarField<64> enables bitslice conversions for arbitrary field elements
- *
- *          N.B. ScalarField bit values are not constrained to be smaller than the TE curve group order.
- *          ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
- **/
+/// Represents a scalar multiplier as a sequence of 4-bit slices.
+///
+/// # Overview
+/// `ScalarField` efficiently encodes scalars for twisted Edwards curve operations. Since these curves
+/// typically have prime group orders that fit within a field element, scalars can often be reconstructed
+/// from their 4-bit slices by summing the slices and verifying equality with the original scalar.
+///
+/// For arbitrary field elements (scalars that may be multiples of the curve's group order), additional
+/// validation is required. In these cases, the sum of the 4-bit slices, interpreted as an integer,
+/// must be less than the field modulus. This check is computationally expensive and avoided when possible.
+///
+/// The `ScalarField<N>` type is flexible:
+/// - `ScalarField<63>`: Efficient bitslice conversions for scalars less than 2^252.
+/// - `ScalarField<64>`: Supports bitslice conversions for arbitrary field elements.
+///
+/// **Note:** The bit values in `ScalarField` are not constrained to be less than the curve's group order.
+/// This type is intended for use in scalar multiplication, where all operations are performed modulo the
+/// curve order.
 pub struct ScalarField<let N: u32> {
     pub(crate) base4_slices: [u8; N],
     pub(crate) skew: bool,
@@ -91,11 +96,11 @@ where
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
-    /**
-     * @brief construct from a field element
-     * @details if N >= 64 we perform extra checks to ensure the slice decomposition represents the same integral value as the input
-     *          (e.g. sum of slices != x + modulus)
-     **/
+    /// Constructs an instance from a field element.
+    ///
+    /// If `N >= 64`, additional checks are performed to ensure that the slice decomposition
+    /// accurately represents the same integral value as the input. For example, it verifies
+    /// that the sum of the slices is not equal to `x + modulus`.
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
         let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };

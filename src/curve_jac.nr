@@ -5,18 +5,18 @@ use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
-/// 
+///
 /// # Representation
 /// - **Jacobian form:** (X, Y, Z)
 /// - **Affine form:** (x, y)
-/// - **Relation:** x = X / Z², y = Y / Z³
+/// - **Relation:** x = X / Z^2, y = Y / Z^3
 ///
 /// # Purpose
 /// This class is designed to speed up witness generation when optimally constraining elliptic curve operations.
-/// 
+///
 /// # Motivation
 /// - Constraints are best constructed in affine coordinates due to fewer field multiplications (3 vs ~14 for Jacobian).
-/// - However, affine coordinates require one modular inverse per group operation, which is expensive over a non-native field (≈2D multiplications, where D is the field bit-width).
+/// - However, affine coordinates require one modular inverse per group operation, which is expensive over a non-native field (~2D multiplications, where D is the field bit-width).
 ///
 /// # Solution
 /// - Perform all computations in unconstrained functions using Jacobian coordinates (no inverses required).

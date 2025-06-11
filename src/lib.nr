@@ -12,7 +12,6 @@ use crate::curve_jac::CurveJ;
 use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 
-
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 pub struct BigCurve<B, CurveParams> {
     pub x: B,
@@ -27,7 +26,6 @@ pub trait CurveParamsTrait<B: BigNum> {
     fn b() -> B;
     fn a() -> B;
 }
-
 
 pub trait BigCurveTrait {
     /// Returns the negation of the point (i.e., the additive inverse on the curve).
@@ -857,7 +855,6 @@ where
     }
 }
 
-
 /// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
 ///
 /// The scalar multiplier is sliced into 4-bit chunks, each represented in WNAF (values in the range [-15, -13, ..., 15]).
@@ -879,14 +876,14 @@ impl<B: BigNum> PointTable<B> {
     }
 
     /// Constructs a `PointTable` from an input point and an `AffineTranscript` containing the required modular inverses.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `point` - The input point to be used for constructing the table.
     /// * `transcript` - An `AffineTranscript` object that holds the necessary modular inverses.
-    /// 
+    ///
     /// # Details
-    /// 
+    ///
     /// See [`CurveJ::mul`] for an example of how `AffineTranscript` objects are generated and used.
     pub(crate) fn new_with_hint<CurveParams>(
         P: BigCurve<B, CurveParams>,

@@ -98,7 +98,7 @@ mod test {
 
     use crate::BigCurveTrait;
 
-    use super::{MNT6_753, MNT6_753_SCALAR_SLICES, MNT6_753Scalar};
+    use super::{MNT6_753, MNT6_753_Params, MNT6_753_SCALAR_SLICES, MNT6_753Scalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -142,6 +142,14 @@ mod test {
         let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // MNT6-753 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT6_753_Fq, MNT6_753_Params>(
+            1,
+        );
     }
 
 }

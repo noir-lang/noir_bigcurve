@@ -56,7 +56,7 @@ mod test {
     use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
 
-    use super::{BN254, BN254_SCALAR_SLICES, BN254Scalar};
+    use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -98,5 +98,13 @@ mod test {
         let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test]
+    unconstrained fn verify_offset_generators() {
+        // BN254 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params>(
+            1,
+        );
     }
 }

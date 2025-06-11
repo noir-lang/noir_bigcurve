@@ -83,6 +83,7 @@ mod test {
 
     use crate::BigCurveTrait;
     use super::Secp384r1;
+    use super::Secp384r1_Params;
     use super::SECP384r1_SCALAR_SLICES;
     use super::Secp384r1Scalar;
 
@@ -128,6 +129,14 @@ mod test {
             Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Secp384r1 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params>(
+            1,
+        );
     }
 
 }

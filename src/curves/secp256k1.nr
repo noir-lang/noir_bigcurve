@@ -68,7 +68,7 @@ mod test {
 
     use crate::BigCurveTrait;
 
-    use super::{Secp256k1, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
+    use super::{Secp256k1, Secp256k1_Params, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -112,5 +112,13 @@ mod test {
             Secp256k1::evaluate_linear_expression(points, scalars, [Secp256k1::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Secp256k1 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, Secp256k1_Params>(
+            1,
+        );
     }
 }

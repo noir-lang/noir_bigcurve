@@ -5,6 +5,7 @@ use crate::scalar_field::ScalarField;
 use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 pub use bignum::{Vesta_Fq, Vesta_Fr};
+use crate::BigCurveTrait;
 
 pub struct Vesta_Params {}
 impl CurveParamsTrait<Vesta_Fq> for Vesta_Params {

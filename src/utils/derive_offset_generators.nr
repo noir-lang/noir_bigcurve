@@ -467,17 +467,15 @@ where
     let a = Curve::a();
     let b = Curve::b();
     let one = Curve::one();
-    
+
     let input: BigCurve<Fq, Curve> = BigCurve::one();
     input.validate_on_curve();
 
     let (offset_generator_initial, offset_generator_final) =
         compute_offset_generators::<Fq, Curve, NScalarSlices>(cofactor);
-    
+
     println(f"pub struct {curvestr} {{}}");
-    println(
-        f"impl CurveParamsTrait<{bignumstr}> for {curvestr} {{",
-    );
+    println(f"impl CurveParamsTrait<{bignumstr}> for {curvestr} {{");
 
     println(f"  fn a() -> {bignumstr} {{ {a} }}");
     println(f"  fn b() -> {bignumstr} {{ {b} }}");

@@ -482,8 +482,7 @@ where
 }
 
 unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let J: u32, let NScalarSlices: u32>(
-    n: u32,
-    paramstr: str<K>,
+    bignumstr: str<K>,
     curvestr: str<J>,
     cofactor: Field,
 )
@@ -494,26 +493,26 @@ where
     let a = Curve::a();
     let b = Curve::b();
     let one = Curve::one();
-
+    
     let input: BigCurve<Fq, Curve> = BigCurve::one();
     input.validate_on_curve();
 
     let (offset_generator_initial, offset_generator_final) =
         compute_offset_generators::<Fq, Curve, NScalarSlices>(cofactor);
-
+    
     println(f"pub struct {curvestr} {{}}");
     println(
-        f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {{",
+        f"impl CurveParamsTrait<{bignumstr}> for {curvestr} {{",
     );
 
-    println(f"  fn a() -> BigNum<{n}, {paramstr}> {{ {a} }}");
-    println(f"  fn b() -> BigNum<{n}, {paramstr}> {{ {b} }}");
-    println(f"  fn one() -> [BigNum<{n}, {paramstr}>; 2] {{ {one} }}");
+    println(f"  fn a() -> {bignumstr} {{ {a} }}");
+    println(f"  fn b() -> {bignumstr} {{ {b} }}");
+    println(f"  fn one() -> [{bignumstr}; 2] {{ {one} }}");
     println(
-        f"  fn offset_generator() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_initial} }}",
+        f"  fn offset_generator() -> [{bignumstr}; 2] {{ {offset_generator_initial} }}",
     );
     println(
-        f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_final} }}",
+        f"  fn offset_generator_final() -> [{bignumstr}; 2] {{ {offset_generator_final} }}",
     );
     println("}}");
 }
@@ -522,30 +521,27 @@ where
 fn test_compute_and_print_offset_generators() {
     unsafe {
         compute_and_print_offset_generators::<BN254_Fq, BN254PartialCurveParams, _, _, 64>(
-            3,
-            "BN254_Fq_Params",
+            "BN254_Fq",
             "BN254PartialCurveParams",
             1,
         );
-        // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>(3, "Pallas_Fq_Params", "Pallas_Params", 1);
-        // compute_and_print_offset_generators::<VestaBN, VestaPartialCurveParams, _, _, 64>(3, "Vesta_Fq_Params", "Vesta_Params", 1);
+        // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>("Pallas_Fq", "Pallas_Params", 1);
+        // compute_and_print_offset_generators::<VestaBN, VestaPartialCurveParams, _, _, 64>("Vesta_Fq", "Vesta_Params", 1);
         // compute_and_print_offset_generators::<BLS377BN, BLS377PartialCurveParams, _, _, 64>(
-        //     4,
-        //     "BLS12_377_Fq_Params",
+        //     "BLS12_377_Fq"
         //     "BLS12_377_Params",
         //     0x170b5d44300000000000000000000000
         // );
         // compute_and_print_offset_generators::<BLS381BN, BLS381PartialCurveParams, _, _, 64>(
-        //     4,
-        //     "BLS12_381_Fq_Params",
+        //     "BLS12_381_Fq",
         //     "BLS12_381_Params",
         //     0x396C8C005555E1568C00AAAB0000AAAB
         // );
-        // compute_and_print_offset_generators::<Mnt4BN, Mnt4PartialCurveParams, _, _, 189>(7, "MNT4_753_Fq_Params", "MNT4_753_Params", 1);
-        // compute_and_print_offset_generators::<Mnt6BN, Mnt6PartialCurveParams, _, _, 189>(7, "MNT6_753_Fq_Params", "MNT6_753_Params", 1);
-        // compute_and_print_offset_generators::<Secp256k1BN, Secp256k1PartialCurveParams, _, _, 65>(3, "Secp256k1_Fq_Params", "Secp256k1_Params", 1);
-        // compute_and_print_offset_generators::<Secp256r1BN, Secp256r1PartialCurveParams, _, _, 65>(3, "Secp256r1_Fq_Params", "Secp256r1_Params", 1);
-        // compute_and_print_offset_generators::<Secp384r1BN, Secp384r1PartialCurveParams, _, _, 97>(4, "Secp384r1_Fq_Params", "Secp384r1_Params", 1);
+        // compute_and_print_offset_generators::<Mnt4BN, Mnt4PartialCurveParams, _, _, 189>("MNT4_753_Fq", "MNT4_753_Params", 1);
+        // compute_and_print_offset_generators::<Mnt6BN, Mnt6PartialCurveParams, _, _, 189>("MNT6_753_Fq", "MNT6_753_Params", 1);
+        // compute_and_print_offset_generators::<Secp256k1BN, Secp256k1PartialCurveParams, _, _, 65>("Secp256k1_Fq", "Secp256k1_Params", 1);
+        // compute_and_print_offset_generators::<Secp256r1BN, Secp256r1PartialCurveParams, _, _, 65>("Secp256r1_Fq", "Secp256r1_Params", 1);
+        // compute_and_print_offset_generators::<Secp384r1BN, Secp384r1PartialCurveParams, _, _, 97>("Secp384r1_Fq", "Secp384r1_Params", 1);
         // cofactor = 0x170b5d44300000000000000000000000 booooo
     }
 }

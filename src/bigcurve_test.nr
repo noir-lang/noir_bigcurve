@@ -6,7 +6,7 @@ use crate::BigCurveTrait;
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::JTranscript;
-use crate::curves::bn254::{BN254, BN254J, BN254Params};
+use crate::curves::bn254::{BN254, BN254J};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::PointTable;
 use crate::scalar_field::ScalarField;

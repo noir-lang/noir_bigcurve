@@ -1,64 +1,18 @@
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Sub};
 
 use bignum::BigNum;
 
-use crate::{BigCurve, BigCurveTrait};
+use crate::BigCurveTrait;
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
-use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377Scalar};
-use crate::curves::bls12_381::{BLS12_381, BLS12_381Scalar};
-use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
-use crate::curves::mnt4_753::{MNT4_753, MNT4_753Scalar};
-use crate::curves::mnt6_753::{MNT6_753, MNT6_753Scalar};
-use crate::curves::pallas::{Pallas, PallasScalar};
-use crate::curves::secp256k1::{Secp256k1, Secp256k1Scalar};
-use crate::curves::secp256r1::{Secp256r1, Secp256r1Scalar};
-use crate::curves::secp384r1::{Secp384r1, Secp384r1Scalar};
-use crate::curves::vesta::{Vesta, VestaScalar};
+use crate::curves::bn254::{BN254, BN254J, BN254Params};
+use crate::curves::mnt6_753::MNT6_753;
 use crate::PointTable;
 use crate::scalar_field::ScalarField;
 
-use bignum::BLS12_377_Fr;
-use bignum::BLS12_381_Fr;
 use bignum::BN254_Fq;
-use bignum::MNT4_753_Fr;
-use bignum::{MNT6_753_Fq, MNT6_753_Fr};
-use bignum::Pallas_Fr;
-use bignum::Secp256k1_Fr;
-use bignum::Secp256r1_Fr;
-use bignum::Secp384r1_Fr;
-use bignum::Vesta_Fr;
-
-type BN254J = CurveJ<BN254_Fq, BN254Params>;
-
-fn main(x: u128) {
-    let mut foo: [u128; 12] = [0; 12];
-    foo[0] = x;
-    for i in 1..12 {
-        foo[i] = foo[i - 1] * x;
-    }
-    let P: BN254 = BigCurve {
-        x: BN254_Fq::from_limbs([foo[0], foo[1], foo[2]]),
-        y: BN254_Fq::from_limbs([foo[3], foo[4], foo[5]]),
-        is_infinity: false,
-    };
-
-    let scalar: ScalarField<64> = ScalarField::from(x as Field); // p - 2 ?
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
-    // 30768
-    // 31020
-    let mut A = P;
-    for i in 0..101 {
-        for j in 0..3 {
-            std::as_witness(transcript[i].lambda.get_limb(j) as Field);
-            std::as_witness(transcript[i].x3.get_limb(j) as Field);
-            std::as_witness(transcript[i].y3.get_limb(j) as Field);
-        }
-        A = A.double_with_hint(transcript[i]);
-    }
-}
+use bignum::MNT6_753_Fq;
 
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
     let s = (P.mul(scalar));
@@ -76,17 +30,17 @@ unconstrained fn get_transcript(
 
 #[test]
 fn test_mul() {
-    let P: BN254 = BigCurve::one();
+    let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
     ); // p - 2
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
 
     // -2
-    let mut expected: BN254 = BigCurve {
+    let mut expected = BN254 {
         x: BN254_Fq::from_limbs([
             0x7816a916871ca8d3c208c16d87cfd3,
             0x44e72e131a029b85045b68181585d9,
@@ -106,7 +60,7 @@ fn test_mul() {
 
 #[test]
 fn test_offset_foo() {
-    let P = BigCurve {
+    let P = BN254 {
         x: BN254_Fq::from_limbs([
             0x0b672a3489895d47157f096e077348,
             0x29f5f5b786660171ae9ad36f6db594,
@@ -119,7 +73,7 @@ fn test_offset_foo() {
         ]),
         is_infinity: false,
     };
-    let Q = BigCurve {
+    let Q = BN254 {
         x: BN254_Fq::from_limbs([
             0x0b672a3489895d47157f096e077348,
             0x29f5f5b786660171ae9ad36f6db594,
@@ -139,12 +93,12 @@ fn test_offset_foo() {
 
 #[test]
 fn test_mul_by_0() {
-    let P: BN254 = BigCurve::one();
+    let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(0); // p - 2
     let foo: Field = ScalarField::into(scalar);
     assert(foo == 0);
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
     assert(result.is_infinity == true);
@@ -152,12 +106,12 @@ fn test_mul_by_0() {
 
 #[test]
 fn test_mul_a_point_at_infinity() {
-    let P: BN254 = BigCurve::point_at_infinity();
+    let P = BN254::point_at_infinity();
 
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
     ); // p - 2
-    let transcript = unsafe { get_transcript(CurveJ::from(P), scalar) };
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = P.mul_with_hint(scalar, transcript);
     assert(result.is_infinity == true);
@@ -166,7 +120,7 @@ fn test_mul_a_point_at_infinity() {
 #[test]
 fn test_mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P: BN254J = CurveJ::one();
+    let P = BN254J::one();
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 
@@ -176,8 +130,8 @@ fn test_mul_jac() {
 }
 
 unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
-    let One: BN254J = CurveJ::one();
-    let Two: BN254J = CurveJ {
+    let One = BN254J::one();
+    let Two = BN254J {
         x: BN254_Fq::from_limbs([
             0x7816a916871ca8d3c208c16d87cfd3,
             0x44e72e131a029b85045b68181585d9,
@@ -191,7 +145,7 @@ unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
         z: BigNum::one(),
         is_infinity: false,
     };
-    let result = CurveJ::msm([One, Two.neg()], scalars);
+    let result = BN254J::msm([One, Two.neg()], scalars);
     let expected = Two.neg();
     assert(result.0 == expected);
 }
@@ -210,7 +164,7 @@ fn test_msm_jac() {
 
 #[test]
 fn test_add_dbl() {
-    let P: BN254J = CurveJ::one();
+    let P = BN254J::one();
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
     let rhs = unsafe { P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
     assert(lhs == rhs);
@@ -219,7 +173,7 @@ fn test_add_dbl() {
 #[test]
 fn test_transcript() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let P2 = P.dbl();
 
@@ -259,11 +213,11 @@ fn test_transcript() {
 #[test]
 fn test_double_with_hint() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let P2 = P.dbl();
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let Z_inverse = P2.1.z3.__invmod();
 
@@ -288,10 +242,10 @@ fn test_double_with_hint() {
 #[test]
 fn test_incomplete_add_with_hint() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         // Q = 2P
-        let Q_affine: BN254 = BigCurve {
+        let Q_affine = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -304,10 +258,10 @@ fn test_incomplete_add_with_hint() {
             ]),
             is_infinity: false,
         };
-        let Q = CurveJ::from(Q_affine);
+        let Q = BN254J::from(Q_affine);
         let R = P.incomplete_add(Q);
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let Z_inverse = R.1.z3.__invmod();
 
@@ -327,7 +281,7 @@ fn test_incomplete_add_with_hint() {
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
 
-        let P: BN254J = CurveJ::one();
+        let P = BN254J::one();
 
         let lhs = P.dbl().0.dbl().0;
         let rhs = P.dbl().0.incomplete_add(P).0.incomplete_add(P).0;
@@ -338,10 +292,10 @@ fn test_incomplete_add_with_hint() {
 #[test]
 fn test_add() {
     unsafe {
-        let P: BN254 = BigCurve::one();
+        let P = BN254::one();
 
         // Q = 2P
-        let Q: BN254 = BigCurve {
+        let Q = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -355,41 +309,41 @@ fn test_add() {
             is_infinity: false,
         };
 
-        let result = CurveJ::from(P.add(Q));
+        let result = BN254J::from(P.add(Q));
 
-        let P_j = CurveJ::from(P);
-        let Q_j = CurveJ::from(Q);
+        let P_j = BN254J::from(P);
+        let Q_j = BN254J::from(Q);
         let expected = P_j.add(Q_j).0;
 
         assert(result.eq(expected));
 
         // doubling
-        let Q: BN254 = BigCurve::one();
+        let Q = BN254::one();
 
-        let result = CurveJ::from(P.add(Q));
+        let result = BN254J::from(P.add(Q));
         let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
         let Q = P.neg();
-        let result = CurveJ::from(P.add(Q));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(P.add(Q));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
 
         // lhs infinity
-        let P: BN254 = BigCurve::point_at_infinity();
-        let result = CurveJ::from(P.add(Q));
-        let expected = CurveJ::from(Q);
+        let P = BN254::point_at_infinity();
+        let result = BN254J::from(P.add(Q));
+        let expected = BN254J::from(Q);
         assert(result.eq(expected));
 
         // rhs infinity
-        let result = CurveJ::from(Q.add(P));
+        let result = BN254J::from(Q.add(P));
         assert(result.eq(expected));
 
         // both infinity
-        let Q: BN254 = BigCurve::point_at_infinity();
-        let result = CurveJ::from(Q.add(P));
-        let expected = CurveJ::point_at_infinity();
+        let Q = BN254::point_at_infinity();
+        let result = BN254J::from(Q.add(P));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
 }
@@ -397,10 +351,10 @@ fn test_add() {
 #[test]
 fn test_sub() {
     unsafe {
-        let P: BN254 = BigCurve::one();
+        let P = BN254::one();
 
         // Q = 2P
-        let Q: BN254 = BigCurve {
+        let Q = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -414,41 +368,41 @@ fn test_sub() {
             is_infinity: false,
         };
 
-        let result = CurveJ::from(P.sub(Q));
+        let result = BN254J::from(P.sub(Q));
 
-        let P_j = CurveJ::from(P);
-        let Q_j = CurveJ::from(Q);
+        let P_j = BN254J::from(P);
+        let Q_j = BN254J::from(Q);
         let expected = P_j.sub(Q_j).0;
 
         assert(result.eq(expected));
 
         // doubling
-        let Q: BN254 = BigCurve::one();
+        let Q = BN254::one();
 
-        let result = CurveJ::from(P.sub(Q.neg()));
+        let result = BN254J::from(P.sub(Q.neg()));
         let expected = P_j.dbl().0;
         assert(result.eq(expected));
 
         // infinity
-        let result = CurveJ::from(P.sub(Q));
-        let expected = CurveJ::point_at_infinity();
+        let result = BN254J::from(P.sub(Q));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
 
         // lhs infinity
-        let P: BN254 = BigCurve::point_at_infinity();
-        let result = CurveJ::from(P.sub(Q));
-        let expected = CurveJ::from(Q.neg());
+        let P = BN254::point_at_infinity();
+        let result = BN254J::from(P.sub(Q));
+        let expected = BN254J::from(Q.neg());
         assert(result.eq(expected));
 
         // rhs infinity
-        let result = CurveJ::from(Q.sub(P));
+        let result = BN254J::from(Q.sub(P));
         let expected = expected.neg();
         assert(result.eq(expected));
 
         // both infinity
-        let Q: BN254 = BigCurve::point_at_infinity();
-        let result = CurveJ::from(Q.sub(P));
-        let expected = CurveJ::point_at_infinity();
+        let Q = BN254::point_at_infinity();
+        let result = BN254J::from(Q.sub(P));
+        let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
 }
@@ -456,7 +410,7 @@ fn test_sub() {
 #[test]
 fn test_make_table() {
     unsafe {
-        let P: BN254J = CurveJ::one();
+        let P: BN254J = BN254J::one();
 
         let mut transcript: [JTranscript<BN254_Fq>] = &[];
         let T: curve_jac::PointTable<BN254_Fq> = curve_jac::PointTable::new(P);
@@ -484,7 +438,7 @@ fn test_make_table() {
             affine_transcript[i] = AffineTranscript { lambda, x3, y3 };
         }
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let affine_point_table: PointTable<BN254_Fq> =
             PointTable::new_with_hint(P_affine, affine_transcript);
@@ -497,449 +451,8 @@ fn test_make_table() {
 }
 
 #[test]
-fn test_bls12_377_offset_generators() {
-    let one = BLS12_377::one();
-    let negone = BLS12_377_Fr::one().neg();
-    let scalar = BLS12_377Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_bls12_381_offset_generators() {
-    let one = BLS12_381::one();
-    let negone = BLS12_381_Fr::one().neg();
-    let scalar = BLS12_381Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_bn254_offset_generators() {
-    let one = BN254::one();
-    let scalar = BN254Scalar::from(-1);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_mnt4_753_offset_generators() {
-    let one = MNT4_753::one();
-    let negone = MNT4_753_Fr::one().neg();
-    let scalar = MNT4_753Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_mnt6_753_offset_generators() {
-    let one = MNT6_753::one();
-    let negone = MNT6_753_Fr::one().neg();
-    let scalar = MNT6_753Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_pallas_offset_generators() {
-    let one = Pallas::one();
-    let negone = Pallas_Fr::one().neg();
-    let scalar = PallasScalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_secp256k1_offset_generators() {
-    let one = Secp256k1::one();
-    let negone = Secp256k1_Fr::one().neg();
-    let scalar = Secp256k1Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_secp256r1_offset_generators() {
-    let one = Secp256r1::one();
-    let negone = Secp256r1_Fr::one().neg();
-    let scalar = Secp256r1Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_secp384r1_offset_generators() {
-    let one = Secp384r1::one();
-    let negone = Secp384r1_Fr::one().neg();
-    let scalar = Secp384r1Scalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_vesta_offset_generators() {
-    let one = Vesta::one();
-    let negone = Vesta_Fr::one().neg();
-    let scalar = VestaScalar::from_bignum(negone);
-    let final = one.mul(scalar);
-
-    assert(final.eq(one.neg()));
-}
-
-#[test]
-fn test_bls12_377_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_377_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = BLS12_377Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_bls12_381_num_scalar_slices_in_scalar_field() {
-    let x = BLS12_381_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = BLS12_381Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_bn254_num_scalar_slices_in_scalar_field() {
-    let x = BN254_Fq::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = BN254Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_mnt4_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT4_753_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = MNT4_753Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_mnt6_753_num_scalar_slices_in_scalar_field() {
-    let x = MNT6_753_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = MNT6_753Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_pallas_num_scalar_slices_in_scalar_field() {
-    let x = Pallas_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = PallasScalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_secp256k1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256k1_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = Secp256k1Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_secp256r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp256r1_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = Secp256r1Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_secp384r1_num_scalar_slices_in_scalar_field() {
-    let x = Secp384r1_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = Secp384r1Scalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_vesta_num_scalar_slices_in_scalar_field() {
-    let x = Vesta_Fr::zero();
-    let max_wnaf_bits = x.modulus_bits() + 1;
-    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-    let scalar = VestaScalar::zero();
-
-    assert(scalar_slices == scalar.len());
-}
-
-#[test]
-fn test_bls12_377_hash_to_curve() {
-    let r = BLS12_377::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_bls12_381_hash_to_curve() {
-    let r = BLS12_381::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_bn254_hash_to_curve() {
-    let r = BN254::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_mnt4_753_hash_to_curve() {
-    let r = MNT4_753::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_mnt6_753_hash_to_curve() {
-    let r = MNT6_753::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_pallas_hash_to_curve() {
-    let r = Pallas::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_secp256k1_hash_to_curve() {
-    let r = Secp256k1::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_secp256r1_hash_to_curve() {
-    let r = Secp256r1::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_secp384r1_hash_to_curve() {
-    let r = Secp384r1::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_vesta_hash_to_curve() {
-    let r = Vesta::hash_to_curve("hello world".as_bytes());
-
-    r.validate_on_curve();
-}
-
-#[test]
-fn test_bls12_377_msm() {
-    let mut four = BLS12_377_Fr::zero();
-    four.set_limb(0, 4);
-    let p_minus_4_fr = BLS12_377_Fr::modulus() - four;
-    let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
-    let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = BLS12_377::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_bls12_381_msm() {
-    let four = BLS12_381_Fr::from(4);
-    let p_minus_4_fr = BLS12_381_Fr::modulus() - four;
-    let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BLS12_381_Fr::one();
-    let p_minus_5 = BLS12_381Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = BLS12_381::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = BLS12_381::evaluate_linear_expression(points, scalars, [BLS12_381::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_bn254_msm() {
-    let four = BN254_Fq::from(4);
-    let p_minus_4_fr = BN254_Fq::modulus() - four;
-    let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
-    let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = BN254::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_mnt4_753_msm() {
-    let mut four = MNT4_753_Fr::from(4);
-    let p_minus_4_fr = MNT4_753_Fr::modulus() - four;
-    let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - MNT4_753_Fr::one();
-    let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = MNT4_753::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_mnt6_753_msm() {
-    let mut four = MNT6_753_Fr::from(4);
-
-    let p_minus_4_fr = MNT6_753_Fr::modulus() - four;
-    let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - MNT6_753_Fr::one();
-    let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = MNT6_753::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_pallas_msm() {
-    let mut four = Pallas_Fr::from(4);
-    let p_minus_4_fr = Pallas_Fr::modulus() - four;
-    let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
-    let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = Pallas::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_secp256k1_msm() {
-    let four = Secp256k1_Fr::from(4);
-    let p_minus_4_fr = Secp256k1_Fr::modulus() - four;
-    let p_minus_4 = Secp256k1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp256k1_Fr::one();
-    let p_minus_5 = Secp256k1Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = Secp256k1::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = Secp256k1::evaluate_linear_expression(points, scalars, [Secp256k1::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_secp256r1_msm() {
-    let four = Secp256r1_Fr::from(4);
-    let p_minus_4_fr = Secp256r1_Fr::modulus() - four;
-    let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp256r1_Fr::one();
-    let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = Secp256r1::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_secp384r1_msm() {
-    let four = Secp384r1_Fr::from(4);
-    let p_minus_4_fr = Secp384r1_Fr::modulus() - four;
-    let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Secp384r1_Fr::one();
-    let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = Secp384r1::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
-fn test_vesta_msm() {
-    let four = Vesta_Fr::from(4);
-    let p_minus_4_fr = Vesta_Fr::modulus() - four;
-    let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - Vesta_Fr::one();
-    let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
-    let mut scalars = [p_minus_4, p_minus_5];
-    let a = Vesta::one();
-    let b = a.neg();
-    let mut points = [a, b];
-
-    let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
-
-    assert(result.is_infinity);
-}
-
-#[test]
 fn test_bigcurve_sub_with_hint() {
-    let accumulator: MNT6_753 = BigCurve {
+    let accumulator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,
@@ -960,7 +473,7 @@ fn test_bigcurve_sub_with_hint() {
         ]),
         is_infinity: false,
     };
-    let offset_generator: MNT6_753 = BigCurve {
+    let offset_generator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,

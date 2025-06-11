@@ -53,16 +53,52 @@ pub type Vesta = BigCurve<Vesta_Fq, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 
 mod test {
-    use super::VESTA_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Vesta_Fq;
+    use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
+    use std::ops::Neg;
+
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use super::{Vesta, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]
-    fn test_vesta_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = Vesta_Fq::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == VESTA_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = Vesta::one();
+        let negone = Vesta_Fr::one().neg();
+        let scalar = VestaScalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = Vesta::hash_to_curve("hello world".as_bytes());
+
+        r.validate_on_curve();
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = Vesta_Fr::from(4);
+        let p_minus_4_fr = Vesta_Fr::modulus() - four;
+        let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - Vesta_Fr::one();
+        let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = Vesta::one();
+        let b = a.neg();
+        let mut points = [a, b];
+
+        let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
+
+        assert(result.is_infinity);
     }
 }

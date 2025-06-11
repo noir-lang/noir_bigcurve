@@ -1,4 +1,5 @@
 use crate::BigCurve;
+use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 
@@ -48,18 +49,54 @@ impl CurveParamsTrait<BN254_Fq> for BN254Params {
 
 pub global BN254_SCALAR_SLICES: u32 = 64;
 pub type BN254 = BigCurve<BN254_Fq, BN254Params>;
+pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
-// pub type Secp256r1Fr = BigNum<3, Secp256r1_Fr_Params>;
 
-// mod test {
-//     use bignum::{BigNum, BigNum};
-//     use crate::curves::secp256r1::SECP256r1_SCALAR_SLICES;
-//     #[test]
-// fn test_bn254_bits() {
-//         let x: BigNum<3, 254, BN254_Fq_Params> = BigNum::zero();
-//         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
+mod test {
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use bignum::{BigNum, BN254_Fq};
 
-//         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
-//         assert(scalar_slices == SECP256r1_SCALAR_SLICES);
-//     }
-// }
+    use super::{BN254, BN254_SCALAR_SLICES, BN254Scalar};
+
+    #[test]
+    fn check_num_scalar_slices_in_scalar_field() {
+        let x = BN254_Fq::zero();
+        let max_wnaf_bits: u32 = x.modulus_bits() + 1;
+
+        let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+        assert_eq(scalar_slices, BN254_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = BN254::one();
+        let scalar = BN254Scalar::from(-1);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = BN254::hash_to_curve("hello world".as_bytes());
+
+        r.validate_on_curve();
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = BN254_Fq::from(4);
+        let p_minus_4_fr = BN254_Fq::modulus() - four;
+        let p_minus_4 = BN254Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
+        let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = BN254::one();
+        let b = a.neg();
+        let mut points = [a, b];
+
+        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+
+        assert(result.is_infinity);
+    }
+}

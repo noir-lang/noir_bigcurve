@@ -67,9 +67,14 @@ pub type BLS12_381 = BigCurve<BLS12_381_Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
 
 mod test {
+    use bignum::{BigNum, BLS12_381_Fq, BLS12_381_Fr};
+    use std::ops::Neg;
+
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+
+    use super::BLS12_381;
     use super::BLS12_381_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::BLS12_381_Fr;
+    use super::BLS12_381Scalar;
 
     #[test]
     fn test_bls12_381_bits() {
@@ -78,5 +83,15 @@ mod test {
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == BLS12_381_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_bls12_381_offset_generators() {
+        let one = BLS12_381::one();
+        let negone = BLS12_381_Fr::one().neg();
+        let scalar = BLS12_381Scalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
     }
 }

@@ -55,10 +55,12 @@ pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
+    use bignum::{BigNum, Pallas_Fr};
+    use std::ops::Neg;
 
-    use super::PALLAS_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Pallas_Fr;
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+
+    use super::{PALLAS_SCALAR_SLICES, Pallas, PallasScalar};
 
     #[test]
     fn test_pallas_bits() {
@@ -68,4 +70,15 @@ mod test {
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == PALLAS_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_pallas_offset_generators() {
+        let one = Pallas::one();
+        let negone = Pallas_Fr::one().neg();
+        let scalar = PallasScalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
+    }
+    
 }

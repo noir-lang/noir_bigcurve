@@ -53,9 +53,11 @@ pub type Vesta = BigCurve<Vesta_Fq, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 
 mod test {
-    use super::VESTA_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Vesta_Fq;
+    use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
+    use std::ops::Neg;
+
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+    use super::{VESTA_SCALAR_SLICES , Vesta, VestaScalar};
 
     #[test]
     fn test_vesta_bits() {
@@ -64,5 +66,15 @@ mod test {
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == VESTA_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_vesta_offset_generators() {
+        let one = Vesta::one();
+        let negone = Vesta_Fr::one().neg();
+        let scalar = VestaScalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
     }
 }

@@ -70,10 +70,12 @@ pub type Secp256r1 = BigCurve<Secp256r1_Fq, Secp256r1_Params>;
 pub type Secp256r1Scalar = ScalarField<SECP256r1_SCALAR_SLICES>;
 
 mod test {
+    use bignum::{BigNum, Secp256r1_Fq, Secp256r1_Fr};
+    use std::ops::Neg;
 
-    use super::SECP256r1_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Secp256r1_Fq;
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+
+    use super::{Secp256r1, Secp256r1Scalar, SECP256r1_SCALAR_SLICES};
 
     #[test]
     fn test_secp256r1_bits() {
@@ -82,5 +84,15 @@ mod test {
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == SECP256r1_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_secp256r1_offset_generators() {
+        let one = Secp256r1::one();
+        let negone = Secp256r1_Fr::one().neg();
+        let scalar = Secp256r1Scalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
     }
 }

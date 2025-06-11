@@ -93,10 +93,14 @@ pub type MNT4_753 = BigCurve<MNT4_753_Fq, MNT4_753_Params>;
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
 
 mod test {
+    use bignum::{BigNum, MNT4_753_Fr};
+    use std::ops::Neg;
 
+    use crate::{BigCurveTrait, scalar_field::ScalarFieldTrait};
+
+    use super::MNT4_753;
     use super::MNT4_753_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::MNT4_753_Fr;
+    use super::MNT4_753Scalar;
 
     #[test]
     fn test_mnt4_753_bits() {
@@ -106,4 +110,15 @@ mod test {
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == MNT4_753_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_mnt4_753_offset_generators() {
+        let one = MNT4_753::one();
+        let negone = MNT4_753_Fr::one().neg();
+        let scalar = MNT4_753Scalar::from_bignum(negone);
+        let final = one.mul(scalar);
+
+        assert(final.eq(one.neg()));
+    }
+    
 }

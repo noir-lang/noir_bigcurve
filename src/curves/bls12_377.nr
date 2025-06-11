@@ -68,7 +68,7 @@ pub type BLS12_377 = BigCurve<BLS12_377_Fq, BLS12_377_Params>;
 pub type BLS12_377Scalar = ScalarField<BLS12_377_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, BLS12_377_Fr};
+    use bignum::{BigNum, BLS12_377_Fr, BLS12_377_Fq};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
@@ -76,6 +76,7 @@ mod test {
     use super::BLS12_377;
     use super::BLS12_377_SCALAR_SLICES;
     use super::BLS12_377Scalar;
+    use super::BLS12_377_Params;
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -119,6 +120,14 @@ mod test {
             BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params>(
+            0x170b5d44300000000000000000000000,
+        );
     }
 
 }

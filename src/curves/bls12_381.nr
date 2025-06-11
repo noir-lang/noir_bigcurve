@@ -67,15 +67,13 @@ pub type BLS12_381 = BigCurve<BLS12_381_Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, BLS12_381_Fr};
+    use bignum::{BigNum, BLS12_381_Fr, BLS12_381_Fq};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
 
-    use super::BLS12_381;
-    use super::BLS12_381_SCALAR_SLICES;
-    use super::BLS12_381Scalar;
-
+    use super::{BLS12_381, BLS12_381Scalar,BLS12_381_SCALAR_SLICES, BLS12_381_Params};
+    
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
         let x = BLS12_381_Fr::zero();
@@ -118,6 +116,14 @@ mod test {
             BLS12_381::evaluate_linear_expression(points, scalars, [BLS12_381::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params>(
+            0x396C8C005555E1568C00AAAB0000AAAB,
+        );
     }
 
 }

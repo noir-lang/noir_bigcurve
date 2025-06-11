@@ -57,7 +57,7 @@ mod test {
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
-    use super::{Vesta, VESTA_SCALAR_SLICES, VestaScalar};
+    use super::{Vesta, Vesta_Params, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -100,5 +100,13 @@ mod test {
         let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Vesta cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta_Params>(
+            1,
+        );
     }
 }

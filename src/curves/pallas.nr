@@ -55,12 +55,12 @@ pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, Pallas_Fr};
+    use bignum::{BigNum, Pallas_Fr, Pallas_Fq};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
 
-    use super::{Pallas, PALLAS_SCALAR_SLICES, PallasScalar};
+    use super::{Pallas, PALLAS_SCALAR_SLICES, PallasScalar, Pallas_Params};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -102,6 +102,14 @@ mod test {
         let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Pallas cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params>(
+            1,
+        );
     }
 
 }

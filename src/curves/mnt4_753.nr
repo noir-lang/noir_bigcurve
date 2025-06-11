@@ -93,14 +93,12 @@ pub type MNT4_753 = BigCurve<MNT4_753_Fq, MNT4_753_Params>;
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
 
 mod test {
-    use bignum::{BigNum, MNT4_753_Fr};
+    use bignum::{BigNum, MNT4_753_Fr, MNT4_753_Fq};
     use std::ops::Neg;
 
     use crate::BigCurveTrait;
 
-    use super::MNT4_753;
-    use super::MNT4_753_SCALAR_SLICES;
-    use super::MNT4_753Scalar;
+    use super::{MNT4_753, MNT4_753_Params, MNT4_753_SCALAR_SLICES, MNT4_753Scalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -143,5 +141,13 @@ mod test {
         let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
 
         assert(result.is_infinity);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // MNT4-753 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params>(
+            1,
+        );
     }
 }

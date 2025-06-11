@@ -1,6 +1,5 @@
 use bignum::BigNum;
 
-///
 /// Represents a scalar multiplier as a sequence of 4-bit slices.
 ///
 /// # Overview

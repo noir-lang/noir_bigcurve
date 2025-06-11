@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use bignum::BigNum;
 
-use crate::{BigCurve, BigCurveTrait};
+use crate::BigCurveTrait;
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
 use crate::curve_jac::CurveJ;
@@ -33,7 +33,7 @@ unconstrained fn get_transcript(
 
 #[test]
 fn test_mul() {
-    let P: BN254 = BigCurve::one();
+    let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
@@ -43,7 +43,7 @@ fn test_mul() {
     let result = P.mul_with_hint(scalar, transcript);
 
     // -2
-    let mut expected: BN254 = BigCurve {
+    let mut expected = BN254 {
         x: BN254_Fq::from_limbs([
             0x7816a916871ca8d3c208c16d87cfd3,
             0x44e72e131a029b85045b68181585d9,
@@ -63,7 +63,7 @@ fn test_mul() {
 
 #[test]
 fn test_offset_foo() {
-    let P = BigCurve {
+    let P = BN254 {
         x: BN254_Fq::from_limbs([
             0x0b672a3489895d47157f096e077348,
             0x29f5f5b786660171ae9ad36f6db594,
@@ -76,7 +76,7 @@ fn test_offset_foo() {
         ]),
         is_infinity: false,
     };
-    let Q = BigCurve {
+    let Q = BN254 {
         x: BN254_Fq::from_limbs([
             0x0b672a3489895d47157f096e077348,
             0x29f5f5b786660171ae9ad36f6db594,
@@ -96,7 +96,7 @@ fn test_offset_foo() {
 
 #[test]
 fn test_mul_by_0() {
-    let P: BN254 = BigCurve::one();
+    let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(0); // p - 2
     let foo: Field = ScalarField::into(scalar);
@@ -109,7 +109,7 @@ fn test_mul_by_0() {
 
 #[test]
 fn test_mul_a_point_at_infinity() {
-    let P: BN254 = BigCurve::point_at_infinity();
+    let P = BN254::point_at_infinity();
 
     let scalar: ScalarField<64> = ScalarField::from(
         0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
@@ -220,7 +220,7 @@ fn test_double_with_hint() {
 
         let P2 = P.dbl();
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let Z_inverse = P2.1.z3.__invmod();
 
@@ -248,7 +248,7 @@ fn test_incomplete_add_with_hint() {
         let P: BN254J = CurveJ::one();
 
         // Q = 2P
-        let Q_affine: BN254 = BigCurve {
+        let Q_affine = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -264,7 +264,7 @@ fn test_incomplete_add_with_hint() {
         let Q = CurveJ::from(Q_affine);
         let R = P.incomplete_add(Q);
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let Z_inverse = R.1.z3.__invmod();
 
@@ -295,10 +295,10 @@ fn test_incomplete_add_with_hint() {
 #[test]
 fn test_add() {
     unsafe {
-        let P: BN254 = BigCurve::one();
+        let P = BN254::one();
 
         // Q = 2P
-        let Q: BN254 = BigCurve {
+        let Q = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -321,7 +321,7 @@ fn test_add() {
         assert(result.eq(expected));
 
         // doubling
-        let Q: BN254 = BigCurve::one();
+        let Q = BN254::one();
 
         let result = CurveJ::from(P.add(Q));
         let expected = P_j.dbl().0;
@@ -334,7 +334,7 @@ fn test_add() {
         assert(result.eq(expected));
 
         // lhs infinity
-        let P: BN254 = BigCurve::point_at_infinity();
+        let P = BN254::point_at_infinity();
         let result = CurveJ::from(P.add(Q));
         let expected = CurveJ::from(Q);
         assert(result.eq(expected));
@@ -344,7 +344,7 @@ fn test_add() {
         assert(result.eq(expected));
 
         // both infinity
-        let Q: BN254 = BigCurve::point_at_infinity();
+        let Q = BN254::point_at_infinity();
         let result = CurveJ::from(Q.add(P));
         let expected = CurveJ::point_at_infinity();
         assert(result.eq(expected));
@@ -354,10 +354,10 @@ fn test_add() {
 #[test]
 fn test_sub() {
     unsafe {
-        let P: BN254 = BigCurve::one();
+        let P = BN254::one();
 
         // Q = 2P
-        let Q: BN254 = BigCurve {
+        let Q = BN254 {
             x: BN254_Fq::from_limbs([
                 0x7816a916871ca8d3c208c16d87cfd3,
                 0x44e72e131a029b85045b68181585d9,
@@ -380,7 +380,7 @@ fn test_sub() {
         assert(result.eq(expected));
 
         // doubling
-        let Q: BN254 = BigCurve::one();
+        let Q = BN254::one();
 
         let result = CurveJ::from(P.sub(Q.neg()));
         let expected = P_j.dbl().0;
@@ -392,7 +392,7 @@ fn test_sub() {
         assert(result.eq(expected));
 
         // lhs infinity
-        let P: BN254 = BigCurve::point_at_infinity();
+        let P = BN254::point_at_infinity();
         let result = CurveJ::from(P.sub(Q));
         let expected = CurveJ::from(Q.neg());
         assert(result.eq(expected));
@@ -403,7 +403,7 @@ fn test_sub() {
         assert(result.eq(expected));
 
         // both infinity
-        let Q: BN254 = BigCurve::point_at_infinity();
+        let Q = BN254::point_at_infinity();
         let result = CurveJ::from(Q.sub(P));
         let expected = CurveJ::point_at_infinity();
         assert(result.eq(expected));
@@ -441,7 +441,7 @@ fn test_make_table() {
             affine_transcript[i] = AffineTranscript { lambda, x3, y3 };
         }
 
-        let P_affine: BN254 = BigCurve::one();
+        let P_affine = BN254::one();
 
         let affine_point_table: PointTable<BN254_Fq> =
             PointTable::new_with_hint(P_affine, affine_transcript);
@@ -455,7 +455,7 @@ fn test_make_table() {
 
 #[test]
 fn test_bigcurve_sub_with_hint() {
-    let accumulator: MNT6_753 = BigCurve {
+    let accumulator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,
@@ -476,7 +476,7 @@ fn test_bigcurve_sub_with_hint() {
         ]),
         is_infinity: false,
     };
-    let offset_generator: MNT6_753 = BigCurve {
+    let offset_generator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,

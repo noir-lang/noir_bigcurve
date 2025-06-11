@@ -418,32 +418,18 @@ impl CurveParamsTrait<Vesta_Fq> for VestaPartialCurveParams {
         panic(f"generator does not exist!")
     }
 }
-/*
-(
 
-   )
-*/
-unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let J: u32, let NScalarSlices: u32>(
-    n: u32,
-    paramstr: str<K>,
-    curvestr: str<J>,
+unconstrained fn compute_offset_generators<Fq, Curve, let NScalarSlices: u32>(
     cofactor: Field,
-)
+) -> ([Fq; 2], [Fq; 2])
 where
     Fq: BigNum,
     Curve: CurveParamsTrait<Fq>,
 {
-    let a = Curve::a();
-    let b = Curve::b();
-    let one = Curve::one();
-
-    let input: BigCurve<Fq, Curve> = BigCurve::one();
-    input.validate_on_curve();
-
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
     // we only need well-defined parameters for a and b, for hash_to_curve to work
-    // (no offset gneerators needed)
+    // (no offset generators needed)
     let g: BigCurve<Fq, Curve> = BigCurve::hash_to_curve(seed);
 
     let g_init: CurveJ<Fq, Curve> = CurveJ { x: g.x, y: g.y, z: Fq::one(), is_infinity: false };
@@ -492,6 +478,29 @@ where
         offset_generator_final[1] = gen.y.__mul(zzz);
     }
 
+    (offset_generator_initial, offset_generator_final)
+}
+
+unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let J: u32, let NScalarSlices: u32>(
+    n: u32,
+    paramstr: str<K>,
+    curvestr: str<J>,
+    cofactor: Field,
+)
+where
+    Fq: BigNum,
+    Curve: CurveParamsTrait<Fq>,
+{
+    let a = Curve::a();
+    let b = Curve::b();
+    let one = Curve::one();
+
+    let input: BigCurve<Fq, Curve> = BigCurve::one();
+    input.validate_on_curve();
+
+    let (offset_generator_initial, offset_generator_final) =
+        compute_offset_generators::<Fq, Curve, NScalarSlices>(cofactor);
+
     println(f"pub struct {curvestr} {{}}");
     println(
         f"impl CurveParamsTrait<BigNum<{n}, {paramstr}>> for {curvestr} {{",
@@ -511,8 +520,6 @@ where
 
 #[test]
 fn test_compute_and_print_offset_generators() {
-
-
     unsafe {
         compute_and_print_offset_generators::<BN254_Fq, BN254PartialCurveParams, _, _, 64>(
             3,
@@ -556,19 +563,19 @@ mod tests {
     use bignum::Secp384r1_Fr;
     use bignum::Vesta_Fq;
 
-    use crate::{BigCurve, BigCurveTrait, CurveParamsTrait, curve_jac::CurveJ};
+    use crate::{BigCurve, BigCurveTrait, curve_jac::CurveJ, CurveParamsTrait};
 
-    use super::Secp256k1PartialCurveParams;
-    use super::Secp256r1PartialCurveParams;
-    use super::Secp384r1PartialCurveParams;
     use super::BLS377PartialCurveParams;
     use super::BLS381PartialCurveParams;
     use super::BN254PartialCurveParams;
     use super::Mnt4PartialCurveParams;
     use super::Mnt6PartialCurveParams;
     use super::PallasPartialCurveParams;
+    use super::Secp256k1PartialCurveParams;
+    use super::Secp256r1PartialCurveParams;
+    use super::Secp384r1PartialCurveParams;
     use super::VestaPartialCurveParams;
-    
+
     unconstrained fn verify_offset_generators<Fq, Curve>(cofactor: Field)
     where
         Fq: BigNum,
@@ -578,7 +585,7 @@ mod tests {
         let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
         // we only need well-defined parameters for a and b, for hash_to_curve to work
-        // (no offset gneerators needed)
+        // (no offset generators needed)
         let g: BigCurve<Fq, Curve> = BigCurve::hash_to_curve(seed);
 
         let g_init: CurveJ<Fq, Curve> = CurveJ { x: g.x, y: g.y, z: Fq::one(), is_infinity: false };
@@ -663,7 +670,7 @@ mod tests {
         // Secp256r1 cofactor is 1
         verify_offset_generators::<Secp256r1_Fr, Secp256r1PartialCurveParams>(1);
     }
-    
+
     #[test(should_fail_with = "generator does not exist!")]
     unconstrained fn verify_secp384r1_offset_generators() {
         // Secp384r1 cofactor is 1

@@ -2,32 +2,11 @@ use crate::{BigCurve, BigCurveTrait};
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::curves::bn254::BN254Params;
-// use crate::curves::bls12_377::BLS12_377_Params;
-// use crate::curves::bls12_381::BLS12_381_Params;
-// use crate::curves::mnt4_753::MNT4_753_Params;
-// use crate::curves::mnt6_753::MNT6_753_Params;
-// use crate::curves::pallas::Pallas_Params;
-// use crate::curves::secp256k1::Secp256k1_Params;
-// use crate::curves::secp256r1::Secp256r1_Params;
-// use crate::curves::secp384r1::Secp384r1_Params;
-// use crate::curves::vesta::Vesta_Params;
 
 use bignum::BigNum;
-// use bignum::BLS12_377_Fq;
-// use bignum::BLS12_381_Fq;
 use bignum::BN254_Fq;
-// use bignum::MNT4_753_Fq;
-// use bignum::MNT6_753_Fq;
-// use bignum::Pallas_Fq;
-// use bignum::Secp256k1_Fq;
-// use bignum::Secp256r1_Fq;
-// use bignum::Secp384r1_Fq;
-// use bignum::Vesta_Fq;
 
-unconstrained fn compute_and_print_offset_generators<Fq, Curve, let K: u32, let J: u32, let NScalarSlices: u32>(
-    n: u32,
-    paramstr: str<K>,
-    curvestr: str<J>,
+unconstrained fn compute_offset_generators<Fq, Curve, let NScalarSlices: u32>(
     cofactor: Field,
 ) -> ([Fq; 2], [Fq; 2])
 where
@@ -126,9 +105,9 @@ where
 #[test]
 fn test_compute_and_print_offset_generators() {
     unsafe {
-        compute_and_print_offset_generators::<BN254_Fq, BN254PartialCurveParams, _, _, 64>(
+        compute_and_print_offset_generators::<BN254_Fq, BN254Params, _, _, 64>(
             "BN254_Fq",
-            "BN254PartialCurveParams",
+            "BN254Params",
             1,
         );
         // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>("Pallas_Fq", "Pallas_Params", 1);
@@ -153,6 +132,16 @@ fn test_compute_and_print_offset_generators() {
 }
 
 mod tests {
+    use crate::curves::bls12_377::BLS12_377_Params;
+    use crate::curves::bls12_381::BLS12_381_Params;
+    use crate::curves::bn254::BN254Params;
+    use crate::curves::mnt4_753::MNT4_753_Params;
+    use crate::curves::mnt6_753::MNT6_753_Params;
+    use crate::curves::pallas::Pallas_Params;
+    use crate::curves::secp256k1::Secp256k1_Params;
+    use crate::curves::secp256r1::Secp256r1_Params;
+    use crate::curves::secp384r1::Secp384r1_Params;
+    use crate::curves::vesta::Vesta_Params;
     use bignum::BigNum;
     use bignum::BLS12_377_Fq;
     use bignum::BLS12_381_Fq;
@@ -160,23 +149,12 @@ mod tests {
     use bignum::MNT4_753_Fq;
     use bignum::MNT6_753_Fq;
     use bignum::Pallas_Fq;
-    use bignum::Secp256k1_Fr;
-    use bignum::Secp256r1_Fr;
-    use bignum::Secp384r1_Fr;
+    use bignum::Secp256k1_Fq;
+    use bignum::Secp256r1_Fq;
+    use bignum::Secp384r1_Fq;
     use bignum::Vesta_Fq;
 
     use crate::{BigCurve, BigCurveTrait, curve_jac::CurveJ, CurveParamsTrait};
-
-    use super::BLS377PartialCurveParams;
-    use super::BLS381PartialCurveParams;
-    use super::BN254PartialCurveParams;
-    use super::Mnt4PartialCurveParams;
-    use super::Mnt6PartialCurveParams;
-    use super::PallasPartialCurveParams;
-    use super::Secp256k1PartialCurveParams;
-    use super::Secp256r1PartialCurveParams;
-    use super::Secp384r1PartialCurveParams;
-    use super::VestaPartialCurveParams;
 
     unconstrained fn verify_offset_generators<Fq, Curve>(cofactor: Field)
     where
@@ -221,58 +199,67 @@ mod tests {
         assert_eq(computed_initial[1], expected_initial[1], "Initial offset generator y mismatch");
     }
 
-#[test]
-fn test_compute_and_print_offset_generators() {
-    unsafe {
-        compute_and_print_offset_generators::<BN254_Fq, BN254Params, _, _, 64>(
-            3,
-            "BN254_Fq_Params",
-            "BN254Params",
-            1,
-        );
-        // compute_and_print_offset_generators::<Pallas_Fq, Pallas_Params, _, _, 64>(3, "Pallas_Fq_Params", "Pallas_Params", 1);
-        // compute_and_print_offset_generators::<Vesta_Fq, Vesta_Params, _, _, 64>(3, "Vesta_Fq_Params", "Vesta_Params", 1);
-        // compute_and_print_offset_generators::<BLS12_377_Fq, BLS12_377_Params, _, _, 64>(
-        //     4,
-        //     "BLS12_377_Fq_Params",
-        //     "BLS12_377_Params",
-        //     0x170b5d44300000000000000000000000
-        // );
-        // compute_and_print_offset_generators::<BLS12_381_Fq, BLS12_381_Params, _, _, 64>(
-        //     4,
-        //     "BLS12_381_Fq_Params",
-        //     "BLS12_381_Params",
-        //     0x396C8C005555E1568C00AAAB0000AAAB
-        // );
-        // compute_and_print_offset_generators::<MNT4_753_Fq, MNT4_753_Params, _, _, 189>(7, "MNT4_753_Fq_Params", "MNT4_753_Params", 1);
-        // compute_and_print_offset_generators::<MNT6_753_Fq, MNT6_753_Params, _, _, 189>(7, "MNT6_753_Fq_Params", "MNT6_753_Params", 1);
-        // compute_and_print_offset_generators::<Secp256k1_Fq, Secp256k1_Params, _, _, 65>(3, "Secp256k1_Fq_Params", "Secp256k1_Params", 1);
-        // compute_and_print_offset_generators::<Secp256r1_Fq, Secp256r1_Params, _, _, 65>(3, "Secp256r1_Fq_Params", "Secp256r1_Params", 1);
-        // compute_and_print_offset_generators::<Secp384r1_Fq, Secp384r1_Params, _, _, 97>(4, "Secp384r1_Fq_Params", "Secp384r1_Params", 1);
-        // cofactor = 0x170b5d44300000000000000000000000 booooo
+    #[test]
+    unconstrained fn verify_bn254_offset_generators() {
+        // BN254 cofactor is 1
+        verify_offset_generators::<BN254_Fq, BN254Params>(1);
     }
-}
 
-#[test]
-unconstrained fn test_verify_offset_generators() {
-    // BN254 cofactor is 1
-    verify_offset_generators::<BN254_Fq, BN254Params>(1);
-    // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
-    // verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params>(0x170b5d44300000000000000000000000);
-    // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
-    // verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params>(0x396C8C005555E1568C00AAAB0000AAAB);
-    // MNT4-753 cofactor is 1
-    // verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params>(1);
-    // MNT6-753 cofactor is 1
-    // verify_offset_generators::<MNT6_753_Fq, MNT6_753_Params>(1);
-    // Pallas cofactor is 1
-    // verify_offset_generators::<Pallas_Fq, Pallas_Params>(1);
-    // Secp256k1 cofactor is 1
-    // verify_offset_generators::<Secp256k1_Fq, Secp256k1_Params>(1);
-    // Secp256r1 cofactor is 1
-    // verify_offset_generators::<Secp256r1_Fq, Secp256r1_Params>(1);
-    // Secp384r1 cofactor is 1
-    // verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params>(1);
-    // Vesta cofactor is 1
-    // verify_offset_generators::<Vesta_Fq, Vesta_Params>(1);
+    #[test(should_fail)]
+    unconstrained fn verify_bls12_377_offset_generators() {
+        // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
+        verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params>(
+            0x170b5d44300000000000000000000000,
+        );
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_bls12_381_offset_generators() {
+        // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
+        verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params>(
+            0x396C8C005555E1568C00AAAB0000AAAB,
+        );
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_mnt4_753_offset_generators() {
+        // MNT4-753 cofactor is 1
+        verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_mnt6_753_offset_generators() {
+        // MNT6-753 cofactor is 1
+        verify_offset_generators::<MNT6_753_Fq, MNT6_753_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_pallas_offset_generators() {
+        // Pallas cofactor is 1
+        verify_offset_generators::<Pallas_Fq, Pallas_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_secp256k1_offset_generators() {
+        // Secp256k1 cofactor is 1
+        verify_offset_generators::<Secp256k1_Fq, Secp256k1_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_secp256r1_offset_generators() {
+        // Secp256r1 cofactor is 1
+        verify_offset_generators::<Secp256r1_Fq, Secp256r1_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_secp384r1_offset_generators() {
+        // Secp384r1 cofactor is 1
+        verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params>(1);
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_vesta_offset_generators() {
+        // Vesta cofactor is 1
+        verify_offset_generators::<Vesta_Fq, Vesta_Params>(1);
+    }
 }

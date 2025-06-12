@@ -7,7 +7,7 @@ use bignum::BigNum;
 
 pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
 
-global BLS12_377_SCALAR_SLICES: u32 = 64;
+pub global BLS12_377_SCALAR_SLICES: u32 = 64;
 pub struct BLS12_377_Params {}
 impl CurveParamsTrait<BLS12_377_Fq> for BLS12_377_Params {
     fn a() -> BLS12_377_Fq {
@@ -76,16 +76,65 @@ pub struct BLS12_377 {
 }
 
 mod test {
+    use bignum::{BigNum, BLS12_377_Fq, BLS12_377_Fr};
+    use std::ops::Neg;
+
+    use crate::BigCurveTrait;
+
+    use super::BLS12_377;
+    use super::BLS12_377_Params;
     use super::BLS12_377_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::BLS12_377_Fr;
+    use super::BLS12_377Scalar;
 
     #[test]
-    fn test_bls12_377_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = BLS12_377_Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == BLS12_377_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = BLS12_377::one();
+        let negone = BLS12_377_Fr::one().neg();
+        let scalar = BLS12_377Scalar::from_bignum(negone);
+        let final = BLS12_377::mul(one, scalar);
+
+        assert(BLS12_377::eq(final, BLS12_377::neg(one)));
+    }
+    #[test]
+    fn test_hash_to_curve() {
+        let r = BLS12_377::hash_to_curve("hello world".as_bytes());
+
+        BLS12_377::validate_on_curve(r);
+    }
+
+    #[test]
+    fn test_msm() {
+        let mut four = BLS12_377_Fr::zero();
+        four.set_limb(0, 4);
+        let p_minus_4_fr = BLS12_377_Fr::modulus() - four;
+        let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
+        let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = BLS12_377::one();
+        let b = BLS12_377::neg(a);
+        let mut points = [a, b];
+
+        let result = BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::neg(BLS12_377::one())]);
+
+        assert(BLS12_377::get_is_infinity(result));
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params, BLS12_377>(
+            0x170b5d44300000000000000000000000,
+        );
+    }
+
 }

@@ -1,12 +1,10 @@
-use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 pub use bignum::{MNT4_753_Fq, MNT4_753_Fr};
 
-global MNT4_753_SCALAR_SLICES: u32 = 189;
+pub global MNT4_753_SCALAR_SLICES: u32 = 189;
 pub struct MNT4_753_Params {}
 impl CurveParamsTrait<MNT4_753_Fq> for MNT4_753_Params {
     fn a() -> MNT4_753_Fq {
@@ -101,17 +99,61 @@ pub struct MNT4_753 {
 }
 
 mod test {
+    use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
+    use std::ops::Neg;
 
-    use super::MNT4_753_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::MNT4_753_Fr;
+    use crate::BigCurveTrait;
+
+    use super::{MNT4_753, MNT4_753_Params, MNT4_753_SCALAR_SLICES, MNT4_753Scalar};
 
     #[test]
-    fn test_mnt4_753_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = MNT4_753_Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == MNT4_753_SCALAR_SLICES);
+    }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = MNT4_753::one();
+        let negone = MNT4_753_Fr::one().neg();
+        let scalar = MNT4_753Scalar::from_bignum(negone);
+        let final = MNT4_753::mul(one, scalar);
+
+        assert(MNT4_753::eq(final, MNT4_753::neg(one)));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = MNT4_753::hash_to_curve("hello world".as_bytes());
+
+        MNT4_753::validate_on_curve(r);
+    }
+
+    #[test]
+    fn test_msm() {
+        let mut four = MNT4_753_Fr::from(4);
+        let p_minus_4_fr = MNT4_753_Fr::modulus() - four;
+        let p_minus_4 = MNT4_753Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - MNT4_753_Fr::one();
+        let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = MNT4_753::one();
+        let b = MNT4_753::neg(a);
+        let mut points = [a, b];
+
+        let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::neg(MNT4_753::one())]);
+
+        assert(MNT4_753::get_is_infinity(result));
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // MNT4-753 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params, MNT4_753>(
+            1,
+        );
     }
 }

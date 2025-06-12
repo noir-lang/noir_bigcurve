@@ -1,11 +1,11 @@
-use crate::BigCurve;
+use crate::derive_curve_impl;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 
 pub use bignum::{Pallas_Fq, Pallas_Fr};
 
-global PALLAS_SCALAR_SLICES: u32 = 64;
+pub global PALLAS_SCALAR_SLICES: u32 = 64;
 
 pub struct Pallas_Params {}
 impl CurveParamsTrait<Pallas_Fq> for Pallas_Params {
@@ -51,21 +51,71 @@ impl CurveParamsTrait<Pallas_Fq> for Pallas_Params {
     }
 }
 
-pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
+#[derive_curve_impl(quote { Pallas_Fq }, quote { Pallas_Params })]
+pub struct Pallas {
+    pub x: Pallas_Fq,
+    pub y: Pallas_Fq,
+    pub is_infinity: bool,
+}
+
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
+    use bignum::{BigNum, Pallas_Fq, Pallas_Fr};
+    use std::ops::Neg;
 
-    use super::PALLAS_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Pallas_Fr;
+    use crate::BigCurveTrait;
+
+    use super::{Pallas, Pallas_Params, PALLAS_SCALAR_SLICES, PallasScalar};
 
     #[test]
-    fn test_pallas_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = Pallas_Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == PALLAS_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = Pallas::one();
+        let negone = Pallas_Fr::one().neg();
+        let scalar = PallasScalar::from_bignum(negone);
+        let final = Pallas::mul(one, scalar);
+
+        assert(Pallas::eq(final, Pallas::neg(one)));
+    }
+    #[test]
+    fn test_hash_to_curve() {
+        let r = Pallas::hash_to_curve("hello world".as_bytes());
+
+        Pallas::validate_on_curve(r);
+    }
+
+    #[test]
+    fn test_msm() {
+        let mut four = Pallas_Fr::from(4);
+        let p_minus_4_fr = Pallas_Fr::modulus() - four;
+        let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
+        let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = Pallas::one();
+        let b = Pallas::neg(a);
+        let mut points = [a, b];
+
+        let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
+
+        assert(Pallas::get_is_infinity(result));
+    }   
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Pallas cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params, Pallas>(
+            1,
+        );
+    }
+
 }

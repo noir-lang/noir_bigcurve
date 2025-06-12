@@ -1,6 +1,8 @@
-use crate::BigCurve;
+use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
+use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 
 pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
@@ -64,8 +66,14 @@ impl CurveParamsTrait<BLS12_377_Fq> for BLS12_377_Params {
     }
 }
 
-pub type BLS12_377 = BigCurve<BLS12_377_Fq, BLS12_377_Params>;
 pub type BLS12_377Scalar = ScalarField<BLS12_377_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BLS12_377_Fq }, quote { BLS12_377_Params })]
+pub struct BLS12_377 {
+    pub x: BLS12_377_Fq,
+    pub y: BLS12_377_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, BLS12_377_Fq, BLS12_377_Fr};
@@ -89,18 +97,18 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = BLS12_377::one();
+        let one = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::one();
         let negone = BLS12_377_Fr::one().neg();
         let scalar = BLS12_377Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(<BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::eq(final, <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::neg(one)));
     }
     #[test]
     fn test_hash_to_curve() {
-        let r = BLS12_377::hash_to_curve("hello world".as_bytes());
+        let r = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::validate_on_curve(r);
     }
 
     #[test]
@@ -112,14 +120,13 @@ mod test {
         let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
         let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
-        let a = BLS12_377::one();
-        let b = a.neg();
+        let a = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::one();
+        let b = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::neg(a);
         let mut points = [a, b];
 
-        let result =
-            BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);
+        let result = <BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::evaluate_linear_expression(points, scalars, [<BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::neg(<BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::one())]);
 
-        assert(result.is_infinity);
+        assert(<BLS12_377 as BigCurveTrait<BLS12_377_Fq>>::get_is_infinity(result));
     }
 
     #[test(should_fail)]

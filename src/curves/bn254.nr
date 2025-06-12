@@ -1,4 +1,4 @@
-use crate::BigCurve;
+use crate::derive_curve_impl;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
@@ -48,16 +48,21 @@ impl CurveParamsTrait<BN254_Fq> for BN254Params {
 }
 
 pub global BN254_SCALAR_SLICES: u32 = 64;
-pub type BN254 = BigCurve<BN254_Fq, BN254Params>;
 pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BN254_Fq }, quote { BN254Params })]
+pub struct BN254 {
+    pub x: BN254_Fq,
+    pub y: BN254_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
-
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
         let x = BN254_Fq::zero();
@@ -67,20 +72,20 @@ mod test {
         assert_eq(scalar_slices, BN254_SCALAR_SLICES);
     }
 
-    #[test]
+    #[test] 
     fn test_offset_generators() {
-        let one = BN254::one();
+        let one = <BN254 as BigCurveTrait<BN254_Fq>>::one();
         let scalar = BN254Scalar::from(-1);
-        let final = one.mul(scalar);
+        let final = <BN254 as BigCurveTrait<BN254_Fq>>::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(<BN254 as BigCurveTrait<BN254_Fq>>::eq(final, <BN254 as BigCurveTrait<BN254_Fq>>::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
-        let r = BN254::hash_to_curve("hello world".as_bytes());
+        let r = <BN254 as BigCurveTrait<BN254_Fq>>::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        <BN254 as BigCurveTrait<BN254_Fq>>::validate_on_curve(r);
     }
 
     #[test]
@@ -91,19 +96,19 @@ mod test {
         let p_minus_5_fr = p_minus_4_fr - BN254_Fq::one();
         let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
-        let a = BN254::one();
-        let b = a.neg();
+        let a = <BN254 as BigCurveTrait<BN254_Fq>>::one();
+        let b = <BN254 as BigCurveTrait<BN254_Fq>>::neg(a);
         let mut points = [a, b];
 
-        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+        let result = <BN254 as BigCurveTrait<BN254_Fq>>::evaluate_linear_expression(points, scalars, [<BN254 as BigCurveTrait<BN254_Fq>>::neg(<BN254 as BigCurveTrait<BN254_Fq>>::one())]);
 
-        assert(result.is_infinity);
+        assert(<BN254 as BigCurveTrait<BN254_Fq>>::get_is_infinity(result));
     }
 
     #[test]
     unconstrained fn verify_offset_generators() {
         // BN254 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params, BN254>(
             1,
         );
     }

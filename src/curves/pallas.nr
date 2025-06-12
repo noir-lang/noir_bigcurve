@@ -73,18 +73,18 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = Pallas::one();
-        let negone = Pallas_Fr::one().neg();
+        let one = <Pallas as BigCurveTrait<Pallas_Fq>>::one();
+        let negone = <Pallas_Fr as BigNum>::one().neg();
         let scalar = PallasScalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = <Pallas as BigCurveTrait<Pallas_Fq>>::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(<Pallas as BigCurveTrait<Pallas_Fq>>::eq(final, <Pallas as BigCurveTrait<Pallas_Fq>>::neg(one)));
     }
     #[test]
     fn test_hash_to_curve() {
-        let r = Pallas::hash_to_curve("hello world".as_bytes());
+        let r = <Pallas as BigCurveTrait<Pallas_Fq>>::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        <Pallas as BigCurveTrait<Pallas_Fq>>::validate_on_curve(r);
     }
 
     #[test]
@@ -95,14 +95,14 @@ mod test {
         let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
         let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
-        let a = Pallas::one();
-        let b = a.neg();
+        let a = <Pallas as BigCurveTrait<Pallas_Fq>>::one();
+        let b = <Pallas as BigCurveTrait<Pallas_Fq>>::neg(a);
         let mut points = [a, b];
 
-        let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
+        let result = <Pallas as BigCurveTrait<Pallas_Fq>>::evaluate_linear_expression(points, scalars, [<Pallas as BigCurveTrait<Pallas_Fq>>::neg(<Pallas as BigCurveTrait<Pallas_Fq>>::one())]);
 
-        assert(result.is_infinity);
-    }
+        assert(<Pallas as BigCurveTrait<Pallas_Fq>>::get_is_infinity(result));
+    }   
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {

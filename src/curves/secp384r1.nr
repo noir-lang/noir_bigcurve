@@ -1,6 +1,8 @@
-use crate::BigCurve;
+use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
+use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 
 pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
@@ -74,8 +76,14 @@ impl CurveParamsTrait<Secp384r1_Fq> for Secp384r1_Params {
 }
 
 pub global SECP384r1_SCALAR_SLICES: u32 = 97;
-pub type Secp384r1 = BigCurve<Secp384r1_Fq, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { Secp384r1_Fq }, quote { Secp384r1_Params })]
+pub struct Secp384r1 {
+    pub x: Secp384r1_Fq,
+    pub y: Secp384r1_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, Secp384r1_Fq, Secp384r1_Fr};
@@ -98,19 +106,19 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = Secp384r1::one();
+        let one = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one();
         let negone = Secp384r1_Fr::one().neg();
         let scalar = Secp384r1Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::eq(final, <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
-        let r = Secp384r1::hash_to_curve("hello world".as_bytes());
+        let r = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::validate_on_curve(r);
     }
 
     #[test]
@@ -121,14 +129,13 @@ mod test {
         let p_minus_5_fr = p_minus_4_fr - Secp384r1_Fr::one();
         let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
-        let a = Secp384r1::one();
-        let b = a.neg();
+        let a = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one();
+        let b = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(a);
         let mut points = [a, b];
 
-        let result =
-            Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
+        let result = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::evaluate_linear_expression(points, scalars, [<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one())]);
 
-        assert(result.is_infinity);
+        assert(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::get_is_infinity(result));
     }
 
     #[test(should_fail)]

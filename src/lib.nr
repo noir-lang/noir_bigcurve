@@ -14,6 +14,7 @@ use crate::utils::hash_to_curve::hash_to_curve;
 
 use scalar_field::ScalarFieldTrait;
 use std::field;
+use curves::bls12_377::BLS12_377Scalar;
 
 /**
  * @brief Implements an elliptic curve instantiated over a prime field that is NOT the circuit's native field
@@ -47,7 +48,7 @@ struct PointTable<B> {
     y: [B; 16],
 }
 
-trait BigCurveTrait {
+trait BigCurveTrait<B: BigNum> {
     fn neg(self) -> Self;
     fn point_at_infinity() -> Self;
     fn offset_generator() -> Self;
@@ -57,9 +58,14 @@ trait BigCurveTrait {
     fn validate_on_curve(self);
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
+    fn from_coordinates(x: B, y: B, is_infinity: bool) -> Self;
+    // fn double_with_hint(self, transcript: AffineTranscript<B>) -> Self;
+    // fn incomplete_add_with_hint(self, other: Self, transcript: AffineTranscript<B>) -> Self;
+    fn get_x(self) -> B;
+    fn get_y(self) -> B;
+    fn get_is_infinity(self) -> bool;
 }
 
-/**
 impl<B: BigNum> PointTable<B> {
      pub(crate) fn empty() -> Self {
          PointTable { x: [B::zero(); 16], y: [B::zero(); 16] }
@@ -69,8 +75,8 @@ impl<B: BigNum> PointTable<B> {
       * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
       * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
       **/
-     pub(crate) fn new_with_hint<CurveParams>(
-         P: BigCurve<B, CurveParams>,
+     pub(crate) fn new_with_hint<CurveParams, P: BigCurveTrait<B>>(
+         point: P,
          transcript: [AffineTranscript<B>; 8],
      ) -> Self
      where
@@ -78,20 +84,20 @@ impl<B: BigNum> PointTable<B> {
      {
          let mut result = PointTable { x: [B::zero(); 16], y: [B::zero(); 16] };
 
-         let D2 = P.double_with_hint(transcript[0]);
+         let D2: P = double_with_hint::<B, CurveParams, P>(point, transcript[0]);
 
-         result.x[8] = P.x;
-         result.y[8] = P.y;
-         result.x[7] = P.x;
-         result.y[7] = (P.y.neg());
+         result.x[8] = point.get_x();
+         result.y[8] = point.get_y();
+         result.x[7] = point.get_x();
+         result.y[7] = point.get_y().neg();
 
-         let mut A = P;
+         let mut A = point;
          for i in 1..8 {
-             A = D2.incomplete_add_with_hint(A, transcript[i]);
-             result.x[8 + i] = A.x;
-             result.y[8 + i] = A.y;
-             result.x[7 - i] = A.x;
-             result.y[7 - i] = (A.y.neg());
+             A = incomplete_add_with_hint::<B, CurveParams, P>(A, D2, transcript[i]);
+             result.x[8 + i] = A.get_x();
+             result.y[8 + i] = A.get_y();
+             result.x[7 - i] = A.get_x();
+             result.y[7 - i] = A.get_y().neg();
          }
          result
      }
@@ -101,11 +107,10 @@ impl<B: BigNum> PointTable<B> {
       * @description if the backend has an efficient implementation of memory lookups,
       * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
       **/
-     pub(crate) fn get<CurveParams>(self, idx: u32) -> BigCurve<B, CurveParams> {
-         BigCurve { x: self.x[idx], y: self.y[idx], is_infinity: false }
+     pub(crate) fn get<CurveParams, P: BigCurveTrait<B>>(self, idx: u32) -> P {
+         P::from_coordinates(self.x[idx], self.y[idx], false)
      }
  }
-**/
 
 /**
 impl<B, CurveParams> BigCurveTrait for BigCurve<B, CurveParams>
@@ -914,51 +919,6 @@ pub(crate) comptime fn derive_curve_impl(
 ) -> Quoted {
     let typ = struct_def.as_type();
     quote {
-        impl crate::PointTable<$field_type> {
-            pub(crate) fn empty() -> Self {
-                crate::PointTable { x: [$field_type::zero(); 16], y: [$field_type::zero(); 16] }
-            }
-
-            /**
-            * @brief Construct a PointTable from an input point and an AffineTranscript that contains required modular inverses
-            * (see `CurveJ::mul` for an example of how AffineTranscript objects are generated/used)
-            **/
-            pub(crate) fn new_with_hint<CurveParams>(
-                P: $typ,
-                transcript: [AffineTranscript<$field_type>; 8],
-            ) -> Self
-            where
-                CurveParams: CurveParamsTrait<$field_type>,
-            {
-                let mut result = crate::PointTable { x: [$field_type::zero(); 16], y: [$field_type::zero(); 16] };
-
-                let D2 = P.double_with_hint(transcript[0]);
-
-                result.x[8] = P.x;
-                result.y[8] = P.y;
-                result.x[7] = P.x;
-                result.y[7] = (std::ops::Neg::neg(P.y));
-
-                let mut A = P;
-                for i in 1..8 {
-                    A = D2.incomplete_add_with_hint(A, transcript[i]);
-                    result.x[8 + i] = A.x;
-                    result.y[8 + i] = A.y;
-                    result.x[7 - i] = A.x;
-                    result.y[7 - i] = (std::ops::Neg::neg(A.y));
-                }
-                result
-            }
-
-            /**
-            * @brief get a value out of the lookup table
-            * @description if the backend has an efficient implementation of memory lookups,
-            * this will be very efficient (~12 constraints for 256-bit curves using the barretenberg backend)
-            **/
-            pub(crate) fn get<CurveParams>(self, idx: u32) -> $typ {
-                $typ { x: self.x[idx], y: self.y[idx], is_infinity: false }
-            }
-        }
         impl $typ {
             /**
      * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
@@ -1310,7 +1270,7 @@ pub(crate) comptime fn derive_curve_impl(
             * @brief Double a point, using an AffineTranscript that contains inverses and output witnesses
             * @note This method minimizes the number of calls to `evalute_quadratic_expression`,
             * which is NOT the same as minimizing the number of multiplications.
-            **/
+            
             fn double_with_hint(self, transcript: AffineTranscript<$field_type>) -> Self {
                 let x1: $field_type = self.x;
                 let y1: $field_type = self.y;
@@ -1358,7 +1318,7 @@ pub(crate) comptime fn derive_curve_impl(
 
                 $typ { x: x3, y: y3, is_infinity: false }
             }
-
+ **/
             /**
             * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
             **/
@@ -1372,7 +1332,7 @@ pub(crate) comptime fn derive_curve_impl(
                 let scalar: ScalarField<NScalarSlices> =
                     crate::scalar_field::ScalarFieldTrait::conditional_select(crate::scalar_field::ScalarFieldTrait::zero(), scalar, self.is_infinity);
 
-                let T: crate::PointTable<$field_type> = crate::PointTable::new_with_hint::<$params_type>(
+                let T: crate::PointTable<$field_type> = crate::PointTable::new_with_hint::<CurveParams, $params_type>(
                     input,
                     [
                         transcript[0],
@@ -1707,6 +1667,22 @@ pub(crate) comptime fn derive_curve_impl(
                 let r = hash_to_curve::<$field_type, N>(seed, $params_type::a(), $params_type::b());
                 $typ { x: r.0, y: r.1, is_infinity: false }
             }
+
+            fn from_coordinates(x: $field_type  , y: $field_type, is_infinity: bool) -> Self {
+                $typ { x, y, is_infinity }
+            }
+
+            fn get_x(self) -> $field_type {
+                self.x
+            }
+
+            fn get_y(self) -> $field_type {
+                self.y
+            }
+
+            fn get_is_infinity(self) -> bool {
+                self.is_infinity
+            }
         }
 
 
@@ -1719,4 +1695,113 @@ pub(crate) comptime fn derive_curve_impl(
             }
         }
     }
+}
+
+pub(crate) fn double_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P:BigCurveTrait<B>>(point: P, transcript: AffineTranscript<B>) -> P {
+    let x1 = point.get_x();
+    let y1 = point.get_y();
+    let lambda = transcript.lambda;
+    let x3 = transcript.x3;
+    let y3 = transcript.y3;
+
+    // TODO: HANDLE CURVES WHERE A != 0
+    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    x3.validate_in_range();
+    y3.validate_in_range();
+    lambda.validate_in_range();
+
+    // -lambda * 2y + 3*x*x + a = 0
+    // validate the provided value of `lambda` is correct
+    // n.b. if CurveParams::a() == 0, its inclusion shouldn't cost extra constraints...I thnk
+    bignum::bignum::evaluate_quadratic_expression(
+        [[x1, x1, x1], [y1, y1, B::zero()]],
+        [[false, false, false], [false, false, false]],
+        [[x1], [lambda]],
+        [[false], [true]],
+        [CurveParams::a()],
+        [false],
+    );
+
+    // validate the provided value of `x3` is correct
+    bignum::bignum::evaluate_quadratic_expression(
+        [[lambda]],
+        [[false]],
+        [[lambda]],
+        [[false]],
+        [x3, x1, x1],
+        [true, true, true],
+    );
+
+    // validate the provided value of `y3` is correct
+    bignum::bignum::evaluate_quadratic_expression(
+        [[lambda]],
+        [[false]],
+        [[x3, x1]],
+        [[false, true]],
+        [y3, y1],
+        [false, false],
+    );
+
+    P::from_coordinates(x3, y3, false)
+}
+
+/**
+     * @brief Add two points together, using an AffineTranscript that contains inverses and output witnesses
+     * @description Only uses incomplete formulae.
+     * With our use of offset generators, an HONEST PROVER should never need to handle edge cases.
+     * Therefore we can sacrifice completeness for cheap soundness. Instead of handling edge cases,
+     * we simply assert that they do not exist by validating x2 != x1
+     * @note This method minimizes the number of calls to `evaluate_quadratic_expression`,
+     * which is NOT the same as minimizing the number of multiplications.
+     * The expensive operation in BigNum is the modular reduction.
+     * e.g. (a * b + c * d = e mod p) is not much more expensive than (a * b = c mod p)
+     **/
+pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P:BigCurveTrait<B>>(point: P, other: P, transcript: AffineTranscript<B>) -> P {
+    let x1: B = point.get_x();
+    let y1: B = point.get_y();
+    let x2: B = other.get_x();
+    let y2: B = other.get_y();
+    let lambda: B = transcript.lambda;
+    let x3: B = transcript.x3;
+    let y3: B = transcript.y3;
+
+    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    x3.validate_in_range();
+    y3.validate_in_range();
+    lambda.validate_in_range();
+
+    // no incomplete Weierstrass shenanigans here
+    x1.assert_is_not_equal(x2);
+
+    // validate the provided value of `lambda` is correct
+    bignum::bignum::evaluate_quadratic_expression(
+        [[lambda]],
+        [[false]],
+        [[x2, x1]],
+        [[false, true]],
+        [y2, y1],
+        [true, false],
+    );
+
+    // validate the provided value of `x3` is correct
+    bignum::bignum::evaluate_quadratic_expression(
+        [[lambda]],
+        [[false]],
+        [[lambda]],
+        [[false]],
+        [x3, x2, x1],
+        [true, true, true],
+    );
+
+    // validate the provided value of `y3` is correct
+    bignum::bignum::evaluate_quadratic_expression(
+        [[lambda]],
+        [[false]],
+        [[x3, x1]],
+        [[false, true]],
+        [y3, y1],
+        [false, false],
+    );
+
+    P::from_coordinates(x3, y3, false)
 }

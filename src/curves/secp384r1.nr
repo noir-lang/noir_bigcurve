@@ -86,17 +86,64 @@ pub struct Secp384r1 {
 }
 
 mod test {
+    use bignum::{BigNum, Secp384r1_Fq, Secp384r1_Fr};
+    use std::ops::Neg;
 
+    use crate::BigCurveTrait;
+    use super::Secp384r1;
+    use super::Secp384r1_Params;
     use super::SECP384r1_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::Secp384r1_Fq;
+    use super::Secp384r1Scalar;
 
     #[test]
-    fn test_secp384r1_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = Secp384r1_Fq::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == SECP384r1_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one();
+        let negone = Secp384r1_Fr::one().neg();
+        let scalar = Secp384r1Scalar::from_bignum(negone);
+        let final = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::mul(one, scalar);
+
+        assert(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::eq(final, <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(one)));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::hash_to_curve("hello world".as_bytes());
+
+        <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::validate_on_curve(r);
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = Secp384r1_Fr::from(4);
+        let p_minus_4_fr = Secp384r1_Fr::modulus() - four;
+        let p_minus_4 = Secp384r1Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - Secp384r1_Fr::one();
+        let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one();
+        let b = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(a);
+        let mut points = [a, b];
+
+        let result = <Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::evaluate_linear_expression(points, scalars, [<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::neg(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::one())]);
+
+        assert(<Secp384r1 as BigCurveTrait<Secp384r1_Fq>>::get_is_infinity(result));
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // Secp384r1 cofactor is 1
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params>(
+            1,
+        );
+    }
+
 }

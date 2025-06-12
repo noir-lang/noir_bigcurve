@@ -1,27 +1,31 @@
 use bignum::BigNum;
 
-use crate::BigCurve;
 use crate::CurveParamsTrait;
-use crate::scalar_field::{ScalarField, ScalarFieldTrait};
-/**
- * @brief CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
- *        representation in Jacobian form is X, Y, Z
- *        representation in affine form is x, y
- *        relation between both is: x = X / Z^2  , y = Y / Z^3
- *
- * @description The purpose of this class is to speed up witness generation when optimally constraining ecc operations
- *              When constructing constraints, we want to work in AFFINE coordinates,
- *              because of the smaller number of field multiplications (3 muls vs ~14 for Jacobian)
- *              HOWEVER, when working in affine coordinates, 1 modular inverse must be computed per group operation.
- *              This is VERY TIME CONSUMING TO DO when generating witnesses, as this is a modular inverse over a non-native field.
- *              This costs approximately 2D multiplications, where D is the bit-width of the curve field.
- *
- *              To solve this problem, we perform the ENTIRE COMPUTATION in unconstrained functions using JACOBIAN coordiantes
- *              (which don't require inverses). We record each ECC op performed in a JTranscript object
- *              We then compute a Montgomery Batch Inverse to compute ALL of the inverses we require when evaluating using affine arithmetic.
- *              i.e. we compute 1 modular inverse instead of ~256 or 320 depending on the elliptic curve.
- *              Yes, this is an extremely complex solution to a simple problem. Such is life. Inverses are expensive to generate witnesses for.
- **/
+use crate::scalar_field::ScalarField;
+use super::BigCurveTrait;
+
+/// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
+///
+/// # Representation
+/// - **Jacobian form:** (X, Y, Z)
+/// - **Affine form:** (x, y)
+/// - **Relation:** x = X / Z^2, y = Y / Z^3
+///
+/// # Purpose
+/// This class is designed to speed up witness generation when optimally constraining elliptic curve operations.
+///
+/// # Motivation
+/// - Constraints are best constructed in affine coordinates due to fewer field multiplications (3 vs ~14 for Jacobian).
+/// - However, affine coordinates require one modular inverse per group operation, which is expensive over a non-native field (~2D multiplications, where D is the field bit-width).
+///
+/// # Solution
+/// - Perform all computations in unconstrained functions using Jacobian coordinates (no inverses required).
+/// - Record each ECC operation in a `JTranscript` object.
+/// - Use a Montgomery Batch Inverse to compute all required inverses at once when evaluating with affine arithmetic.
+/// - This reduces the number of modular inverses from ~256 or 320 (depending on the curve) to just one.
+///
+/// # Note
+/// This approach is complex but necessary due to the high cost of generating modular inverses for witness generation.
 pub struct CurveJ<B, CurveParams> {
     pub(crate) x: B,
     pub(crate) y: B,
@@ -29,11 +33,12 @@ pub struct CurveJ<B, CurveParams> {
     pub(crate) is_infinity: bool,
 }
 
-/**
- * @brief A transcript of a group operation in Jacobian coordinates
- * x3, y3, z3 = the output of the group operation
- * lambda_numerator = numerator of the `lambda` term (the denominator is assumed to be z3)
- **/
+/// A transcript of a group operation in Jacobian coordinates.
+///
+/// # Fields
+/// - `x3`, `y3`, `z3`: The output coordinates of the group operation in Jacobian form.
+/// - `lambda_numerator`: The numerator of the `lambda` term used in the group operation.
+///   (The denominator is assumed to be `z3`.)
 pub struct JTranscript<B> {
     pub(crate) lambda_numerator: B,
     pub(crate) x3: B,
@@ -50,23 +55,24 @@ where
     }
 }
 
-/**
- * @brief A transcript of a group operation in Affine coordinates
- * x3, y3 = the output of the group operation
- * lambda = gradient of the line that passes through input points of group operation
- * For addition, lambda = (y2 - y1) / (x2 - x1)
- * For doubling, lambda = (3 * x1 * x1) / (2 * y1)
- * If we have an array of JTranscript objects, we can turn them into AffineTranscript objects with only 1 modular inverse
- **/
+/// A transcript of a group operation in Affine coordinates.
+///
+/// # Fields
+/// - `x3`, `y3`: The output coordinates of the group operation.
+/// - `lambda`: The gradient of the line that passes through the input points of the group operation.
+///
+/// # Details
+/// - For addition: `lambda = (y2 - y1) / (x2 - x1)`
+/// - For doubling: `lambda = (3 * x1 * x1) / (2 * y1)`
+///
+/// # Optimization
+/// If you have an array of `JTranscript` objects, you can convert them into `AffineTranscript` objects using only one modular inverse.
 pub struct AffineTranscript<B> {
     pub(crate) lambda: B,
     pub(crate) x3: B,
     pub(crate) y3: B,
 }
 
-/**
- * @brief construct a sequence of AffineTranscript objects from a sequence of Jacobian transcript objects
- **/
 impl<B> AffineTranscript<B>
 where
     B: BigNum,
@@ -115,16 +121,16 @@ where
     }
 }
 
-/**
- * @brief A lookup table we use when performing scalar multiplications.
- * @description We slice scalar multiplier into 4 bit chunks represented
- * in windowed non-adjacent form ([-15, -13, ..., 15])
- * We compute a table of point multiples that map to the 4-bit WNAF values T = ([-15[P], -13[P], ..., 15[P]])
- * We set an accumulator to equal T[most significant WNAF slice]
- * We then iterate over our remaining bit slices (starting with most significant slice)
- * For each iteration `i` we double the accumulator 4 times and then add `T[slice[i]]` into the accumulator.
- * For small multiscalar multiplications (i.e. <512 points) this produces the minimal number of addition operations.
- **/
+/// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
+///
+/// The scalar multiplier is sliced into 4-bit chunks, each represented in WNAF (values in the range [-15, -13, ..., 15]).
+/// A table `T` is computed containing point multiples corresponding to these 4-bit WNAF values: `T = ([-15[P], -13[P], ..., 15[P]])`.
+///
+/// The accumulator is initialized with `T[most significant WNAF slice]`.
+/// For each remaining slice (starting from the most significant), the accumulator is doubled 4 times,
+/// then `T[slice[i]]` is added to the accumulator.
+///
+/// For small multiscalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
 pub struct PointTable<B> {
     x: [B; 16],
     y: [B; 16],
@@ -202,17 +208,18 @@ where
 /**
  * @brief construct from BigCurve
  **/
-impl<B, CurveParams> std::convert::From<BigCurve<B, CurveParams>> for CurveJ<B, CurveParams>
+impl<B, CurveParams, P> std::convert::From<P> for CurveJ<B, CurveParams>
 where
     B: BigNum,
     CurveParams: CurveParamsTrait<B>,
+    P: BigCurveTrait<B>,
 {
-    fn from(affine_point: BigCurve<B, CurveParams>) -> Self {
+    fn from(affine_point: P) -> Self {
         CurveJ {
-            x: affine_point.x,
-            y: affine_point.y,
+            x: affine_point.get_x(),
+            y: affine_point.get_y(),
             z: B::one(),
-            is_infinity: affine_point.is_infinity,
+            is_infinity: affine_point.get_is_infinity(),
         }
     }
 }
@@ -676,10 +683,10 @@ where
         (accumulator, affine_transcript)
     }
 
-    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
-        mut mul_points: [BigCurve<B, CurveParams>; NMuls],
+    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P:BigCurveTrait<B>>(
+        mut mul_points: [P; NMuls],
         mut scalars: [ScalarField<NScalarSlices>; NMuls],
-        mut add_points: [BigCurve<B, CurveParams>; NAdds],
+        mut add_points: [P; NAdds],
     ) -> (Self, [AffineTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) {
         let mut mul_j: [CurveJ<B, CurveParams>; NMuls] = [CurveJ::new(); NMuls];
         let mut add_j: [CurveJ<B, CurveParams>; NAdds] = [CurveJ::new(); NAdds];

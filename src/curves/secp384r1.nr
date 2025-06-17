@@ -1,8 +1,8 @@
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
-
 pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
 
 pub struct Secp384r1_Params {}
@@ -131,7 +131,11 @@ mod test {
         let b = Secp384r1::neg(a);
         let mut points = [a, b];
 
-        let result = Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::neg(Secp384r1::one())]);
+        let result = Secp384r1::evaluate_linear_expression(
+            points,
+            scalars,
+            [Secp384r1::neg(Secp384r1::one())],
+        );
 
         assert(Secp384r1::get_is_infinity(result));
     }

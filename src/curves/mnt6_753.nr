@@ -2,6 +2,7 @@ use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use crate::BigCurveTrait;
 use crate::derive_curve_impl;
 
 pub global MNT6_753_SCALAR_SLICES: u32 = 189;
@@ -144,7 +145,8 @@ mod test {
         let b = MNT6_753::neg(a);
         let mut points = [a, b];
 
-        let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::neg(MNT6_753::one())]);
+        let result =
+            MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::neg(MNT6_753::one())]);
 
         assert(MNT6_753::get_is_infinity(result));
     }

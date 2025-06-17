@@ -3,9 +3,10 @@ use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::curves::bn254::BN254Params;
 
+use crate::curves::bn254::BN254;
 use bignum::BigNum;
 use bignum::BN254_Fq;
-use crate::curves::bn254::BN254;
+
 unconstrained fn compute_offset_generators<Fq, CurveParams, let NScalarSlices: u32, BigCurve: BigCurveTrait<Fq>>(
     cofactor: Field,
 ) -> ([Fq; 2], [Fq; 2])
@@ -20,7 +21,8 @@ where
     // (no offset generators needed)
     let g = <BigCurve as BigCurveTrait<Fq>>::hash_to_curve(seed);
 
-    let g_init: CurveJ<Fq, CurveParams> = CurveJ { x: g.get_x(), y: g.get_y(), z: Fq::one(), is_infinity: false };
+    let g_init: CurveJ<Fq, CurveParams> =
+        CurveJ { x: g.get_x(), y: g.get_y(), z: Fq::one(), is_infinity: false };
     let mut gen = g_init;
 
     let cofactor_bits: [u1; 128] = cofactor.to_be_bits();
@@ -134,7 +136,9 @@ fn test_compute_and_print_offset_generators() {
     }
 }
 
-pub(crate) unconstrained fn verify_offset_generators<Fq, CurveParams, BigCurve: BigCurveTrait<Fq>>(cofactor: Field)
+pub(crate) unconstrained fn verify_offset_generators<Fq, CurveParams, BigCurve: BigCurveTrait<Fq>>(
+    cofactor: Field,
+)
 where
     Fq: BigNum,
     CurveParams: CurveParamsTrait<Fq>,
@@ -147,7 +151,8 @@ where
     // (no offset generators needed)
     let g = <BigCurve as BigCurveTrait<Fq>>::hash_to_curve(seed);
 
-    let g_init: CurveJ<Fq, CurveParams> = CurveJ { x: g.get_x(), y: g.get_y(), z: Fq::one(), is_infinity: false };
+    let g_init: CurveJ<Fq, CurveParams> =
+        CurveJ { x: g.get_x(), y: g.get_y(), z: Fq::one(), is_infinity: false };
     let mut gen = g_init;
 
     let cofactor_bits: [u1; 128] = cofactor.to_be_bits();

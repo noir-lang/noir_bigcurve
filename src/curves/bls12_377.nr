@@ -1,8 +1,7 @@
-use crate::curve_jac::AffineTranscript;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 
 pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
@@ -124,7 +123,11 @@ mod test {
         let b = BLS12_377::neg(a);
         let mut points = [a, b];
 
-        let result = BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::neg(BLS12_377::one())]);
+        let result = BLS12_377::evaluate_linear_expression(
+            points,
+            scalars,
+            [BLS12_377::neg(BLS12_377::one())],
+        );
 
         assert(BLS12_377::get_is_infinity(result));
     }

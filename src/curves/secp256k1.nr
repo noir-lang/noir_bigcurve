@@ -1,11 +1,10 @@
-use crate::curve_jac::AffineTranscript;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use crate::utils::hash_to_curve::hash_to_curve;
 use bignum::BigNum;
 use bignum::Secp256k1_Fq;
 
+use crate::BigCurveTrait;
 pub global SECP256k1_SCALAR_SLICES: u32 = 65;
 
 pub struct Secp256k1_Params {}
@@ -119,7 +118,11 @@ mod test {
         let b = Secp256k1::neg(a);
         let mut points = [a, b];
 
-        let result = Secp256k1::evaluate_linear_expression(points, scalars, [Secp256k1::neg(Secp256k1::one())]);
+        let result = Secp256k1::evaluate_linear_expression(
+            points,
+            scalars,
+            [Secp256k1::neg(Secp256k1::one())],
+        );
 
         assert(Secp256k1::get_is_infinity(result));
     }

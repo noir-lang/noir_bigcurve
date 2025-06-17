@@ -1,8 +1,8 @@
-use crate::derive_curve_impl;
+use crate::BigCurveTrait;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use crate::BigCurveTrait;
 
 use bignum::BigNum;
 pub use bignum::BN254_Fq;
@@ -73,7 +73,7 @@ mod test {
         assert_eq(scalar_slices, BN254_SCALAR_SLICES);
     }
 
-    #[test] 
+    #[test]
     fn test_offset_generators() {
         let one = BN254::one();
         let scalar = BN254Scalar::from(-1);

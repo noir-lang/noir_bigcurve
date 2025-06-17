@@ -1,5 +1,6 @@
-use crate::derive_curve_impl;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 
@@ -105,10 +106,11 @@ mod test {
         let b = Pallas::neg(a);
         let mut points = [a, b];
 
-        let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
+        let result =
+            Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
 
         assert(Pallas::get_is_infinity(result));
-    }   
+    }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {

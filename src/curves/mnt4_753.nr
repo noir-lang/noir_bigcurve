@@ -1,3 +1,4 @@
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
@@ -144,7 +145,8 @@ mod test {
         let b = MNT4_753::neg(a);
         let mut points = [a, b];
 
-        let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::neg(MNT4_753::one())]);
+        let result =
+            MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::neg(MNT4_753::one())]);
 
         assert(MNT4_753::get_is_infinity(result));
     }

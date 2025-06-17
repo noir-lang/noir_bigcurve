@@ -80,8 +80,8 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = Pallas::one();
-        let negone = Pallas_Fr::one().neg();
+        let one = <Pallas as BigCurveTrait<Pallas_Fq>>::one();
+        let negone = <Pallas_Fr as BigNum>::one().neg();
         let scalar = PallasScalar::from_bignum(negone);
         let final = Pallas::mul(one, scalar);
 
@@ -89,7 +89,7 @@ mod test {
     }
     #[test]
     fn test_hash_to_curve() {
-        let r = Pallas::hash_to_curve("hello world".as_bytes());
+        let r = <Pallas as BigCurveTrait<Pallas_Fq>>::hash_to_curve("hello world".as_bytes());
 
         Pallas::validate_on_curve(r);
     }

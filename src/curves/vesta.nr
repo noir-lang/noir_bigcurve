@@ -77,8 +77,8 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = Vesta::one();
-        let negone = Vesta_Fr::one().neg();
+        let one = <Vesta as BigCurveTrait<Vesta_Fq>>::one();
+        let negone = <Vesta_Fr as BigNum>::one().neg();
         let scalar = VestaScalar::from_bignum(negone);
         let final = Vesta::mul(one, scalar);
 
@@ -87,7 +87,7 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = Vesta::hash_to_curve("hello world".as_bytes());
+        let r = <Vesta as BigCurveTrait<Vesta_Fq>>::hash_to_curve("hello world".as_bytes());
 
         Vesta::validate_on_curve(r);
     }

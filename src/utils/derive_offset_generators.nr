@@ -6,7 +6,6 @@ use crate::curves::bn254::BN254Params;
 use crate::curves::bn254::BN254;
 use bignum::BigNum;
 use bignum::BN254_Fq;
-
 unconstrained fn compute_offset_generators<Fq, CurveParams, let NScalarSlices: u32, BigCurve: BigCurveTrait<Fq>>(
     cofactor: Field,
 ) -> ([Fq; 2], [Fq; 2])

@@ -117,7 +117,7 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = MNT6_753::one();
+        let one = <MNT6_753 as BigCurveTrait<MNT6_753_Fq>>::one();
         let negone = MNT6_753_Fr::one().neg();
         let scalar = MNT6_753Scalar::from_bignum(negone);
         let final = MNT6_753::mul(one, scalar);
@@ -127,7 +127,7 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = MNT6_753::hash_to_curve("hello world".as_bytes());
+        let r = <MNT6_753 as BigCurveTrait<MNT6_753_Fq>>::hash_to_curve("hello world".as_bytes());
 
         MNT6_753::validate_on_curve(r);
     }

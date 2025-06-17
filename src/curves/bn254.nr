@@ -75,7 +75,7 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = BN254::one();
+        let one = <BN254 as BigCurveTrait<BN254_Fq>>::one();
         let scalar = BN254Scalar::from(-1);
         let final = BN254::mul(one, scalar);
 
@@ -84,7 +84,7 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = BN254::hash_to_curve("hello world".as_bytes());
+        let r = <BN254 as BigCurveTrait<BN254_Fq>>::hash_to_curve("hello world".as_bytes());
 
         BN254::validate_on_curve(r);
     }

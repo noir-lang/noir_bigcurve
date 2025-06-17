@@ -91,7 +91,7 @@ mod test {
 
     #[test]
     fn test_offset_generators() {
-        let one = Secp256k1::one();
+        let one = <Secp256k1 as BigCurveTrait<Secp256k1_Fq>>::one();
         let negone = Secp256k1_Fr::one().neg();
         let scalar = Secp256k1Scalar::from_bignum(negone);
         let final = Secp256k1::mul(one, scalar);
@@ -101,7 +101,7 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = Secp256k1::hash_to_curve("hello world".as_bytes());
+        let r = <Secp256k1 as BigCurveTrait<Secp256k1_Fq>>::hash_to_curve("hello world".as_bytes());
 
         Secp256k1::validate_on_curve(r);
     }

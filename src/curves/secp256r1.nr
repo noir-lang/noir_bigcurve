@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
@@ -66,8 +67,14 @@ impl CurveParamsTrait<Secp256r1_Fq> for Secp256r1_Params {
 
 pub global SECP256r1_SCALAR_SLICES: u32 = 65;
 
-pub type Secp256r1 = BigCurve<Secp256r1_Fq, Secp256r1_Params>;
 pub type Secp256r1Scalar = ScalarField<SECP256r1_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { bignum::Secp256r1_Fq }, quote { Secp256r1_Params })]
+pub struct Secp256r1 {
+    pub x: Secp256r1_Fq,
+    pub y: Secp256r1_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, Secp256r1_Fq, Secp256r1_Fr};
@@ -91,16 +98,16 @@ mod test {
         let one = Secp256r1::one();
         let negone = Secp256r1_Fr::one().neg();
         let scalar = Secp256r1Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = Secp256r1::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(Secp256r1::eq(final, Secp256r1::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = Secp256r1::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        Secp256r1::validate_on_curve(r);
     }
 
     #[test]
@@ -112,19 +119,22 @@ mod test {
         let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Secp256r1::one();
-        let b = a.neg();
+        let b = Secp256r1::neg(a);
         let mut points = [a, b];
 
-        let result =
-            Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);
+        let result = Secp256r1::evaluate_linear_expression(
+            points,
+            scalars,
+            [Secp256r1::neg(Secp256r1::one())],
+        );
 
-        assert(result.is_infinity);
+        assert(Secp256r1::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Secp256r1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256r1_Fq, Secp256r1_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256r1_Fq, Secp256r1_Params, Secp256r1>(
             1,
         );
     }

@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 
@@ -51,7 +52,13 @@ impl CurveParamsTrait<Pallas_Fq> for Pallas_Params {
     }
 }
 
-pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
+#[derive_curve_impl(quote { Pallas_Fq }, quote { Pallas_Params })]
+pub struct Pallas {
+    pub x: Pallas_Fq,
+    pub y: Pallas_Fq,
+    pub is_infinity: bool,
+}
+
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
@@ -76,15 +83,15 @@ mod test {
         let one = Pallas::one();
         let negone = Pallas_Fr::one().neg();
         let scalar = PallasScalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = Pallas::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(Pallas::eq(final, Pallas::neg(one)));
     }
     #[test]
     fn test_hash_to_curve() {
         let r = Pallas::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        Pallas::validate_on_curve(r);
     }
 
     #[test]
@@ -96,18 +103,19 @@ mod test {
         let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Pallas::one();
-        let b = a.neg();
+        let b = Pallas::neg(a);
         let mut points = [a, b];
 
-        let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
+        let result =
+            Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
 
-        assert(result.is_infinity);
+        assert(Pallas::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Pallas cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params, Pallas>(
             1,
         );
     }

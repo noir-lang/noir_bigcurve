@@ -1,6 +1,7 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 
 use bignum::BigNum;
@@ -48,16 +49,21 @@ impl CurveParamsTrait<BN254_Fq> for BN254Params {
 }
 
 pub global BN254_SCALAR_SLICES: u32 = 64;
-pub type BN254 = BigCurve<BN254_Fq, BN254Params>;
 pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BN254_Fq }, quote { BN254Params })]
+pub struct BN254 {
+    pub x: BN254_Fq,
+    pub y: BN254_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
-
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
         let x = BN254_Fq::zero();
@@ -71,16 +77,16 @@ mod test {
     fn test_offset_generators() {
         let one = BN254::one();
         let scalar = BN254Scalar::from(-1);
-        let final = one.mul(scalar);
+        let final = BN254::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(BN254::eq(final, BN254::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = BN254::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        BN254::validate_on_curve(r);
     }
 
     #[test]
@@ -92,18 +98,18 @@ mod test {
         let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = BN254::one();
-        let b = a.neg();
+        let b = BN254::neg(a);
         let mut points = [a, b];
 
-        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::neg(BN254::one())]);
 
-        assert(result.is_infinity);
+        assert(BN254::get_is_infinity(result));
     }
 
     #[test]
     unconstrained fn verify_offset_generators() {
         // BN254 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params, BN254>(
             1,
         );
     }

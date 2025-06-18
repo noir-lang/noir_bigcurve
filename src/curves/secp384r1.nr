@@ -1,8 +1,8 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
-
 pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
 
 pub struct Secp384r1_Params {}
@@ -74,8 +74,14 @@ impl CurveParamsTrait<Secp384r1_Fq> for Secp384r1_Params {
 }
 
 pub global SECP384r1_SCALAR_SLICES: u32 = 97;
-pub type Secp384r1 = BigCurve<Secp384r1_Fq, Secp384r1_Params>;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { Secp384r1_Fq }, quote { Secp384r1_Params })]
+pub struct Secp384r1 {
+    pub x: Secp384r1_Fq,
+    pub y: Secp384r1_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, Secp384r1_Fq, Secp384r1_Fr};
@@ -101,16 +107,16 @@ mod test {
         let one = Secp384r1::one();
         let negone = Secp384r1_Fr::one().neg();
         let scalar = Secp384r1Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = Secp384r1::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(Secp384r1::eq(final, Secp384r1::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = Secp384r1::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        Secp384r1::validate_on_curve(r);
     }
 
     #[test]
@@ -122,19 +128,22 @@ mod test {
         let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Secp384r1::one();
-        let b = a.neg();
+        let b = Secp384r1::neg(a);
         let mut points = [a, b];
 
-        let result =
-            Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
+        let result = Secp384r1::evaluate_linear_expression(
+            points,
+            scalars,
+            [Secp384r1::neg(Secp384r1::one())],
+        );
 
-        assert(result.is_infinity);
+        assert(Secp384r1::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Secp384r1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1_Params, Secp384r1>(
             1,
         );
     }

@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 use bignum::BLS12_381_Fq;
@@ -63,8 +64,14 @@ impl CurveParamsTrait<BLS12_381_Fq> for BLS12_381_Params {
     }
 }
 
-pub type BLS12_381 = BigCurve<BLS12_381_Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BLS12_381_Fq }, quote { BLS12_381_Params })]
+pub struct BLS12_381 {
+    pub x: BLS12_381_Fq,
+    pub y: BLS12_381_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, BLS12_381_Fq, BLS12_381_Fr};
@@ -88,16 +95,16 @@ mod test {
         let one = BLS12_381::one();
         let negone = BLS12_381_Fr::one().neg();
         let scalar = BLS12_381Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = BLS12_381::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(BLS12_381::eq(final, BLS12_381::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = BLS12_381::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        BLS12_381::validate_on_curve(r);
     }
 
     #[test]
@@ -109,19 +116,22 @@ mod test {
         let p_minus_5 = BLS12_381Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = BLS12_381::one();
-        let b = a.neg();
+        let b = BLS12_381::neg(a);
         let mut points = [a, b];
 
-        let result =
-            BLS12_381::evaluate_linear_expression(points, scalars, [BLS12_381::one().neg()]);
+        let result = BLS12_381::evaluate_linear_expression(
+            points,
+            scalars,
+            [BLS12_381::neg(BLS12_381::one())],
+        );
 
-        assert(result.is_infinity);
+        assert(BLS12_381::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
-        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params, BLS12_381>(
             0x396C8C005555E1568C00AAAB0000AAAB,
         );
     }

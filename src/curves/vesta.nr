@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{Vesta_Fq, Vesta_Fr};
@@ -49,8 +50,14 @@ impl CurveParamsTrait<Vesta_Fq> for Vesta_Params {
 }
 
 pub global VESTA_SCALAR_SLICES: u32 = 64;
-pub type Vesta = BigCurve<Vesta_Fq, Vesta_Params>;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { Vesta_Fq }, quote { Vesta_Params })]
+pub struct Vesta {
+    pub x: Vesta_Fq,
+    pub y: Vesta_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
@@ -73,16 +80,16 @@ mod test {
         let one = Vesta::one();
         let negone = Vesta_Fr::one().neg();
         let scalar = VestaScalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = Vesta::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(Vesta::eq(final, Vesta::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = Vesta::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        Vesta::validate_on_curve(r);
     }
 
     #[test]
@@ -94,18 +101,18 @@ mod test {
         let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Vesta::one();
-        let b = a.neg();
+        let b = Vesta::neg(a);
         let mut points = [a, b];
 
-        let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
+        let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::neg(Vesta::one())]);
 
-        assert(result.is_infinity);
+        assert(Vesta::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Vesta cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta_Params, Vesta>(
             1,
         );
     }

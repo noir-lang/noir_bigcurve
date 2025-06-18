@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT4_753_Fq, MNT4_753_Fr};
@@ -89,8 +90,14 @@ impl CurveParamsTrait<MNT4_753_Fq> for MNT4_753_Params {
     }
 }
 
-pub type MNT4_753 = BigCurve<MNT4_753_Fq, MNT4_753_Params>;
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { MNT4_753_Fq }, quote { MNT4_753_Params })]
+pub struct MNT4_753 {
+    pub x: MNT4_753_Fq,
+    pub y: MNT4_753_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
@@ -114,16 +121,16 @@ mod test {
         let one = MNT4_753::one();
         let negone = MNT4_753_Fr::one().neg();
         let scalar = MNT4_753Scalar::from_bignum(negone);
-        let final = one.mul(scalar);
+        let final = MNT4_753::mul(one, scalar);
 
-        assert(final.eq(one.neg()));
+        assert(MNT4_753::eq(final, MNT4_753::neg(one)));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = MNT4_753::hash_to_curve("hello world".as_bytes());
 
-        r.validate_on_curve();
+        MNT4_753::validate_on_curve(r);
     }
 
     #[test]
@@ -135,18 +142,19 @@ mod test {
         let p_minus_5 = MNT4_753Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = MNT4_753::one();
-        let b = a.neg();
+        let b = MNT4_753::neg(a);
         let mut points = [a, b];
 
-        let result = MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::one().neg()]);
+        let result =
+            MNT4_753::evaluate_linear_expression(points, scalars, [MNT4_753::neg(MNT4_753::one())]);
 
-        assert(result.is_infinity);
+        assert(MNT4_753::get_is_infinity(result));
     }
 
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // MNT4-753 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params, MNT4_753>(
             1,
         );
     }

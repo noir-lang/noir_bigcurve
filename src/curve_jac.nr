@@ -681,7 +681,7 @@ where
             AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)
-        }
+    }
 
     pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P: BigCurveTrait<B>>(
         mut mul_points: [P; NMuls],
@@ -714,5 +714,5 @@ where
             AffineTranscript::from_jacobian_transcript(transcript);
 
         (accumulator, affine_transcript)
-        }
+    }
 }

@@ -1,10 +1,11 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 use bignum::BLS12_381_Fq;
 
-global BLS12_381_SCALAR_SLICES: u32 = 64;
+pub global BLS12_381_SCALAR_SLICES: u32 = 64;
 pub struct BLS12_381_Params {}
 impl CurveParamsTrait<BLS12_381_Fq> for BLS12_381_Params {
     fn a() -> BLS12_381_Fq {
@@ -63,20 +64,76 @@ impl CurveParamsTrait<BLS12_381_Fq> for BLS12_381_Params {
     }
 }
 
-pub type BLS12_381 = BigCurve<BLS12_381_Fq, BLS12_381_Params>;
 pub type BLS12_381Scalar = ScalarField<BLS12_381_SCALAR_SLICES>;
 
+#[derive_curve_impl(quote { BLS12_381_Fq }, quote { BLS12_381_Params })]
+pub struct BLS12_381 {
+    pub x: BLS12_381_Fq,
+    pub y: BLS12_381_Fq,
+    pub is_infinity: bool,
+}
+
 mod test {
-    use super::BLS12_381_SCALAR_SLICES;
-    use bignum::BigNum;
-    use bignum::BLS12_381_Fr;
+    use bignum::{BigNum, BLS12_381_Fq, BLS12_381_Fr};
+    use std::ops::Neg;
+
+    use crate::BigCurveTrait;
+
+    use super::{BLS12_381, BLS12_381_Params, BLS12_381_SCALAR_SLICES, BLS12_381Scalar};
 
     #[test]
-    fn test_bls12_381_bits() {
+    fn check_num_scalar_slices_in_scalar_field() {
         let x = BLS12_381_Fr::zero();
         let max_wnaf_bits: u32 = x.modulus_bits() + 1;
 
         let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
         assert(scalar_slices == BLS12_381_SCALAR_SLICES);
     }
+
+    #[test]
+    fn test_offset_generators() {
+        let one = <BLS12_381 as BigCurveTrait<BLS12_381_Fq>>::one();
+        let negone = BLS12_381_Fr::one().neg();
+        let scalar = BLS12_381Scalar::from_bignum(negone);
+        let final = BLS12_381::mul(one, scalar);
+
+        assert(BLS12_381::eq(final, BLS12_381::neg(one)));
+    }
+
+    #[test]
+    fn test_hash_to_curve() {
+        let r = <BLS12_381 as BigCurveTrait<BLS12_381_Fq>>::hash_to_curve("hello world".as_bytes());
+
+        BLS12_381::validate_on_curve(r);
+    }
+
+    #[test]
+    fn test_msm() {
+        let four = BLS12_381_Fr::from(4);
+        let p_minus_4_fr = BLS12_381_Fr::modulus() - four;
+        let p_minus_4 = BLS12_381Scalar::from_bignum(p_minus_4_fr);
+        let p_minus_5_fr = p_minus_4_fr - BLS12_381_Fr::one();
+        let p_minus_5 = BLS12_381Scalar::from_bignum(p_minus_5_fr);
+        let mut scalars = [p_minus_4, p_minus_5];
+        let a = BLS12_381::one();
+        let b = BLS12_381::neg(a);
+        let mut points = [a, b];
+
+        let result = BLS12_381::evaluate_linear_expression(
+            points,
+            scalars,
+            [BLS12_381::neg(BLS12_381::one())],
+        );
+
+        assert(BLS12_381::get_is_infinity(result));
+    }
+
+    #[test(should_fail)]
+    unconstrained fn verify_offset_generators() {
+        // BLS12-381 cofactor is 0x396C8C005555E1568C00AAAB0000AAAB
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_381_Fq, BLS12_381_Params, BLS12_381>(
+            0x396C8C005555E1568C00AAAB0000AAAB,
+        );
+    }
+
 }

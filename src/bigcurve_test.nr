@@ -455,7 +455,7 @@ fn test_make_table() {
         );
 
         for i in 0..8 {
-            let point: BN254 = affine_point_table.get(i);
+            let point: BN254 = affine_point_table.get::<BN254Params, BN254>(i);
             point.validate_on_curve();
         }
     }

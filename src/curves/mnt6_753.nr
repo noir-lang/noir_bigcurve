@@ -148,7 +148,7 @@ mod test {
         let result =
             MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::neg(MNT6_753::one())]);
 
-        assert(MNT6_753::get_is_infinity(result));
+        assert(MNT6_753::is_infinity(result));
     }
 
     #[test(should_fail)]

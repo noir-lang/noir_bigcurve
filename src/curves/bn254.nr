@@ -103,7 +103,7 @@ mod test {
 
         let result = BN254::evaluate_linear_expression(points, scalars, [BN254::neg(BN254::one())]);
 
-        assert(BN254::get_is_infinity(result));
+        assert(BN254::is_infinity(result));
     }
 
     #[test]

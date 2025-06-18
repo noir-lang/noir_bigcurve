@@ -109,7 +109,7 @@ mod test {
         let result =
             Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
 
-        assert(Pallas::get_is_infinity(result));
+        assert(Pallas::is_infinity(result));
     }
 
     #[test(should_fail)]

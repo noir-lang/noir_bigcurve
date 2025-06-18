@@ -216,10 +216,10 @@ where
 {
     fn from(affine_point: P) -> Self {
         CurveJ {
-            x: affine_point.get_x(),
-            y: affine_point.get_y(),
+            x: affine_point.x(),
+            y: affine_point.y(),
             z: B::one(),
-            is_infinity: affine_point.get_is_infinity(),
+            is_infinity: affine_point.is_infinity(),
         }
     }
 }

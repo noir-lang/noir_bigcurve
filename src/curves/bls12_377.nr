@@ -129,7 +129,7 @@ mod test {
             [BLS12_377::neg(BLS12_377::one())],
         );
 
-        assert(BLS12_377::get_is_infinity(result));
+        assert(BLS12_377::is_infinity(result));
     }
 
     #[test(should_fail)]

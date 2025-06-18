@@ -137,7 +137,7 @@ mod test {
             [Secp384r1::neg(Secp384r1::one())],
         );
 
-        assert(Secp384r1::get_is_infinity(result));
+        assert(Secp384r1::is_infinity(result));
     }
 
     #[test(should_fail)]

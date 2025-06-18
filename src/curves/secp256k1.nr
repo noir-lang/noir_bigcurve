@@ -124,7 +124,7 @@ mod test {
             [Secp256k1::neg(Secp256k1::one())],
         );
 
-        assert(Secp256k1::get_is_infinity(result));
+        assert(Secp256k1::is_infinity(result));
     }
 
     #[test(should_fail)]

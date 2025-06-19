@@ -20,8 +20,7 @@ where
     // (no offset generators needed)
     let g: BigCurve = BigCurve::hash_to_curve(seed);
 
-    let g_init: CurveJ<Fq, CurveParams> =
-        CurveJ { x: g.x(), y: g.y(), z: Fq::one(), is_infinity: false };
+    let g_init = CurveJ::<Fq, CurveParams>::from(g);
     let mut gen = g_init;
 
     let cofactor_bits: [u1; 128] = cofactor.to_be_bits();
@@ -148,8 +147,7 @@ where
     // (no offset generators needed)
     let g: BigCurve = BigCurve::hash_to_curve(seed);
 
-    let g_init: CurveJ<Fq, CurveParams> =
-        CurveJ { x: g.x(), y: g.y(), z: Fq::one(), is_infinity: false };
+    let g_init = CurveJ::<Fq, CurveParams>::from(g);
     let mut gen = g_init;
 
     let cofactor_bits: [u1; 128] = cofactor.to_be_bits();

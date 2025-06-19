@@ -176,11 +176,6 @@ pub(crate) comptime fn derive_curve_impl(
                 Self { x: r.0, y: r.1, is_infinity: false }
             }
 
-    
-          
-
-
-
             fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
                 mul_points: [Self; NMuls],
                 mul_scalars: [ScalarField<NScalarSlices>; NMuls],

@@ -64,7 +64,9 @@ pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub + Neg {
     fn msm<let NScalarSlices: u32, let NMuls: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-    ) -> Self;
+    ) -> Self {
+        Self::evaluate_linear_expression(mul_points, mul_scalars, [])
+    }
 
     /// Evaluates a linear expression involving multiple points and scalars, returning the resulting point.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
@@ -92,6 +94,10 @@ pub(crate) comptime fn derive_curve_impl(
 
             fn is_infinity(self) -> bool {
                 self.is_infinity
+            }
+
+            fn from_coordinates(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
+                Self { x, y, is_infinity }
             }
 
             fn point_at_infinity() -> Self {
@@ -170,18 +176,10 @@ pub(crate) comptime fn derive_curve_impl(
                 Self { x: r.0, y: r.1, is_infinity: false }
             }
 
-            fn from_coordinates(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
-                Self { x, y, is_infinity }
-            }
+    
+          
 
-            
 
-            fn msm<let NScalarSlices: u32, let NMuls: u32>(
-                mul_points: [Self; NMuls],
-                mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-            ) -> Self {
-                crate::BigCurveTrait::evaluate_linear_expression(mul_points, mul_scalars, [])
-            }
 
             fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
                 mul_points: [Self; NMuls],

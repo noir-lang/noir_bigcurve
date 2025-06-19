@@ -9,7 +9,7 @@ use bignum::BigNum;
 
 use crate::curve_jac::AffineTranscript;
 use crate::scalar_field::ScalarField;
-use std::ops::{Add, Sub, Neg};
+use std::ops::{Add, Neg, Sub};
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 

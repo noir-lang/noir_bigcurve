@@ -9,7 +9,7 @@ use bignum::BigNum;
 
 use crate::curve_jac::AffineTranscript;
 use crate::scalar_field::ScalarField;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Sub, Neg};
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 
@@ -21,21 +21,30 @@ pub trait CurveParamsTrait<B: BigNum> {
     fn a() -> B;
 }
 
-pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub {
-    /// Returns the negation of the point (i.e., the additive inverse on the curve).
-    fn neg(self) -> Self;
+pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub + Neg {
+    /// Returns the x-coordinate of the point.
+    fn x(self) -> B;
+
+    /// Returns the y-coordinate of the point.
+    fn y(self) -> B;
+
+    /// Creates a point from its coordinates.
+    fn from_coordinates(x: B, y: B, is_infinity: bool) -> Self;
 
     /// Returns the point at infinity (the identity element of the curve group).
     fn point_at_infinity() -> Self;
+
+    /// Returns true if the point is the point at infinity.
+    fn is_infinity(self) -> bool;
+
+    /// Returns the canonical generator point of the curve.
+    fn one() -> Self;
 
     /// Returns a generator point offset by a fixed value (implementation-specific).
     fn offset_generator() -> Self;
 
     /// Returns the final offset generator point (implementation-specific).
     fn offset_generator_final() -> Self;
-
-    /// Returns the canonical generator point of the curve.
-    fn one() -> Self;
 
     /// Conditionally selects between `lhs` and `rhs` based on the boolean `predicate`.
     ///
@@ -50,18 +59,6 @@ pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub {
 
     /// Hashes the provided `seed` to a point on the curve.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
-
-    /// Creates a point from its coordinates.
-    fn from_coordinates(x: B, y: B, is_infinity: bool) -> Self;
-
-    /// Returns the x-coordinate of the point.
-    fn x(self) -> B;
-
-    /// Returns the y-coordinate of the point.
-    fn y(self) -> B;
-
-    /// Returns true if the point is the point at infinity.
-    fn is_infinity(self) -> bool;
 
     /// Multiplies a point by a scalar field value, returning the resulting point.
     fn msm<let NScalarSlices: u32, let NMuls: u32>(
@@ -85,12 +82,16 @@ pub(crate) comptime fn derive_curve_impl(
     let typ = struct_def.as_type();
     quote {
         impl crate::BigCurveTrait<$field_type> for $typ {
-            fn neg(self) -> Self {
-                Self { 
-                    x: self.x, 
-                    y: std::ops::Neg::neg(self.y), 
-                    is_infinity: self.is_infinity 
-                }
+            fn x(self) -> $field_type {
+                self.x
+            }
+
+            fn y(self) -> $field_type {
+                self.y
+            }
+
+            fn is_infinity(self) -> bool {
+                self.is_infinity
             }
 
             fn point_at_infinity() -> Self {
@@ -173,17 +174,7 @@ pub(crate) comptime fn derive_curve_impl(
                 Self { x, y, is_infinity }
             }
 
-            fn x(self) -> $field_type {
-                self.x
-            }
-
-            fn y(self) -> $field_type {
-                self.y
-            }
-
-            fn is_infinity(self) -> bool {
-                self.is_infinity
-            }
+            
 
             fn msm<let NScalarSlices: u32, let NMuls: u32>(
                 mul_points: [Self; NMuls],
@@ -319,7 +310,16 @@ pub(crate) comptime fn derive_curve_impl(
                     crate::sub_with_hint::<$field_type, $params_type, $typ>(self,other, transcript)
                 }
             }
-        
+
+            impl std::ops::Neg for $typ {
+                fn neg(self) -> Self {
+                    Self { 
+                        x: self.x, 
+                        y: std::ops::Neg::neg(self.y), 
+                        is_infinity: self.is_infinity 
+                    }
+                }
+            }        
     }
 }
 

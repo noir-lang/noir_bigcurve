@@ -62,6 +62,7 @@ pub struct BN254 {
 mod test {
     use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
+    use std::ops::Neg;
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
 
@@ -102,7 +103,7 @@ mod test {
         let b = a.neg();
         let mut points = [a, b];
 
-        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+        let result = BN254::evaluate_linear_expression(points, scalars, [b]);
 
         assert(result.is_infinity);
     }

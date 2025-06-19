@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 
@@ -51,7 +52,13 @@ impl CurveParamsTrait<Pallas_Fq> for Pallas_Params {
     }
 }
 
-pub type Pallas = BigCurve<Pallas_Fq, Pallas_Params>;
+#[derive_curve_impl(quote { Pallas_Fq }, quote { Pallas_Params })]
+pub struct Pallas {
+    pub x: Pallas_Fq,
+    pub y: Pallas_Fq,
+    pub is_infinity: bool,
+}
+
 pub type PallasScalar = ScalarField<PALLAS_SCALAR_SLICES>;
 
 mod test {
@@ -107,7 +114,7 @@ mod test {
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Pallas cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas_Params, Pallas>(
             1,
         );
     }

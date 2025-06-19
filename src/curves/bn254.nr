@@ -1,6 +1,7 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 
 use bignum::BigNum;
@@ -48,13 +49,20 @@ impl CurveParamsTrait<BN254_Fq> for BN254Params {
 }
 
 pub global BN254_SCALAR_SLICES: u32 = 64;
-pub type BN254 = BigCurve<BN254_Fq, BN254Params>;
 pub(crate) type BN254J = CurveJ<BN254_Fq, BN254Params>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BN254_Fq }, quote { BN254Params })]
+pub struct BN254 {
+    pub x: BN254_Fq,
+    pub y: BN254_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use crate::BigCurveTrait;
     use bignum::{BigNum, BN254_Fq};
+    use std::ops::Neg;
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
 
@@ -95,7 +103,7 @@ mod test {
         let b = a.neg();
         let mut points = [a, b];
 
-        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
+        let result = BN254::evaluate_linear_expression(points, scalars, [b]);
 
         assert(result.is_infinity);
     }
@@ -103,7 +111,7 @@ mod test {
     #[test]
     unconstrained fn verify_offset_generators() {
         // BN254 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254Params, BN254>(
             1,
         );
     }

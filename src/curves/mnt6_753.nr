@@ -1,8 +1,9 @@
-use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use crate::BigCurveTrait;
+use crate::derive_curve_impl;
 
 pub global MNT6_753_SCALAR_SLICES: u32 = 189;
 pub struct MNT6_753_Params {}
@@ -89,7 +90,12 @@ impl CurveParamsTrait<MNT6_753_Fq> for MNT6_753_Params {
     }
 }
 
-pub type MNT6_753 = BigCurve<MNT6_753_Fq, MNT6_753_Params>;
+#[derive_curve_impl(quote { MNT6_753_Fq }, quote { MNT6_753_Params })]
+pub struct MNT6_753 {
+    pub x: MNT6_753_Fq,
+    pub y: MNT6_753_Fq,
+    pub is_infinity: bool,
+}
 pub type MNT6_753Scalar = ScalarField<MNT6_753_SCALAR_SLICES>;
 
 mod test {
@@ -147,7 +153,7 @@ mod test {
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // MNT6-753 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<MNT6_753_Fq, MNT6_753_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT6_753_Fq, MNT6_753_Params, MNT6_753>(
             1,
         );
     }

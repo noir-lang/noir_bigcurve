@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 
@@ -64,8 +65,14 @@ impl CurveParamsTrait<BLS12_377_Fq> for BLS12_377_Params {
     }
 }
 
-pub type BLS12_377 = BigCurve<BLS12_377_Fq, BLS12_377_Params>;
 pub type BLS12_377Scalar = ScalarField<BLS12_377_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { BLS12_377_Fq }, quote { BLS12_377_Params })]
+pub struct BLS12_377 {
+    pub x: BLS12_377_Fq,
+    pub y: BLS12_377_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, BLS12_377_Fq, BLS12_377_Fr};
@@ -125,7 +132,7 @@ mod test {
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
-        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377_Params, BLS12_377>(
             0x170b5d44300000000000000000000000,
         );
     }

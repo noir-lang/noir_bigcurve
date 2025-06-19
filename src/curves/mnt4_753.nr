@@ -1,5 +1,6 @@
-use crate::BigCurve;
+use crate::BigCurveTrait;
 use crate::CurveParamsTrait;
+use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT4_753_Fq, MNT4_753_Fr};
@@ -89,8 +90,14 @@ impl CurveParamsTrait<MNT4_753_Fq> for MNT4_753_Params {
     }
 }
 
-pub type MNT4_753 = BigCurve<MNT4_753_Fq, MNT4_753_Params>;
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
+
+#[derive_curve_impl(quote { MNT4_753_Fq }, quote { MNT4_753_Params })]
+pub struct MNT4_753 {
+    pub x: MNT4_753_Fq,
+    pub y: MNT4_753_Fq,
+    pub is_infinity: bool,
+}
 
 mod test {
     use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
@@ -146,7 +153,7 @@ mod test {
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // MNT4-753 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_Params, MNT4_753>(
             1,
         );
     }

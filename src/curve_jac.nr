@@ -1,8 +1,8 @@
 use bignum::BigNum;
 
-use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
+use super::BigCurveTrait;
 
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
 ///
@@ -197,10 +197,7 @@ where
     /**
      * @brief get a value out of the lookup table
      **/
-    pub(crate) unconstrained fn get<CurveParams>(self, idx: u32) -> CurveJ<B, CurveParams>
-    where
-        CurveParams: CurveParamsTrait<B>,
-    {
+    pub(crate) unconstrained fn get<CurveParams>(self, idx: u32) -> CurveJ<B, CurveParams> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
 }
@@ -208,17 +205,17 @@ where
 /**
  * @brief construct from BigCurve
  **/
-impl<B, CurveParams> std::convert::From<BigCurve<B, CurveParams>> for CurveJ<B, CurveParams>
+impl<B, CurveParams, P> std::convert::From<P> for CurveJ<B, CurveParams>
 where
     B: BigNum,
-    CurveParams: CurveParamsTrait<B>,
+    P: BigCurveTrait<B>,
 {
-    fn from(affine_point: BigCurve<B, CurveParams>) -> Self {
+    fn from(affine_point: P) -> Self {
         CurveJ {
-            x: affine_point.x,
-            y: affine_point.y,
+            x: affine_point.x(),
+            y: affine_point.y(),
             z: B::one(),
-            is_infinity: affine_point.is_infinity,
+            is_infinity: affine_point.is_infinity(),
         }
     }
 }
@@ -682,10 +679,10 @@ where
         (accumulator, affine_transcript)
     }
 
-    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
-        mut mul_points: [BigCurve<B, CurveParams>; NMuls],
+    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P: BigCurveTrait<B>>(
+        mut mul_points: [P; NMuls],
         mut scalars: [ScalarField<NScalarSlices>; NMuls],
-        mut add_points: [BigCurve<B, CurveParams>; NAdds],
+        mut add_points: [P; NAdds],
     ) -> (Self, [AffineTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) {
         let mut mul_j: [CurveJ<B, CurveParams>; NMuls] = [CurveJ::new(); NMuls];
         let mut add_j: [CurveJ<B, CurveParams>; NAdds] = [CurveJ::new(); NAdds];

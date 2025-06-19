@@ -107,16 +107,16 @@ mod test {
         let one = Secp384r1::one();
         let negone = Secp384r1_Fr::one().neg();
         let scalar = Secp384r1Scalar::from_bignum(negone);
-        let final = Secp384r1::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(Secp384r1::eq(final, Secp384r1::neg(one)));
+        assert(final.eq(one.neg()));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = Secp384r1::hash_to_curve("hello world".as_bytes());
 
-        Secp384r1::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -128,16 +128,13 @@ mod test {
         let p_minus_5 = Secp384r1Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Secp384r1::one();
-        let b = Secp384r1::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result = Secp384r1::evaluate_linear_expression(
-            points,
-            scalars,
-            [Secp384r1::neg(Secp384r1::one())],
-        );
+        let result =
+            Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
 
-        assert(Secp384r1::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test(should_fail)]

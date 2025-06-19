@@ -83,15 +83,15 @@ mod test {
         let one = Pallas::one();
         let negone = Pallas_Fr::one().neg();
         let scalar = PallasScalar::from_bignum(negone);
-        let final = Pallas::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(Pallas::eq(final, Pallas::neg(one)));
+        assert(final.eq(one.neg()));
     }
     #[test]
     fn test_hash_to_curve() {
         let r = Pallas::hash_to_curve("hello world".as_bytes());
 
-        Pallas::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -103,13 +103,12 @@ mod test {
         let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Pallas::one();
-        let b = Pallas::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result =
-            Pallas::evaluate_linear_expression(points, scalars, [Pallas::neg(Pallas::one())]);
+        let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
 
-        assert(Pallas::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test(should_fail)]

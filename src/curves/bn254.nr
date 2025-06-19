@@ -64,6 +64,7 @@ mod test {
     use bignum::{BigNum, BN254_Fq};
 
     use super::{BN254, BN254_SCALAR_SLICES, BN254Params, BN254Scalar};
+
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
         let x = BN254_Fq::zero();
@@ -77,16 +78,16 @@ mod test {
     fn test_offset_generators() {
         let one = BN254::one();
         let scalar = BN254Scalar::from(-1);
-        let final = BN254::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(BN254::eq(final, BN254::neg(one)));
+        assert(final.eq(one.neg()));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = BN254::hash_to_curve("hello world".as_bytes());
 
-        BN254::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -98,12 +99,12 @@ mod test {
         let p_minus_5 = BN254Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = BN254::one();
-        let b = BN254::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::neg(BN254::one())]);
+        let result = BN254::evaluate_linear_expression(points, scalars, [BN254::one().neg()]);
 
-        assert(BN254::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test]

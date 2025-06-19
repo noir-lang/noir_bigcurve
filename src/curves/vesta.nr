@@ -80,16 +80,16 @@ mod test {
         let one = Vesta::one();
         let negone = Vesta_Fr::one().neg();
         let scalar = VestaScalar::from_bignum(negone);
-        let final = Vesta::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(Vesta::eq(final, Vesta::neg(one)));
+        assert(final.eq(one.neg()));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = Vesta::hash_to_curve("hello world".as_bytes());
 
-        Vesta::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -101,12 +101,12 @@ mod test {
         let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = Vesta::one();
-        let b = Vesta::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::neg(Vesta::one())]);
+        let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 
-        assert(Vesta::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test(should_fail)]

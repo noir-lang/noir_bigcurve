@@ -99,15 +99,15 @@ mod test {
         let one = BLS12_377::one();
         let negone = BLS12_377_Fr::one().neg();
         let scalar = BLS12_377Scalar::from_bignum(negone);
-        let final = BLS12_377::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(BLS12_377::eq(final, BLS12_377::neg(one)));
+        assert(final.eq(one.neg()));
     }
     #[test]
     fn test_hash_to_curve() {
         let r = BLS12_377::hash_to_curve("hello world".as_bytes());
 
-        BLS12_377::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -120,16 +120,13 @@ mod test {
         let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = BLS12_377::one();
-        let b = BLS12_377::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result = BLS12_377::evaluate_linear_expression(
-            points,
-            scalars,
-            [BLS12_377::neg(BLS12_377::one())],
-        );
+        let result =
+            BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);
 
-        assert(BLS12_377::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test(should_fail)]

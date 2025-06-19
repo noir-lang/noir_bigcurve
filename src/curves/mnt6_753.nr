@@ -120,16 +120,16 @@ mod test {
         let one = MNT6_753::one();
         let negone = MNT6_753_Fr::one().neg();
         let scalar = MNT6_753Scalar::from_bignum(negone);
-        let final = MNT6_753::mul(one, scalar);
+        let final = one.mul(scalar);
 
-        assert(MNT6_753::eq(final, MNT6_753::neg(one)));
+        assert(final.eq(one.neg()));
     }
 
     #[test]
     fn test_hash_to_curve() {
         let r = MNT6_753::hash_to_curve("hello world".as_bytes());
 
-        MNT6_753::validate_on_curve(r);
+        r.validate_on_curve();
     }
 
     #[test]
@@ -142,13 +142,12 @@ mod test {
         let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
         let mut scalars = [p_minus_4, p_minus_5];
         let a = MNT6_753::one();
-        let b = MNT6_753::neg(a);
+        let b = a.neg();
         let mut points = [a, b];
 
-        let result =
-            MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::neg(MNT6_753::one())]);
+        let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
 
-        assert(MNT6_753::is_infinity(result));
+        assert(result.is_infinity);
     }
 
     #[test(should_fail)]

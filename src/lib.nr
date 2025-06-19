@@ -60,15 +60,6 @@ pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub + Neg {
     /// Hashes the provided `seed` to a point on the curve.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 
-    /// Multiplies a point by a scalar field value, returning the resulting point.
-    fn msm<let NScalarSlices: u32, let NMuls: u32>(
-        mul_points: [Self; NMuls],
-        mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-    ) -> Self {
-        let add_points: [Self; 0] = [];
-        Self::evaluate_linear_expression(mul_points, mul_scalars, add_points)
-    }
-
     /// Evaluates a linear expression involving multiple points and scalars, returning the resulting point.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Self; NMuls],
@@ -434,6 +425,16 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<
 
     P::from_coordinates(x3, y3, false)
 }
+
+/// Multiplies a point by a scalar field value, returning the resulting point.
+pub fn msm<P: BigCurveTrait<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
+    mul_points: [P; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+) -> P {
+    let add_points: [P; 0] = [];
+    P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
+}
+
 
 // TODO: offset generators
 //       conditional subtract, conditional add

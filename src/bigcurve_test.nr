@@ -463,7 +463,7 @@ fn test_make_table() {
 
 #[test]
 fn test_bigcurve_sub_with_hint() {
-    let accumulator: MNT6_753 = MNT6_753 {
+    let accumulator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,
@@ -484,7 +484,7 @@ fn test_bigcurve_sub_with_hint() {
         ]),
         is_infinity: false,
     };
-    let offset_generator: MNT6_753 = MNT6_753 {
+    let offset_generator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,
             0x7d06f1a94609f8e4eb48c998d1571d,

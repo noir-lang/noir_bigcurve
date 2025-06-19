@@ -198,8 +198,6 @@ where
      * @brief get a value out of the lookup table
      **/
     pub(crate) unconstrained fn get<CurveParams>(self, idx: u32) -> CurveJ<B, CurveParams>
-    where
-        CurveParams: CurveParamsTrait<B>,
     {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
@@ -211,7 +209,6 @@ where
 impl<B, CurveParams, P> std::convert::From<P> for CurveJ<B, CurveParams>
 where
     B: BigNum,
-    CurveParams: CurveParamsTrait<B>,
     P: BigCurveTrait<B>,
 {
     fn from(affine_point: P) -> Self {

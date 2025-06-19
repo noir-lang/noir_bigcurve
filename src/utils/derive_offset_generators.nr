@@ -83,8 +83,8 @@ where
     let b = CurveParams::b();
     let one = CurveParams::one();
 
-    let input = <BigCurve as BigCurveTrait<Fq>>::one();
-    <BigCurve as BigCurveTrait<Fq>>::validate_on_curve(input);
+    let input = BigCurve::one();
+    input.validate_on_curve();
 
     let (offset_generator_initial, offset_generator_final) =
         compute_offset_generators::<Fq, CurveParams, NScalarSlices, BigCurve>(cofactor);

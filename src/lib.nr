@@ -160,7 +160,6 @@ pub(crate) comptime fn derive_curve_impl(
 
             fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
                 let transcript: [crate::curve_jac::AffineTranscript<$field_type>; (NScalarSlices * 5) + 6] =
-                // Safety:
                     unsafe { crate::get_mul_transcript::<NScalarSlices, $field_type, $params_type, $typ>(self, scalar) };
                 crate::mul_with_hint::<NScalarSlices, (NScalarSlices * 5) + 6, $field_type, $params_type, $typ>(self, scalar, transcript)
             }
@@ -198,7 +197,6 @@ pub(crate) comptime fn derive_curve_impl(
                 mul_scalars: [ScalarField<NScalarSlices>; NMuls],
                 add_points: [Self; NAdds],
             ) -> Self {
-                // Safety:
                 let transcript: [crate::curve_jac::AffineTranscript<$field_type>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
                     crate::curve_jac::CurveJ::<$field_type, $params_type>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
 };
@@ -296,7 +294,6 @@ pub(crate) comptime fn derive_curve_impl(
                     let lhsJ = crate::curve_jac::CurveJ::<$field_type, $params_type>::from(self);
                     let rhsJ = crate::curve_jac::CurveJ::<$field_type, $params_type>::from(other);
 
-                    // Safety: 
                     let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(lhsJ.add(rhsJ).1) };
 
                     crate::add_with_hint::<$field_type, $params_type, $typ>(self,other, transcript)
@@ -317,7 +314,6 @@ pub(crate) comptime fn derive_curve_impl(
                     let lhsJ = crate::curve_jac::CurveJ::<$field_type, $params_type>::from(self);
                     let rhsJ = crate::curve_jac::CurveJ::<$field_type, $params_type>::from(other);
 
-                    //Safety: 
                     let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(lhsJ.sub(rhsJ).1) };
 
                     crate::sub_with_hint::<$field_type, $params_type, $typ>(self,other, transcript)

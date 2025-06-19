@@ -65,7 +65,8 @@ pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub + Neg {
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     ) -> Self {
-        Self::evaluate_linear_expression(mul_points, mul_scalars, [])
+        let add_points: [Self; 0] = [];
+        Self::evaluate_linear_expression(mul_points, mul_scalars, add_points)
     }
 
     /// Evaluates a linear expression involving multiple points and scalars, returning the resulting point.

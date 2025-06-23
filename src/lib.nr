@@ -46,11 +46,6 @@ pub trait BigCurve<B: BigNum>: Eq + Add + Sub + Neg {
     /// Returns the final offset generator point (implementation-specific).
     fn offset_generator_final() -> Self;
 
-    /// Conditionally selects between `lhs` and `rhs` based on the boolean `predicate`.
-    ///
-    /// Returns `lhs` if `predicate` is false, otherwise returns `rhs`.
-    fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self;
-
     /// Validates that the point lies on the curve. May panic or fail if invalid.
     fn validate_on_curve(self);
 
@@ -59,15 +54,6 @@ pub trait BigCurve<B: BigNum>: Eq + Add + Sub + Neg {
 
     /// Hashes the provided `seed` to a point on the curve.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
-
-    /// Multiplies a point by a scalar field value, returning the resulting point.
-    fn msm<let NScalarSlices: u32, let NMuls: u32>(
-        mul_points: [Self; NMuls],
-        mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-    ) -> Self {
-        let add_points: [Self; 0] = [];
-        Self::evaluate_linear_expression(mul_points, mul_scalars, add_points)
-    }
 
     /// Evaluates a linear expression involving multiple points and scalars, returning the resulting point.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
@@ -136,16 +122,6 @@ pub(crate) comptime fn derive_curve_impl(
                 }
             }
 
-            fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
-                let x = bignum::bignum::conditional_select(lhs.x, rhs.x, predicate);
-                let y = bignum::bignum::conditional_select(lhs.y, rhs.y, predicate);
-                let is_infinity = (
-                    (lhs.is_infinity as Field - rhs.is_infinity as Field) * predicate as Field
-                        + rhs.is_infinity as Field
-                ) != 0;
-                Self { x, y, is_infinity }
-            }
-
             fn validate_on_curve(self) {
                 // if is point at infinity, we're on the curve.
                 // In this case just sub in a valid point for the x/y coordinates we are about to test
@@ -188,7 +164,7 @@ pub(crate) comptime fn derive_curve_impl(
                 let mut _inputs: [Self; NMuls] = [crate::BigCurve::one(); NMuls];
                 let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [crate::ScalarField::zero(); NMuls];
                 for i in 0..NMuls {
-                    _inputs[i] = crate::BigCurve::conditional_select(
+                    _inputs[i] = crate::conditional_select(
                         crate::BigCurve::one(),
                         mul_points[i],
                         mul_points[i].is_infinity,
@@ -317,6 +293,17 @@ pub(crate) comptime fn derive_curve_impl(
     }
 }
 
+fn conditional_select<P: BigCurveTrait<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
+    let x = bignum::bignum::conditional_select(lhs.x(), rhs.x(), predicate);
+    let y = bignum::bignum::conditional_select(lhs.y(), rhs.y(), predicate);
+    let is_infinity = (
+        (lhs.is_infinity() as Field - rhs.is_infinity() as Field) * predicate as Field
+            + rhs.is_infinity() as Field
+    )
+        != 0;
+    P::from_coordinates(x, y, is_infinity)
+}
+
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
 ///
 /// This method is optimized to minimize the number of calls to `evaluate_quadratic_expression`,
@@ -435,6 +422,15 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<
     P::from_coordinates(x3, y3, false)
 }
 
+/// Multiplies a point by a scalar field value, returning the resulting point.
+pub fn msm<P: BigCurveTrait<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
+    mul_points: [P; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+) -> P {
+    let add_points: [P; 0] = [];
+    P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
+}
+
 // TODO: offset generators
 //       conditional subtract, conditional add
 //
@@ -450,7 +446,7 @@ fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscript
     let mut _inputs: [P; Size] = [P::one(); Size];
     let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
     for i in 0..Size {
-        _inputs[i] = P::conditional_select(P::one(), points[i], points[i].is_infinity());
+        _inputs[i] = conditional_select(P::one(), points[i], points[i].is_infinity());
         _scalars[i] = ScalarField::conditional_select(
             ScalarField::zero(),
             scalars[i],
@@ -537,7 +533,7 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, CurveParams: Curve
 ) -> P {
     let operand_output =
         crate::incomplete_add_with_hint::<B, CurveParams, P>(point, other, transcript);
-    let result = P::conditional_select(operand_output, point, predicate);
+    let result = conditional_select(operand_output, point, predicate);
     result
 }
 
@@ -549,7 +545,7 @@ fn conditional_incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParams
 ) -> P {
     let operand_output =
         crate::incomplete_subtract_with_hint::<B, CurveParams, P>(point, other, transcript);
-    let result = P::conditional_select(operand_output, point, predicate);
+    let result = conditional_select(operand_output, point, predicate);
     result
 }
 
@@ -847,7 +843,7 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
     transcript: [AffineTranscript<B>; NTranscriptSlices],
 ) -> P {
     // Compute a 4-bit lookup table of multiples of P
-    let input: P = P::conditional_select(P::one(), point, point.is_infinity());
+    let input: P = conditional_select(P::one(), point, point.is_infinity());
     let scalar: ScalarField<NScalarSlices> =
         ScalarField::conditional_select(ScalarField::zero(), scalar, point.is_infinity());
     let T: PointTable<B> = PointTable::new_with_hint::<CurveParams, P>(

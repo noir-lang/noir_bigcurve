@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
@@ -103,7 +103,7 @@ mod test {
     use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
 
     use super::{MNT4_753, MNT4_753_Params, MNT4_753_SCALAR_SLICES, MNT4_753Scalar};
 

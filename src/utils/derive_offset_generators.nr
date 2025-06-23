@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::curves::bn254::BN254Params;
@@ -12,7 +12,7 @@ unconstrained fn compute_offset_generators<Fq, CurveParams, let NScalarSlices: u
 where
     Fq: BigNum,
     CurveParams: CurveParamsTrait<Fq>,
-    BigCurve: BigCurveTrait<Fq>,
+    BigCurve: BigCurve<Fq>,
 {
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
@@ -69,7 +69,7 @@ where
     (offset_generator_initial, offset_generator_final)
 }
 
-unconstrained fn compute_and_print_offset_generators<Fq, CurveParams, let K: u32, let J: u32, let NScalarSlices: u32, BigCurve>(
+unconstrained fn compute_and_print_offset_generators<Fq, CurveParams, let K: u32, let J: u32, let NScalarSlices: u32, Curve>(
     bignumstr: str<K>,
     curvestr: str<J>,
     cofactor: Field,
@@ -77,17 +77,17 @@ unconstrained fn compute_and_print_offset_generators<Fq, CurveParams, let K: u32
 where
     Fq: BigNum,
     CurveParams: CurveParamsTrait<Fq>,
-    BigCurve: BigCurveTrait<Fq>,
+    Curve: BigCurve<Fq>,
 {
     let a = CurveParams::a();
     let b = CurveParams::b();
     let one = CurveParams::one();
 
-    let input = BigCurve::one();
+    let input = Curve::one();
     input.validate_on_curve();
 
     let (offset_generator_initial, offset_generator_final) =
-        compute_offset_generators::<Fq, CurveParams, NScalarSlices, BigCurve>(cofactor);
+        compute_offset_generators::<Fq, CurveParams, NScalarSlices, Curve>(cofactor);
 
     println(f"pub struct {curvestr} {{}}");
     println(f"impl CurveParamsTrait<{bignumstr}> for {curvestr} {{");
@@ -107,7 +107,7 @@ where
 #[test]
 fn test_compute_and_print_offset_generators() {
     unsafe {
-        let _ = <BN254 as BigCurveTrait<BN254_Fq>>::one();
+        let _ = <BN254 as BigCurve<BN254_Fq>>::one();
         compute_and_print_offset_generators::<BN254_Fq, BN254Params, _, _, 64, BN254>(
             "BN254_Fq",
             "BN254Params",
@@ -134,18 +134,18 @@ fn test_compute_and_print_offset_generators() {
     }
 }
 
-pub(crate) unconstrained fn verify_offset_generators<Fq, CurveParams, BigCurve>(cofactor: Field)
+pub(crate) unconstrained fn verify_offset_generators<Fq, CurveParams, Curve>(cofactor: Field)
 where
     Fq: BigNum,
     CurveParams: CurveParamsTrait<Fq>,
-    BigCurve: BigCurveTrait<Fq>,
+    Curve: BigCurve<Fq>,
 {
     // For each curve, compute the offset generators and verify they match the ones in the curve parameters
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
     // we only need well-defined parameters for a and b, for hash_to_curve to work
     // (no offset generators needed)
-    let g: BigCurve = BigCurve::hash_to_curve(seed);
+    let g: Curve = Curve::hash_to_curve(seed);
 
     let g_init = CurveJ::<Fq, CurveParams>::from(g);
     let mut gen = g_init;
@@ -171,7 +171,7 @@ where
     let zzz = zz.__mul(genz);
     let computed_initial = [gen.x.__mul(zz), gen.y.__mul(zzz)];
     // Verify against the values in the curve parameters
-    let expected_initial = BigCurve::offset_generator();
+    let expected_initial = Curve::offset_generator();
     println(f"expected_initial: {expected_initial}");
     println(f"computed_initial: {computed_initial}");
     assert_eq(computed_initial[0], expected_initial.x(), "Initial offset generator x mismatch");

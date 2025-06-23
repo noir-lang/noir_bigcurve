@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
@@ -80,7 +80,7 @@ mod test {
     use bignum::{BigNum, Secp256r1_Fq, Secp256r1_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
 
     use super::{Secp256r1, Secp256r1_Params, SECP256r1_SCALAR_SLICES, Secp256r1Scalar};
 

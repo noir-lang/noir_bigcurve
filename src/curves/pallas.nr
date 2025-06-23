@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
@@ -65,7 +65,7 @@ mod test {
     use bignum::{BigNum, Pallas_Fq, Pallas_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
 
     use super::{Pallas, Pallas_Params, PALLAS_SCALAR_SLICES, PallasScalar};
 

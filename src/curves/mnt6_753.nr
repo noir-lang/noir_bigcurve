@@ -2,7 +2,7 @@ use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::derive_curve_impl;
 
 pub global MNT6_753_SCALAR_SLICES: u32 = 189;
@@ -102,7 +102,7 @@ mod test {
     use bignum::{BigNum, MNT6_753_Fq, MNT6_753_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
 
     use super::{MNT6_753, MNT6_753_Params, MNT6_753_SCALAR_SLICES, MNT6_753Scalar};
 

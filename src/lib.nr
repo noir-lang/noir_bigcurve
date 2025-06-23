@@ -293,7 +293,7 @@ pub(crate) comptime fn derive_curve_impl(
     }
 }
 
-fn conditional_select<P: BigCurveTrait<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
+fn conditional_select<P: BigCurve<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
     let x = bignum::bignum::conditional_select(lhs.x(), rhs.x(), predicate);
     let y = bignum::bignum::conditional_select(lhs.y(), rhs.y(), predicate);
     let is_infinity = (
@@ -420,15 +420,6 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<
     );
 
     P::from_coordinates(x3, y3, false)
-}
-
-/// Multiplies a point by a scalar field value, returning the resulting point.
-pub fn msm<P: BigCurveTrait<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
-    mul_points: [P; NMuls],
-    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-) -> P {
-    let add_points: [P; 0] = [];
-    P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
 }
 
 // TODO: offset generators

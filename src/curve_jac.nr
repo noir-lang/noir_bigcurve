@@ -2,7 +2,7 @@ use bignum::BigNum;
 
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
-use super::BigCurveTrait;
+use super::BigCurve;
 
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
 ///
@@ -208,7 +208,7 @@ where
 impl<B, CurveParams, P> std::convert::From<P> for CurveJ<B, CurveParams>
 where
     B: BigNum,
-    P: BigCurveTrait<B>,
+    P: BigCurve<B>,
 {
     fn from(affine_point: P) -> Self {
         CurveJ {
@@ -679,7 +679,7 @@ where
         (accumulator, affine_transcript)
     }
 
-    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P: BigCurveTrait<B>>(
+    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P: BigCurve<B>>(
         mut mul_points: [P; NMuls],
         mut scalars: [ScalarField<NScalarSlices>; NMuls],
         mut add_points: [P; NAdds],

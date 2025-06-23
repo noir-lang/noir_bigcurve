@@ -21,7 +21,7 @@ pub trait CurveParamsTrait<B: BigNum> {
     fn a() -> B;
 }
 
-pub trait BigCurveTrait<B: BigNum>: Eq + Add + Sub + Neg {
+pub trait BigCurve<B: BigNum>: Eq + Add + Sub + Neg {
     /// Returns the x-coordinate of the point.
     fn x(self) -> B;
 
@@ -70,7 +70,7 @@ pub(crate) comptime fn derive_curve_impl(
 ) -> Quoted {
     let typ = struct_def.as_type();
     quote {
-        impl crate::BigCurveTrait<$field_type> for $typ {
+        impl crate::BigCurve<$field_type> for $typ {
             fn x(self) -> $field_type {
                 self.x
             }
@@ -161,11 +161,11 @@ pub(crate) comptime fn derive_curve_impl(
                 let transcript: [crate::curve_jac::AffineTranscript<$field_type>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
                     crate::curve_jac::CurveJ::<$field_type, $params_type>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
 };
-                let mut _inputs: [Self; NMuls] = [crate::BigCurveTrait::one(); NMuls];
+                let mut _inputs: [Self; NMuls] = [crate::BigCurve::one(); NMuls];
                 let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [crate::ScalarField::zero(); NMuls];
                 for i in 0..NMuls {
                     _inputs[i] = crate::conditional_select(
-                        crate::BigCurveTrait::one(),
+                        crate::BigCurve::one(),
                         mul_points[i],
                         mul_points[i].is_infinity,
                     );
@@ -188,7 +188,7 @@ pub(crate) comptime fn derive_curve_impl(
                 }
 
                 // Init the accumulator from the most significant scalar slice
-                let mut accumulator: Self = crate::BigCurveTrait::offset_generator();
+                let mut accumulator: Self = crate::BigCurve::offset_generator();
                 let mut accumulator = crate::incomplete_add_with_hint::<$field_type, $params_type, $typ>(accumulator,
                     tables[0].get::<$params_type, $typ>(scalars[0].base4_slices[0] as u32),
                     transcript[8 * NMuls],
@@ -241,7 +241,7 @@ pub(crate) comptime fn derive_curve_impl(
 
                 accumulator = crate::sub_with_hint::<$field_type, $params_type, $typ>(
                     accumulator,
-                    crate::BigCurveTrait::offset_generator_final(),
+                    crate::BigCurve::offset_generator_final(),
                     transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
                 );
 
@@ -293,7 +293,7 @@ pub(crate) comptime fn derive_curve_impl(
     }
 }
 
-fn conditional_select<P: BigCurveTrait<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
+fn conditional_select<P: BigCurve<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
     let x = bignum::bignum::conditional_select(lhs.x(), rhs.x(), predicate);
     let y = bignum::bignum::conditional_select(lhs.y(), rhs.y(), predicate);
     let is_infinity = (
@@ -308,7 +308,7 @@ fn conditional_select<P: BigCurveTrait<B>, B: BigNum>(lhs: P, rhs: P, predicate:
 ///
 /// This method is optimized to minimize the number of calls to `evaluate_quadratic_expression`,
 /// which is not necessarily the same as minimizing the number of multiplications.
-pub(crate) fn double_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn double_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     transcript: AffineTranscript<B>,
 ) -> P {
@@ -368,7 +368,7 @@ pub(crate) fn double_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: B
 /// This method minimizes the number of calls to `evaluate_quadratic_expression`, which is not the same
 /// as minimizing the number of multiplications. The expensive operation in `BigNum` is the modular
 /// reduction. For example, `(a * b + c * d = e mod p)` is not much more expensive than `(a * b = c mod p)`.
-pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -422,22 +422,13 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<
     P::from_coordinates(x3, y3, false)
 }
 
-/// Multiplies a point by a scalar field value, returning the resulting point.
-pub fn msm<P: BigCurveTrait<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
-    mul_points: [P; NMuls],
-    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
-) -> P {
-    let add_points: [P; 0] = [];
-    P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
-}
-
 // TODO: offset generators
 //       conditional subtract, conditional add
 //
 /**
     * @brief Perform an ecc scalar multiplication, given an [AffineTranscript] generated via unconstrained functions
     **/
-fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     mut points: [P; Size],
     mut scalars: [ScalarField<NScalarSlices>; Size],
     transcript: [AffineTranscript<B>; NTranscriptSlices],
@@ -525,7 +516,7 @@ fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscript
     accumulator
 }
 
-pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     predicate: bool,
@@ -537,7 +528,7 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, CurveParams: Curve
     result
 }
 
-fn conditional_incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+fn conditional_incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     predicate: bool,
@@ -549,7 +540,7 @@ fn conditional_incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParams
     result
 }
 
-fn incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+fn incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -603,7 +594,7 @@ fn incomplete_subtract_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P:
     P::from_coordinates(x3, y3, false)
 }
 
-pub(crate) fn add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -713,7 +704,7 @@ pub(crate) fn add_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigC
     result
 }
 
-pub(crate) fn sub_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn sub_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -837,7 +828,7 @@ pub(crate) fn sub_with_hint<B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigC
 /// # Note
 ///
 /// This function assumes the transcript is generated using unconstrained functions.
-pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
     transcript: [AffineTranscript<B>; NTranscriptSlices],
@@ -902,7 +893,7 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
     accumulator
 }
 
-fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     mut points: [P; Size],
     mut scalars: [ScalarField<NScalarSlices>; Size],
     transcript: [AffineTranscript<B>; NTranscriptSlices],
@@ -920,7 +911,7 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
     accumulator
 }
 
-unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurveTrait<B>>(
+unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, CurveParams: CurveParamsTrait<B>, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
 ) -> [AffineTranscript<B>; 6 + NScalarSlices * 5] {
@@ -959,7 +950,7 @@ impl<B: BigNum> PointTable<B> {
     /// # Details
     ///
     /// See [`CurveJ::mul`] for an example of how `AffineTranscript` objects are generated and used.
-    pub(crate) fn new_with_hint<CurveParams, P: BigCurveTrait<B>>(
+    pub(crate) fn new_with_hint<CurveParams, P: BigCurve<B>>(
         point: P,
         transcript: [AffineTranscript<B>; 8],
     ) -> Self
@@ -991,7 +982,7 @@ impl<B: BigNum> PointTable<B> {
     /// If the backend supports efficient memory lookups, this operation can be highly efficient.
     /// For example, using the barretenberg backend, lookups on 256-bit curves may require only
     /// around 12 constraints.
-    pub(crate) fn get<CurveParams, P: BigCurveTrait<B>>(self, idx: u32) -> P {
+    pub(crate) fn get<CurveParams, P: BigCurve<B>>(self, idx: u32) -> P {
         P::from_coordinates(self.x[idx], self.y[idx], false)
     }
 }

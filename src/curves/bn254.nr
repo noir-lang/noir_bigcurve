@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::curve_jac::CurveJ;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
@@ -60,7 +60,7 @@ pub struct BN254 {
 }
 
 mod test {
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
     use bignum::{BigNum, BN254_Fq};
     use std::ops::Neg;
 

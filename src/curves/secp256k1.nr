@@ -4,7 +4,7 @@ use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 use bignum::Secp256k1_Fq;
 
-use crate::BigCurveTrait;
+use crate::BigCurve;
 pub global SECP256k1_SCALAR_SLICES: u32 = 65;
 
 pub struct Secp256k1_Params {}
@@ -76,7 +76,7 @@ mod test {
     use bignum::{BigNum, Secp256k1_Fq, Secp256k1_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
 
     use super::{Secp256k1, Secp256k1_Params, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
 

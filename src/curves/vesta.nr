@@ -1,4 +1,4 @@
-use crate::BigCurveTrait;
+use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
@@ -63,7 +63,7 @@ mod test {
     use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurveTrait;
+    use crate::BigCurve;
     use super::{Vesta, Vesta_Params, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]

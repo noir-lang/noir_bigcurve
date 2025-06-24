@@ -436,6 +436,15 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
+/// Multiplies a point by a scalar field value, returning the resulting point.
+pub fn msm<P: BigCurve<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
+    mul_points: [P; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+) -> P {
+    let add_points: [P; 0] = [];
+    P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
+}
+
 // TODO: offset generators
 //       conditional subtract, conditional add
 //

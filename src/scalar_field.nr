@@ -26,7 +26,12 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix::<N>(16);
+    let bytes: [u8; (N + 1) / 2] = x.to_le_bytes();
+    let mut nibbles: [u8; N] = [0; N];
+    for i in 0..(N + 1) / 2 {
+        nibbles[i * 2] = bytes[i] & 0x0f; // lower nibble
+        nibbles[i * 2 + 1] = (bytes[i] >> 4); // upper nibble
+    }
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] as u8 + (skew as u8);
@@ -49,13 +54,19 @@ where
 {
     let mut result: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [u128] = x.get_limbs().as_slice();
+    let x: [u128; _] = x.get_limbs();
     for i in 0..x.len() {
-        nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
+        let bytes: [u8; 15] = (x[i] as Field).to_le_bytes();
+        let mut nibbles_i: [u8; 30] = [0; 30];
+        for j in 0..15 {
+            nibbles_i[j * 2] = bytes[j] & 0x0f; // lower nibble
+            nibbles_i[j * 2 + 1] = (bytes[j] >> 4); // upper nibble
+        }
+        nibbles[i] = nibbles_i;
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
-    nibbles[0][0] = nibbles[0][0] as u8 + (skew as u8);
+    nibbles[0][0] += (skew as u8);
     result[N - 1] = (nibbles[0][0] + 15) / 2;
 
     for i in 1..N {
@@ -249,5 +260,16 @@ impl<let N: u32> ScalarField<N> {
 
     pub fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
+    }
+}
+
+mod test {
+    use super::ScalarField;
+
+    #[test]
+    fn fuzz_scalar_field_conversion(x: Field) {
+        let scalar: ScalarField<64> = ScalarField::from(x);
+        let x2: Field = scalar.into();
+        assert_eq(x, x2, f"ScalarField conversion failed: {x} != {x2}");
     }
 }

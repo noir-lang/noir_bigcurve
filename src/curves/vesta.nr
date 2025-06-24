@@ -1,58 +1,47 @@
 use crate::BigCurve;
-use crate::CurveParamsTrait;
+use crate::BigCurveParams;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{Vesta_Fq, Vesta_Fr};
 
-pub struct Vesta_Params {}
-impl CurveParamsTrait<Vesta_Fq> for Vesta_Params {
-    fn a() -> Vesta_Fq {
-        Vesta_Fq::from_limbs([0x00, 0x00, 0x00])
-    }
-    fn b() -> Vesta_Fq {
-        Vesta_Fq::from_limbs([0x05, 0x00, 0x00])
-    }
-    fn one() -> [Vesta_Fq; 2] {
-        [
-            Vesta_Fq::from_limbs([0x4698fc0994a8dd8c46eb2100000000, 0x22, 0x4000]),
-            Vesta_Fq::from_limbs([0x02, 0x00, 0x00]),
-        ]
-    }
-    fn offset_generator() -> [Vesta_Fq; 2] {
-        [
-            Vesta_Fq::from_limbs([
-                0xd6286ae8e92203a8122b1827a9b6d1,
-                0xcd21322ea03ceea814cfd7137b4a13,
-                0x0116,
-            ]),
-            Vesta_Fq::from_limbs([
-                0x6c4531e4384d03f3c0febb060cbe74,
-                0xabaae719efbfcf4a24508d1596c758,
-                0x2190,
-            ]),
-        ]
-    }
-    fn offset_generator_final() -> [Vesta_Fq; 2] {
-        [
-            Vesta_Fq::from_limbs([
-                0xa87902cfed63db9fdaa5a570a4938d,
-                0x1d99860422926bca663f59f047ce18,
-                0x1083,
-            ]),
-            Vesta_Fq::from_limbs([
-                0x9fa3943f857b1178d7242101da6c4c,
-                0xa67fd5354fcf62d204d7ad617adb6c,
-                0x0a9f,
-            ]),
-        ]
-    }
-}
+pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
+    a: Vesta_Fq::from_limbs([0x00, 0x00, 0x00]),
+    b: Vesta_Fq::from_limbs([0x05, 0x00, 0x00]),
+    one: [
+        Vesta_Fq::from_limbs([0x4698fc0994a8dd8c46eb2100000000, 0x22, 0x4000]),
+        Vesta_Fq::from_limbs([0x02, 0x00, 0x00]),
+    ],
+    offset_generator: [
+        Vesta_Fq::from_limbs([
+            0xd6286ae8e92203a8122b1827a9b6d1,
+            0xcd21322ea03ceea814cfd7137b4a13,
+            0x0116,
+        ]),
+        Vesta_Fq::from_limbs([
+            0x6c4531e4384d03f3c0febb060cbe74,
+            0xabaae719efbfcf4a24508d1596c758,
+            0x2190,
+        ]),
+    ],
+    offset_generator_final: [
+        Vesta_Fq::from_limbs([
+            0xa87902cfed63db9fdaa5a570a4938d,
+            0x1d99860422926bca663f59f047ce18,
+            0x1083,
+        ]),
+        Vesta_Fq::from_limbs([
+            0x9fa3943f857b1178d7242101da6c4c,
+            0xa67fd5354fcf62d204d7ad617adb6c,
+            0x0a9f,
+        ]),
+    ],
+};
 
 pub global VESTA_SCALAR_SLICES: u32 = 64;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { Vesta_Fq }, quote { Vesta_Params })]
+#[derive_curve_impl(quote { Vesta_Fq }, quote { VESTA_PARAM })]
 pub struct Vesta {
     pub x: Vesta_Fq,
     pub y: Vesta_Fq,
@@ -64,7 +53,7 @@ mod test {
     use std::ops::Neg;
 
     use crate::BigCurve;
-    use super::{Vesta, Vesta_Params, VESTA_SCALAR_SLICES, VestaScalar};
+    use super::{Vesta, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]
     fn check_num_scalar_slices_in_scalar_field() {
@@ -112,8 +101,6 @@ mod test {
     #[test(should_fail)]
     unconstrained fn verify_offset_generators() {
         // Vesta cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta_Params, Vesta>(
-            1,
-        );
+        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta>(1);
     }
 }

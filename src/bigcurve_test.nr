@@ -1,11 +1,10 @@
-use crate::curves::bn254::BN254Params;
-use crate::curves::mnt6_753::MNT6_753_Params;
 use bignum::BigNum;
 use std::ops::{Add, Neg, Sub};
 
 use crate::BigCurve;
 use crate::curve_jac;
 use crate::curve_jac::AffineTranscript;
+use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
 use crate::curves::bn254::{BN254, BN254J};
 use crate::curves::mnt6_753::MNT6_753;
@@ -16,7 +15,7 @@ use bignum::BN254_Fq;
 use bignum::MNT6_753_Fq;
 
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
-    let s = (P.mul(scalar));
+    let s: (CurveJ<BN254_Fq, BN254>, [AffineTranscript<BN254_Fq>; 326]) = (P.mul(scalar));
     assert(s.0.eq(K.neg()));
     Q.eq(s.0)
 }
@@ -38,8 +37,7 @@ fn test_mul() {
     ); // p - 2
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result =
-        crate::mul_with_hint::<64, 326, BN254_Fq, BN254Params, BN254>(P, scalar, transcript);
+    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
 
     // -2
     let mut expected = BN254 {
@@ -102,8 +100,7 @@ fn test_mul_by_0() {
     assert(foo == 0);
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result =
-        crate::mul_with_hint::<64, 326, BN254_Fq, BN254Params, BN254>(P, scalar, transcript);
+    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
     assert(result.is_infinity == true);
 }
 
@@ -116,15 +113,14 @@ fn test_mul_a_point_at_infinity() {
     ); // p - 2
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result =
-        crate::mul_with_hint::<64, 326, BN254_Fq, BN254Params, BN254>(P, scalar, transcript);
+    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
     assert(result.is_infinity == true);
 }
 
 #[test]
 fn test_mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P = BN254J::one();
+    let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 
@@ -236,8 +232,7 @@ fn test_double_with_hint() {
         let y3 = Y3.__mul(ZZZ);
 
         let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
-        let P2_affine =
-            crate::double_with_hint::<BN254_Fq, BN254Params, BN254>(P_affine, transcript);
+        let P2_affine = crate::double_with_hint::<BN254_Fq, BN254>(P_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
@@ -281,11 +276,8 @@ fn test_incomplete_add_with_hint() {
         let y3 = Y3.__mul(ZZZ);
 
         let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
-        let P2_affine = crate::incomplete_add_with_hint::<BN254_Fq, BN254Params, BN254>(
-            P_affine,
-            Q_affine,
-            transcript,
-        );
+        let P2_affine =
+            crate::incomplete_add_with_hint::<BN254_Fq, BN254>(P_affine, Q_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
@@ -449,13 +441,11 @@ fn test_make_table() {
 
         let P_affine = BN254::one();
 
-        let affine_point_table: PointTable<BN254_Fq> = PointTable::<BN254_Fq>::new_with_hint::<BN254Params, BN254>(
-            P_affine,
-            affine_transcript,
-        );
+        let affine_point_table: PointTable<BN254_Fq> =
+            PointTable::<BN254_Fq>::new_with_hint::<BN254>(P_affine, affine_transcript);
 
         for i in 0..8 {
-            let point: BN254 = affine_point_table.get::<BN254Params, BN254>(i);
+            let point: BN254 = affine_point_table.get::<BN254>(i);
             point.validate_on_curve();
         }
     }
@@ -510,10 +500,7 @@ fn test_bigcurve_sub_with_hint() {
         x3: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
         y3: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
     };
-    let result = crate::sub_with_hint::<MNT6_753_Fq, MNT6_753_Params, MNT6_753>(
-        accumulator,
-        offset_generator,
-        transcript,
-    );
+    let result =
+        crate::sub_with_hint::<MNT6_753_Fq, MNT6_753>(accumulator, offset_generator, transcript);
     assert(result.is_infinity);
 }

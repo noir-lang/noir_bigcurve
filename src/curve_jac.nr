@@ -1,6 +1,5 @@
 use bignum::BigNum;
 
-use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use super::BigCurve;
 
@@ -26,7 +25,7 @@ use super::BigCurve;
 ///
 /// # Note
 /// This approach is complex but necessary due to the high cost of generating modular inverses for witness generation.
-pub struct CurveJ<B, CurveParams> {
+pub struct CurveJ<B, BigCurve> {
     pub(crate) x: B,
     pub(crate) y: B,
     pub(crate) z: B,
@@ -158,9 +157,9 @@ where
      * [0, P, ..., 15P] requires 14 group operations.
      * group operations are expensive!
      **/
-    pub(crate) unconstrained fn new<CurveParams>(P: CurveJ<B, CurveParams>) -> Self
+    pub(crate) unconstrained fn new<Curve>(P: CurveJ<B, Curve>) -> Self
     where
-        CurveParams: CurveParamsTrait<B>,
+        Curve: BigCurve<B>,
     {
         let mut result = PointTable {
             x: [B::zero(); 16],
@@ -197,7 +196,7 @@ where
     /**
      * @brief get a value out of the lookup table
      **/
-    pub(crate) unconstrained fn get<CurveParams>(self, idx: u32) -> CurveJ<B, CurveParams> {
+    pub(crate) unconstrained fn get<BigCurve>(self, idx: u32) -> CurveJ<B, BigCurve> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
 }
@@ -205,7 +204,7 @@ where
 /**
  * @brief construct from BigCurve
  **/
-impl<B, CurveParams, P> std::convert::From<P> for CurveJ<B, CurveParams>
+impl<B, P> std::convert::From<P> for CurveJ<B, P>
 where
     B: BigNum,
     P: BigCurve<B>,
@@ -224,10 +223,10 @@ where
  * @brief are two Jacobian points equal?
  * @description only really used in tests for now.
  **/
-impl<B, CurveParams> std::cmp::Eq for CurveJ<B, CurveParams>
+impl<B, BigCurve> std::cmp::Eq for CurveJ<B, BigCurve>
 where
     B: BigNum,
-    CurveParams: CurveParamsTrait<B>,
+    BigCurve: BigCurve<B>,
 {
     fn eq(self, other: Self) -> bool {
         // if x == y then (X1 / Z1 * Z1 = X2 / Z2 * Z2)
@@ -260,10 +259,10 @@ where
     }
 }
 
-impl<B, CurveParams> CurveJ<B, CurveParams>
+impl<B, Curve> CurveJ<B, Curve>
 where
     B: BigNum,
-    CurveParams: CurveParamsTrait<B>,
+    Curve: BigCurve<B>,
 {
     /**
      * @brief negate a point
@@ -470,9 +469,9 @@ where
             [],
         );
 
-        if (CurveParams::a().get_limb(0) != 0) {
+        if (Curve::a().get_limb(0) != 0) {
             let ZZ = Z1.__mul(Z1);
-            let AZZZZ = ZZ.__mul(ZZ).__mul(CurveParams::a());
+            let AZZZZ = ZZ.__mul(ZZ).__mul(Curve::a());
             XX_mul_3 = XX_mul_3.__add(AZZZZ);
         }
         let (_, D): (B, B) = bignum::bignum::compute_quadratic_expression(
@@ -515,18 +514,18 @@ where
     }
 
     pub(crate) fn offset_generator() -> Self {
-        let result = CurveParams::offset_generator();
-        Self { x: result[0], y: result[1], z: B::one(), is_infinity: false }
+        let result = Curve::offset_generator();
+        Self { x: result.x(), y: result.y(), z: B::one(), is_infinity: false }
     }
 
     pub(crate) fn offset_generator_final() -> Self {
-        let result = CurveParams::offset_generator_final();
-        Self { x: result[0], y: result[1], z: B::one(), is_infinity: false }
+        let result = Curve::offset_generator_final();
+        Self { x: result.x(), y: result.y(), z: B::one(), is_infinity: false }
     }
 
     pub(crate) fn one() -> Self {
-        let result = CurveParams::one();
-        Self { x: result[0], y: result[1], z: B::one(), is_infinity: false }
+        let result = Curve::one();
+        Self { x: result.x(), y: result.y(), z: B::one(), is_infinity: false }
     }
 
     pub(crate) fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
@@ -679,15 +678,15 @@ where
         (accumulator, affine_transcript)
     }
 
-    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, P: BigCurve<B>>(
-        mut mul_points: [P; NMuls],
+    pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+        mut mul_points: [Curve; NMuls],
         mut scalars: [ScalarField<NScalarSlices>; NMuls],
-        mut add_points: [P; NAdds],
+        mut add_points: [Curve; NAdds],
     ) -> (Self, [AffineTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) {
-        let mut mul_j: [CurveJ<B, CurveParams>; NMuls] = [CurveJ::new(); NMuls];
-        let mut add_j: [CurveJ<B, CurveParams>; NAdds] = [CurveJ::new(); NAdds];
+        let mut mul_j: [CurveJ<B, Curve>; NMuls] = [CurveJ::new(); NMuls];
+        let mut add_j: [CurveJ<B, Curve>; NAdds] = [CurveJ::new(); NAdds];
         for i in 0..NMuls {
-            mul_j[i] = CurveJ::from(mul_points[i]);
+            mul_j[i] = CurveJ::<B, Curve>::from(mul_points[i]);
         }
         for i in 0..NAdds {
             add_j[i] = CurveJ::from(add_points[i]);

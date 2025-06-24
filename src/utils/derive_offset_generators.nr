@@ -4,20 +4,20 @@ use crate::curve_jac::CurveJ;
 use crate::curves::bn254::BN254;
 use bignum::BigNum;
 use bignum::BN254_Fq;
-unconstrained fn compute_offset_generators<Fq, let NScalarSlices: u32, BigCurve>(
+unconstrained fn compute_offset_generators<Fq, let NScalarSlices: u32, Curve>(
     cofactor: Field,
 ) -> ([Fq; 2], [Fq; 2])
 where
     Fq: BigNum,
-    BigCurve: BigCurve<Fq>,
+    Curve: BigCurve<Fq>,
 {
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
     // we only need well-defined parameters for a and b, for hash_to_curve to work
     // (no offset generators needed)
-    let g: BigCurve = BigCurve::hash_to_curve(seed);
+    let g: Curve = Curve::hash_to_curve(seed);
 
-    let g_init = CurveJ::<Fq, BigCurve>::from(g);
+    let g_init = CurveJ::<Fq, Curve>::from(g);
     let mut gen = g_init;
 
     let cofactor_bits: [u1; 128] = cofactor.to_be_bits();
@@ -86,7 +86,6 @@ where
         compute_offset_generators::<Fq, NScalarSlices, Curve>(cofactor);
 
     println(f"pub struct {curvestr} {{}}");
-    println(f"impl CurveParamsTrait<{bignumstr}> for {curvestr} {{");
 
     println(f"  fn a() -> {bignumstr} {{ {a} }}");
     println(f"  fn b() -> {bignumstr} {{ {b} }}");
@@ -104,28 +103,24 @@ where
 fn test_compute_and_print_offset_generators() {
     unsafe {
         let _ = <BN254 as BigCurve<BN254_Fq>>::one();
-        compute_and_print_offset_generators::<BN254_Fq, _, _, 64, BN254>(
-            "BN254_Fq",
-            "BN254Params",
-            1,
-        );
-        // compute_and_print_offset_generators::<PallasBN, _, _, 64>("Pallas_Fq", "Pallas_Params", 1);
-        // compute_and_print_offset_generators::<VestaBN, _, _, 64>("Vesta_Fq", "Vesta_Params", 1);
+        compute_and_print_offset_generators::<BN254_Fq, _, _, 64, BN254>("BN254_Fq", "BN254", 1);
+        // compute_and_print_offset_generators::<PallasBN, _, _, 64>("Pallas_Fq", "Pallas", 1);
+        // compute_and_print_offset_generators::<VestaBN, _, _, 64>("Vesta_Fq", "Vesta", 1);
         // compute_and_print_offset_generators::<BLS377BN, _, _, 64>(
-        //     "BLS12_377_Fq"
-        //     "BLS12_377_Params",
+        //     "BLS12_377_Fq",
+        //     "BLS12_377",
         //     0x170b5d44300000000000000000000000
         // );
         // compute_and_print_offset_generators::<BLS381BN, _, _, 64>(
         //     "BLS12_381_Fq",
-        //     "BLS12_381_Params",
+        //     "BLS12_381",
         //     0x396C8C005555E1568C00AAAB0000AAAB
         // );
-        // compute_and_print_offset_generators::<Mnt4BN, _, _, 189>("MNT4_753_Fq", "MNT4_753_Params", 1);
-        // compute_and_print_offset_generators::<Mnt6BN, _, _, 189>("MNT6_753_Fq", "MNT6_753_Params", 1);
-        // compute_and_print_offset_generators::<Secp256k1BN, _, _, 65>("Secp256k1_Fq", "Secp256k1_Params", 1);
-        // compute_and_print_offset_generators::<Secp256r1BN, _, _, 65>("Secp256r1_Fq", "Secp256r1_Params", 1);
-        // compute_and_print_offset_generators::<Secp384r1BN, _, _, 97>("Secp384r1_Fq", "Secp384r1_Params", 1);
+        // compute_and_print_offset_generators::<Mnt4BN, _, _, 189>("MNT4_753_Fq", "MNT4_753", 1);
+        // compute_and_print_offset_generators::<Mnt6BN, _, _, 189>("MNT6_753_Fq", "MNT6_753", 1);
+        // compute_and_print_offset_generators::<Secp256k1BN, _, _, 65>("Secp256k1_Fq", "Secp256k1", 1);
+        // compute_and_print_offset_generators::<Secp256r1BN, _, _, 65>("Secp256r1_Fq", "Secp256r1", 1);
+        // compute_and_print_offset_generators::<Secp384r1BN, _, _, 97>("Secp384r1_Fq", "Secp384r1", 1);
         // cofactor = 0x170b5d44300000000000000000000000 booooo
     }
 }

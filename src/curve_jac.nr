@@ -196,7 +196,7 @@ where
     /**
      * @brief get a value out of the lookup table
      **/
-    pub(crate) unconstrained fn get<BigCurve>(self, idx: u32) -> CurveJ<B, BigCurve> {
+    pub(crate) unconstrained fn get<Curve>(self, idx: u32) -> CurveJ<B, Curve> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
 }
@@ -204,12 +204,12 @@ where
 /**
  * @brief construct from BigCurve
  **/
-impl<B, P> std::convert::From<P> for CurveJ<B, P>
+impl<B, Curve> std::convert::From<Curve> for CurveJ<B, Curve>
 where
     B: BigNum,
-    P: BigCurve<B>,
+    Curve: BigCurve<B>,
 {
-    fn from(affine_point: P) -> Self {
+    fn from(affine_point: Curve) -> Self {
         CurveJ {
             x: affine_point.x(),
             y: affine_point.y(),
@@ -223,10 +223,10 @@ where
  * @brief are two Jacobian points equal?
  * @description only really used in tests for now.
  **/
-impl<B, BigCurve> std::cmp::Eq for CurveJ<B, BigCurve>
+impl<B, Curve> std::cmp::Eq for CurveJ<B, Curve>
 where
     B: BigNum,
-    BigCurve: BigCurve<B>,
+    Curve: BigCurve<B>,
 {
     fn eq(self, other: Self) -> bool {
         // if x == y then (X1 / Z1 * Z1 = X2 / Z2 * Z2)

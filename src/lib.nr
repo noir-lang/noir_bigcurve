@@ -13,14 +13,6 @@ use std::ops::{Add, Neg, Sub};
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 
-pub trait CurveParamsTrait<B: BigNum> {
-    fn offset_generator() -> [B; 2];
-    fn offset_generator_final() -> [B; 2];
-    fn one() -> [B; 2];
-    fn b() -> B;
-    fn a() -> B;
-}
-
 pub struct BigCurveParams<B> {
     pub a: B,
     pub b: B,
@@ -927,11 +919,11 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
     accumulator
 }
 
-unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, Curve: BigCurve<B>>(
-    point: Curve,
+unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCurve<B>>(
+    point: P,
     scalar: ScalarField<NScalarSlices>,
 ) -> [AffineTranscript<B>; 6 + NScalarSlices * 5] {
-    let tmp: crate::curve_jac::CurveJ<B, Curve> = crate::curve_jac::CurveJ::from(point);
+    let tmp: crate::curve_jac::CurveJ<B, P> = crate::curve_jac::CurveJ::from(point);
     let (_, transcript) = tmp.mul(scalar);
     transcript
 }

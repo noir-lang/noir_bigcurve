@@ -1,5 +1,3 @@
-//use crate::curves::bn254::BN254Params;
-//use crate::curves::mnt6_753::MNT6_753_Params;
 use bignum::BigNum;
 use std::ops::{Add, Neg, Sub};
 

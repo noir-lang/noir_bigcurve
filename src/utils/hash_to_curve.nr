@@ -79,7 +79,7 @@ where
     let parity_flag = (inner_hash[0] & 1) == 1;
 
     let negated_y = y.neg();
-    let output_y = bignum::bignum::conditional_select(y, negated_y, parity_flag);
+    let output_y = if parity_flag { y } else { negated_y };
 
     x.validate_in_field();
     x.validate_in_range();

@@ -621,10 +621,10 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     other: P,
     transcript: AffineTranscript<B>,
 ) -> P {
-    let mut x1: B = point.x();
-    let mut y1: B = point.y();
-    let mut x2: B = other.x();
-    let mut y2: B = other.y();
+    let x1: B = point.x();
+    let y1: B = point.y();
+    let x2: B = other.x();
+    let y2: B = other.y();
     let lambda: B = transcript.lambda;
     let x3: B = transcript.x3;
     let y3: B = transcript.y3;
@@ -645,25 +645,10 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
 
     // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
     // set input operands to 0!
-    x1 = if evaluate_group_operation_predicate {
-        x1
+    let (x1, y1, x2, y2) = if evaluate_group_operation_predicate {
+        (x1, y1, x2, y2)
     } else {
-        B::zero()
-    };
-    y1 = if evaluate_group_operation_predicate {
-        y1
-    } else {
-        B::zero()
-    };
-    x2 = if evaluate_group_operation_predicate {
-        x2
-    } else {
-        B::zero()
-    };
-    y2 = if evaluate_group_operation_predicate {
-        y2
-    } else {
-        B::zero()
+        (B::zero(), B::zero(), B::zero(), B::zero())
     };
 
     // lambda * 2y - 3x * x = 0

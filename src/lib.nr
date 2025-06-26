@@ -304,14 +304,6 @@ pub(crate) comptime fn derive_curve_impl(
     }
 }
 
-fn conditional_select<P: BigCurve<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
-    if predicate {
-        lhs
-    } else {
-        rhs
-    }
-}
-
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
 ///
 /// This method is optimized to minimize the number of calls to `evaluate_quadratic_expression`,
@@ -901,9 +893,11 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
     transcript: [AffineTranscript<B>; NTranscriptSlices],
 ) -> P {
     // Compute a 4-bit lookup table of multiples of P
-    let input: P = conditional_select(P::one(), point, point.is_infinity());
-    let scalar: ScalarField<NScalarSlices> =
-        ScalarField::conditional_select(ScalarField::zero(), scalar, point.is_infinity());
+    let (input, scalar) = if point.is_infinity() {
+        (P::one(), ScalarField::zero())
+    } else {
+        (point, scalar)
+    };
     let T: PointTable<B> = PointTable::new_with_hint::<P>(
         input,
         [

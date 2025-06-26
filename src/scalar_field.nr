@@ -184,14 +184,6 @@ impl<let N: u32> ScalarField<N> {
         result
     }
 
-    pub fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
-        if predicate {
-            lhs
-        } else {
-            rhs
-        }
-    }
-
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNum due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!
     pub fn from_bignum<B>(x: B) -> Self
     where

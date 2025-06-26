@@ -440,7 +440,7 @@ where
         predicate: bool,
     ) -> (Self, JTranscript<B>) {
         let mut operand_output = self.incomplete_add(p2);
-        let result = CurveJ::conditional_select(operand_output.0, self, predicate);
+        let result = if predicate { operand_output.0 } else { self };
         (result, operand_output.1)
     }
     /**
@@ -528,13 +528,6 @@ where
         Self { x: result.x(), y: result.y(), z: B::one(), is_infinity: false }
     }
 
-    pub(crate) fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
-        if predicate {
-            lhs
-        } else {
-            rhs
-        }
-    }
     /**
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
@@ -545,9 +538,11 @@ where
         let mut transcript: [JTranscript<B>; NScalarSlices * 5 + 6] =
             [JTranscript::new(); NScalarSlices * 5 + 6];
 
-        let input: Self = CurveJ::conditional_select(CurveJ::one(), self, self.is_infinity);
-        let scalar: ScalarField<NScalarSlices> =
-            ScalarField::conditional_select(ScalarField::zero(), scalar, self.is_infinity);
+        let (input, scalar) = if self.is_infinity {
+            (CurveJ::one(), ScalarField::zero())
+        } else {
+            (self, scalar)
+        };
         let mut ptr: u32 = 0;
         let T = PointTable::new(input);
         for i in 0..8 {
@@ -603,13 +598,13 @@ where
         let mut _inputs: [Self; Size] = [CurveJ::new(); Size];
         let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
         for i in 0..Size {
-            _inputs[i] =
-                CurveJ::conditional_select(CurveJ::one(), points[i], points[i].is_infinity);
-            _scalars[i] = ScalarField::conditional_select(
-                ScalarField::zero(),
-                scalars[i],
-                points[i].is_infinity,
-            );
+            let (input, scalar) = if points[i].is_infinity {
+                (CurveJ::one(), crate::scalar_field::ScalarField::zero())
+            } else {
+                (points[i], scalars[i])
+            };
+            _inputs[i] = input;
+            _scalars[i] = scalar;
         }
         let points = _inputs;
         let scalars = _scalars;

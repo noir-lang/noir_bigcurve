@@ -185,11 +185,11 @@ impl<let N: u32> ScalarField<N> {
     }
 
     pub fn conditional_select(lhs: Self, rhs: Self, predicate: bool) -> Self {
-        let mut result = rhs;
-        if (predicate) {
-            result = lhs;
+        if predicate {
+            lhs
+        } else {
+            rhs
         }
-        result
     }
 
     // Note: I can't propagate ModulusBits or NumLimbs from a generic that satisfies BigNum due to bugs, so we have to pass NumLimbs and Params in directly. disgusting!

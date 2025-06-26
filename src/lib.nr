@@ -178,16 +178,13 @@ pub(crate) comptime fn derive_curve_impl(
                 let mut _inputs: [Self; NMuls] = [crate::BigCurve::one(); NMuls];
                 let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [crate::ScalarField::zero(); NMuls];
                 for i in 0..NMuls {
-                    _inputs[i] = crate::conditional_select(
-                        crate::BigCurve::one(),
-                        mul_points[i],
-                        mul_points[i].is_infinity,
-                    );
-                    _scalars[i] = crate::ScalarField::conditional_select(
-                        crate::scalar_field::ScalarField::zero(),
-                        mul_scalars[i],
-                        mul_points[i].is_infinity,
-                    );
+                    let (input, scalar) = if mul_points[i].is_infinity {
+                        (crate::BigCurve::one(), crate::scalar_field::ScalarField::zero())
+                    } else {
+                        (mul_points[i], mul_scalars[i])
+                    };
+                    _inputs[i] = input;
+                    _scalars[i] = scalar;
                 }
                 let msm_points = _inputs;
                 let scalars = _scalars;
@@ -308,14 +305,11 @@ pub(crate) comptime fn derive_curve_impl(
 }
 
 fn conditional_select<P: BigCurve<B>, B: BigNum>(lhs: P, rhs: P, predicate: bool) -> P {
-    let x = if predicate { lhs.x() } else { rhs.x() };
-    let y = if predicate { lhs.y() } else { rhs.y() };
-    let is_infinity = (
-        (lhs.is_infinity() as Field - rhs.is_infinity() as Field) * predicate as Field
-            + rhs.is_infinity() as Field
-    )
-        != 0;
-    P::from_coordinates(x, y, is_infinity)
+    if predicate {
+        lhs
+    } else {
+        rhs
+    }
 }
 
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
@@ -460,12 +454,13 @@ fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscript
     let mut _inputs: [P; Size] = [P::one(); Size];
     let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
     for i in 0..Size {
-        _inputs[i] = conditional_select(P::one(), points[i], points[i].is_infinity());
-        _scalars[i] = ScalarField::conditional_select(
-            ScalarField::zero(),
-            scalars[i],
-            points[i].is_infinity(),
-        );
+        let (input, scalar) = if points[i].is_infinity() {
+            (P::one(), ScalarField::zero())
+        } else {
+            (points[i], scalars[i])
+        };
+        _inputs[i] = input;
+        _scalars[i] = scalar;
     }
     points = _inputs;
     scalars = _scalars;
@@ -546,8 +541,11 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     transcript: AffineTranscript<B>,
 ) -> P {
     let operand_output = crate::incomplete_add_with_hint::<B, P>(point, other, transcript);
-    let result = conditional_select(operand_output, point, predicate);
-    result
+    if predicate {
+        operand_output
+    } else {
+        point
+    }
 }
 
 fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
@@ -557,8 +555,11 @@ fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     transcript: AffineTranscript<B>,
 ) -> P {
     let operand_output = crate::incomplete_subtract_with_hint::<B, P>(point, other, transcript);
-    let result = conditional_select(operand_output, point, predicate);
-    result
+    if predicate {
+        operand_output
+    } else {
+        point
+    }
 }
 
 fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
@@ -739,14 +740,22 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     y_out = if output_is_rhs { other.y() } else { y_out };
     y_out = if infinity_predicate { B::zero() } else { y_out };
 
-    let conditional_select = |a: bool, b: bool, predicate: bool| {
-        ((a as Field - b as Field) * predicate as Field + b as Field) != 0
+    let mut infinity_out = !evaluate_group_operation_predicate;
+    infinity_out = if infinity_predicate {
+        true
+    } else {
+        infinity_out
     };
-
-    let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
-    infinity_out = conditional_select(true, infinity_out, infinity_predicate);
-    infinity_out = conditional_select(point.is_infinity(), infinity_out, output_is_lhs);
-    infinity_out = conditional_select(other.is_infinity(), infinity_out, output_is_rhs);
+    infinity_out = if output_is_lhs {
+        point.is_infinity()
+    } else {
+        infinity_out
+    };
+    infinity_out = if output_is_rhs {
+        other.is_infinity()
+    } else {
+        infinity_out
+    };
 
     let result: P = P::from_coordinates(x_out, y_out, infinity_out);
     result
@@ -880,14 +889,22 @@ pub(crate) fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
     };
     y_out = if infinity_predicate { B::zero() } else { y_out };
 
-    let conditional_select = |a: bool, b: bool, predicate: bool| {
-        ((a as Field - b as Field) * predicate as Field + b as Field) != 0
+    let mut infinity_out = !evaluate_group_operation_predicate;
+    infinity_out = if infinity_predicate {
+        true
+    } else {
+        infinity_out
     };
-
-    let mut infinity_out = conditional_select(false, true, evaluate_group_operation_predicate);
-    infinity_out = conditional_select(true, infinity_out, infinity_predicate);
-    infinity_out = conditional_select(point.is_infinity(), infinity_out, output_is_lhs);
-    infinity_out = conditional_select(other.is_infinity(), infinity_out, output_is_rhs);
+    infinity_out = if output_is_lhs {
+        point.is_infinity()
+    } else {
+        infinity_out
+    };
+    infinity_out = if output_is_rhs {
+        other.is_infinity()
+    } else {
+        infinity_out
+    };
 
     let result: P = P::from_coordinates(x_out, y_out, infinity_out);
     result

@@ -26,8 +26,8 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let bytes = x.to_le_bytes::<N/2>();
-    
+    let bytes = x.to_le_bytes::<N / 2>();
+
     // Extract nibbles from bytes
     let mut nibbles: [u8; N] = [0; N];
     nibbles = extract_nibbles_from_bytes(bytes);
@@ -35,7 +35,7 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] + (skew as u8);
     result[N - 1] = (nibbles[0] + 15) / 2;
-    
+
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
         result[N - 1 - i] = (nibble + 15) / 2;
@@ -261,7 +261,7 @@ impl<let N: u32> ScalarField<N> {
 unconstrained fn extract_nibbles_from_bytes<let N: u32>(bytes: [u8]) -> [u8; N] {
     let mut result: [u8; N] = [0; N];
     let mut nibble_idx = 0;
-    
+
     for i in 0..bytes.len() {
         if nibble_idx >= N {
             break;
@@ -277,6 +277,6 @@ unconstrained fn extract_nibbles_from_bytes<let N: u32>(bytes: [u8]) -> [u8; N] 
         result[nibble_idx] = (bytes[i] >> 4) & 0x0F;
         nibble_idx += 1;
     }
-    
+
     result
 }

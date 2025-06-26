@@ -26,9 +26,9 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let bytes = x.to_le_bytes();
+    let bytes = x.to_le_bytes::<N/2>();
     
-    // Extract nibbles from bytes using helper function
+    // Extract nibbles from bytes
     let mut nibbles: [u8; N] = [0; N];
     nibbles = extract_nibbles_from_bytes(bytes);
 
@@ -56,7 +56,7 @@ where
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
     let x: [u128] = x.get_limbs().as_slice();
     for i in 0..x.len() {
-        let bytes = (x[i] as Field).to_le_bytes();
+        let bytes = (x[i] as Field).to_le_bytes::<15>();
         nibbles[i] = extract_nibbles_from_bytes(bytes);
     }
 
@@ -266,15 +266,15 @@ unconstrained fn extract_nibbles_from_bytes<let N: u32>(bytes: [u8]) -> [u8; N] 
         if nibble_idx >= N {
             break;
         }
-        // Extract high nibble (bits 4-7)
-        result[nibble_idx] = (bytes[i] >> 4) & 0x0F;
+        // Extract low nibble (bits 0-3)
+        result[nibble_idx] = bytes[i] & 0x0F;
         nibble_idx += 1;
-        
+
         if nibble_idx >= N {
             break;
         }
-        // Extract low nibble (bits 0-3)
-        result[nibble_idx] = bytes[i] & 0x0F;
+        // Extract high nibble (bits 4-7)
+        result[nibble_idx] = (bytes[i] >> 4) & 0x0F;
         nibble_idx += 1;
     }
     

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.9.0...v0.10.0) (2025-06-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove some methods from `BigCurveTrait` ([#69](https://github.com/noir-lang/noir_bigcurve/issues/69))
+* create separate `BigCurveTrait` implementations for each curve ([#65](https://github.com/noir-lang/noir_bigcurve/issues/65))
+
+### Features
+
+* Create separate `BigCurveTrait` implementations for each curve ([#65](https://github.com/noir-lang/noir_bigcurve/issues/65)) ([7cff316](https://github.com/noir-lang/noir_bigcurve/commit/7cff31643c621e272ffe93a54beda8f5cc105f43))
+* Remove conditional select ([#74](https://github.com/noir-lang/noir_bigcurve/issues/74)) ([31ae850](https://github.com/noir-lang/noir_bigcurve/commit/31ae8508547eed12ecc2a614d7cdbcb147458072))
+* Remove CurveParamsTrait ([#73](https://github.com/noir-lang/noir_bigcurve/issues/73)) ([59bde3b](https://github.com/noir-lang/noir_bigcurve/commit/59bde3b603c859920f9d99b20bc44793a52d49cb))
+* Remove Trait suffix from BigCurveTrait ([#71](https://github.com/noir-lang/noir_bigcurve/issues/71)) ([4aed759](https://github.com/noir-lang/noir_bigcurve/commit/4aed759b843815af915d91bb2252bed6debdae9c))
+
+
+### Miscellaneous Chores
+
+* Remove some methods from `BigCurveTrait` ([#69](https://github.com/noir-lang/noir_bigcurve/issues/69)) ([832fabc](https://github.com/noir-lang/noir_bigcurve/commit/832fabc210cafcdbbb1e0fa4dc4327f1bf0aaf99))
+
 ## [0.9.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.8.0...v0.9.0) (2025-06-06)
 
 

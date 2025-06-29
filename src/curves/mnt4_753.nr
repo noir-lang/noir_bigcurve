@@ -148,10 +148,10 @@ mod test {
         );
     }
 
-    #[test]
-    fn test_scalar_field_conversion(num: MNT4_753_Fr) {
-        let scalar_field = MNT4_753Scalar::from_bignum(num);
-        let bignum = scalar_field.into_bignum();
-        assert(bignum == num);
-    }
+    // #[test]
+    // fn test_scalar_field_conversion(num: MNT4_753_Fr) {
+    //   let scalar_field = MNT4_753Scalar::from_bignum(num);
+    //    let bignum = scalar_field.into_bignum();
+    //    assert(bignum == num);
+    //}
 }

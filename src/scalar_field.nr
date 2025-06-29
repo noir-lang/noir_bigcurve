@@ -285,11 +285,11 @@ pub(crate) unconstrained fn extract_nibbles_from_bytes<let N: u32, let M: u32>(
 }
 
 mod tests {
-    // use crate::scalar_field::ScalarField;
-    // #[test]
-    // unconstrained fn fuzz_test_scalar_field_conversion(f: Field) {
-    //     let scalar_field: ScalarField<64> = ScalarField::from(f);
-    //     let scalar_field2 = scalar_field.into();
-    //     assert(f == scalar_field2);
-    // }
+    use crate::scalar_field::ScalarField;
+    #[test]
+    unconstrained fn fuzz_test_scalar_field_conversion(f: Field) {
+        let scalar_field: ScalarField<64> = ScalarField::from(f);
+        let scalar_field2 = scalar_field.into();
+        assert(f == scalar_field2);
+    }
 }

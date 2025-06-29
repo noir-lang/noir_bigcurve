@@ -26,11 +26,16 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix::<N>(16);
+    let bytes = x.to_le_bytes::<32>();
+
+    // Extract nibbles from bytes
+    let mut nibbles: [u8; N] = [0; N];
+    nibbles = extract_nibbles_from_bytes(bytes);
 
     let skew: bool = nibbles[0] & 1 == 0;
-    nibbles[0] = nibbles[0] as u8 + (skew as u8);
+    nibbles[0] = nibbles[0] + (skew as u8);
     result[N - 1] = (nibbles[0] + 15) / 2;
+
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
         result[N - 1 - i] = (nibble + 15) / 2;
@@ -51,11 +56,12 @@ where
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
     let x: [u128] = x.get_limbs().as_slice();
     for i in 0..x.len() {
-        nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
+        let bytes = (x[i] as Field).to_le_bytes::<30>();
+        nibbles[i] = extract_nibbles_from_bytes(bytes);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
-    nibbles[0][0] = nibbles[0][0] as u8 + (skew as u8);
+    nibbles[0][0] = nibbles[0][0] + (skew as u8);
     result[N - 1] = (nibbles[0][0] + 15) / 2;
 
     for i in 1..N {
@@ -219,6 +225,7 @@ impl<let N: u32> ScalarField<N> {
             let mut acc: u128 = 0;
             for _ in 0..30 {
                 acc = acc * 16;
+                // TODO: this is not correct. Error: attempt to subtract with overflow
                 acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
                 count = count + 1;
             }
@@ -241,5 +248,40 @@ impl<let N: u32> ScalarField<N> {
 
     pub fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
+    }
+}
+
+pub(crate) unconstrained fn extract_nibbles_from_bytes<let N: u32, let M: u32>(
+    bytes: [u8; M],
+) -> [u8; N] {
+    let mut result: [u8; N] = [0; N];
+    let mut nibble_idx = 0;
+
+    for i in 0..M {
+        if nibble_idx >= N {
+            break;
+        }
+        // Extract low nibble (bits 0-3)
+        result[nibble_idx] = bytes[i] & 0x0F;
+        nibble_idx += 1;
+
+        if nibble_idx >= N {
+            break;
+        }
+        // Extract high nibble (bits 4-7)
+        result[nibble_idx] = (bytes[i] >> 4);
+        nibble_idx += 1;
+    }
+
+    result
+}
+
+mod tests {
+    use crate::scalar_field::ScalarField;
+    #[test]
+    unconstrained fn fuzz_test_scalar_field_conversion(f: Field) {
+        let scalar_field: ScalarField<64> = ScalarField::from(f);
+        let scalar_field2 = scalar_field.into();
+        assert(f == scalar_field2);
     }
 }

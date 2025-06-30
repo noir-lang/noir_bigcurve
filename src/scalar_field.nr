@@ -97,10 +97,6 @@ where
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
     /// Constructs an instance from a field element.
-    ///
-    /// If `N >= 64`, additional checks are performed to ensure that the slice decomposition
-    /// accurately represents the same integral value as the input. For example, it verifies
-    /// that the sum of the slices is not equal to `x + modulus`.
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
         let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
@@ -108,8 +104,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
         result.skew = skew;
         let mut acc: Field = (slices[0] as Field) * 2 - 15;
         for i in 1..N {
-            acc *= 16;
-            acc += (slices[i] as Field) * 2 - 15;
+            let new_acc = acc * 16;
+            assert(!new_acc.lt(x));
+            acc = new_acc + (slices[i] as Field) * 2 - 15;
         }
         assert(acc - skew as Field == x);
         for i in 0..N {

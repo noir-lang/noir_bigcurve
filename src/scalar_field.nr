@@ -106,50 +106,12 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
         let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
         result.base4_slices = slices;
         result.skew = skew;
-        if (N < 64) {
-            let mut acc: Field = (slices[0] as Field) * 2 - 15;
-            for i in 1..N {
-                acc *= 16;
-                acc += (slices[i] as Field) * 2 - 15;
-            }
-            assert(acc - skew as Field == x);
-        } else {
-            // TODO fix! this does not work because we are assuming N slices is smaller than 256 bits
-            // let mut lo: Field = slices[(N / 2)] as Field * 2 - 15;
-            // let mut hi: Field = slices[0] as Field * 2 - 15;
-            // let mut borrow_shift = 1;
-            // for i in 1..(N / 2) {
-            //     borrow_shift *= 16;
-            //     lo *= 16;
-            //     lo += (slices[(N/2) + i] as Field) * 2 - 15;
-            //     hi *= 16;
-            //     hi += (slices[i] as Field) * 2 - 15;
-            // }
-            // if ((N & 1) == 1) {
-            //     borrow_shift *= 16;
-            //     lo *= 16;
-            //     lo += (slices[N-1] as Field) * 2 - 15;
-            // }
-            // // 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff
-            // // 0x2833e84879b9709143e1f593f0000001
-            // // 0x8833e84879b9709143e1f593efffffff
-            // lo -= skew as Field;
-            // // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-            // let (plo, phi) = unsafe {
-            //     get_modulus_slices()
-            // };
-            // let borrow = unsafe {
-            //     get_borrow_flag(plo, lo) as Field
-            // };
-            // let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
-            // let rhi = phi - hi - borrow;
-            // let offset = (N & 1 == 1) as u32;
-            // let hibits = (N / 2) * 4;
-            // let lobits = hibits + offset * 4 + 1; // 1 extra bit to account for borrow
-            // // 0x013833e84879b9709143e1f593f0000000
-            // // rlo.assert_max_bit_size(lobits as u32);
-            // // rhi.assert_max_bit_size(hibits as u32);
+        let mut acc: Field = (slices[0] as Field) * 2 - 15;
+        for i in 1..N {
+            acc *= 16;
+            acc += (slices[i] as Field) * 2 - 15;
         }
+        assert(acc - skew as Field == x);
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
         }

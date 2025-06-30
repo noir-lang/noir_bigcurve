@@ -104,9 +104,8 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
         result.skew = skew;
         let mut acc: Field = (slices[0] as Field) * 2 - 15;
         for i in 1..N {
-            let new_acc = acc * 16;
-            assert(!new_acc.lt(acc));
-            acc = new_acc + (slices[i] as Field) * 2 - 15;
+            acc = acc * 16;
+            acc += (slices[i] as Field) * 2 - 15;
         }
         assert(acc - skew as Field == x);
         for i in 0..N {

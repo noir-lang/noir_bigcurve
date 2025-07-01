@@ -203,7 +203,39 @@ impl<let N: u32> ScalarField<N> {
     {
         x.validate_in_field();
         let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
-        // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
+        for i in 0..N {
+            (slices[i] as Field).assert_max_bit_size::<4>();
+        }
+        let mut result = B::zero();
+        let mut count: u32 = 0;
+        {
+            let mut acc: u128 = 0;
+            let mut last_bits = (result.modulus_bits() % 120) as u64;
+            if (last_bits == 0) {
+                last_bits = 120;
+            }
+            let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
+            for _ in 0..last_nibbles {
+                acc = acc * 16;
+                acc = acc + (slices[count] as u128) * 2 - 15;
+                count = count + 1;
+            }
+            result.set_limb(result.num_limbs() - 1, acc);
+        }
+        for i in 1..result.num_limbs() {
+            // Using a Field type to allow for negative numbers.
+            let mut acc: Field = 0;
+            for _ in 0..30 {
+                acc = acc * 16;
+                acc = acc + (slices[count] as Field) * 2 - 15;
+                count = count + 1;
+            }
+            // Handle overflow using helper function
+            let acc_u128 = handle_overflow::<B>(acc, &mut result, i);
+            result.set_limb(result.num_limbs() - 1 - i, acc_u128);
+        }
+        result.set_limb(0, result.get_limb(0) - skew as u128);
+        assert(result == x);
         Self { base4_slices: slices, skew }
     }
 
@@ -235,21 +267,8 @@ impl<let N: u32> ScalarField<N> {
                 acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
                 count = count + 1;
             }
-            let mut acc_u128: u128 = acc as u128;
-            // Handle negative numbers. If the number is negative, it is greater than 2^120 in Field.
-            // All positive numbers are less than 2^120 in Field.
-            // For example, 42 is -6 + 3 * 2^4 with wnaf algorithm, but it should be 42 = 10 + 2 * 2^4
-            // To get the actual number 10, we need to subtract the number 6 from 2^4.
-            if acc_u128 >= 0x1000000000000000000000000000000 {
-                // find the actual number needed to be subtracted.
-                let reverse = (acc * -1) as u128;
-                acc_u128 = (1 as u128 << 120) - reverse;
-                acc = acc - 0x1000000000000000000000000000000;
-                result.set_limb(
-                    result.num_limbs() - i,
-                    result.get_limb((result.num_limbs() - i)) - 1,
-                );
-            }
+            // Handle overflow using helper function
+            let acc_u128 = handle_overflow::<B>(acc, &mut result, i);
             result.set_limb(result.num_limbs() - 1 - i, acc_u128);
         }
         result.set_limb(0, result.get_limb(0) - self.skew as u128);
@@ -288,6 +307,26 @@ pub(crate) unconstrained fn extract_nibbles_from_bytes<let N: u32, let M: u32>(
     }
 
     result
+}
+
+// Helper function to handle overflow in wNAF reconstruction
+fn handle_overflow<B: BigNum>(acc: Field, result: &mut B, limb_index: u32) -> u128 {
+    let mut acc_u128: u128 = acc as u128;
+
+    // Handle negative numbers. If the number is negative, it is greater than 2^120 in Field.
+    // All positive numbers are less than 2^120 in Field.
+    // For example, 42 is -6 + 3 * 2^4 with wnaf algorithm, but it should be 42 = 10 + 2 * 2^4
+    // To get the actual number 10, we need to subtract the number 6 from 2^4.
+    if acc_u128 >= 0x1000000000000000000000000000000 {
+        // find the actual number needed to be subtracted.
+        let reverse = (acc * -1) as u128;
+        acc_u128 = (1 as u128 << 120) - reverse;
+        result.set_limb(
+            result.num_limbs() - limb_index,
+            result.get_limb(result.num_limbs() - limb_index) - 1,
+        );
+    }
+    acc_u128
 }
 
 mod tests {

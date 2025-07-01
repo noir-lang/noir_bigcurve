@@ -103,4 +103,12 @@ mod test {
         // Vesta cofactor is 1
         crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta>(1);
     }
+
+    #[test]
+    unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
+        let num: Vesta_Fr = Vesta_Fr::derive_from_seed(seed);
+        let scalar_field = VestaScalar::from_bignum(num);
+        let bignum = scalar_field.into_bignum();
+        assert(bignum == num);
+    }
 }

@@ -125,4 +125,12 @@ mod test {
         );
     }
 
+    #[test(should_fail)]
+    unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
+        let num: Secp256r1_Fr = Secp256r1_Fr::derive_from_seed(seed);
+        let scalar_field = Secp256r1Scalar::from_bignum(num);
+        let bignum = scalar_field.into_bignum();
+        assert(bignum == num);
+    }
+
 }

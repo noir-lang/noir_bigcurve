@@ -125,4 +125,11 @@ mod test {
         );
     }
 
+    #[test]
+    unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
+        let num: BLS12_377_Fr = BLS12_377_Fr::derive_from_seed(seed);
+        let scalar_field = BLS12_377Scalar::from_bignum(num);
+        let bignum = scalar_field.into_bignum();
+        assert(bignum == num);
+    }
 }

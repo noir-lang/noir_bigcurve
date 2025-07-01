@@ -44,7 +44,6 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
             result[N - i] -= 8;
         }
     }
-
     (result, skew)
 }
 
@@ -74,7 +73,6 @@ where
             result[N - i] -= 8;
         }
     }
-
     (result, skew)
 }
 
@@ -230,21 +228,29 @@ impl<let N: u32> ScalarField<N> {
             result.set_limb(result.num_limbs() - 1, acc);
         }
         for i in 1..result.num_limbs() {
-            let mut acc: u128 = 0;
+            // Using a Field type to allow for negative numbers.
+            let mut acc: Field = 0;
             for _ in 0..30 {
                 acc = acc * 16;
-                // TODO: this is not correct. Error: attempt to subtract with overflow
-                acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
+                acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
                 count = count + 1;
             }
-            if acc >= 0x1000000000000000000000000000000 {
-                acc += 0x1000000000000000000000000000000;
+            let mut acc_u128: u128 = acc as u128;
+            // Handle negative numbers. If the number is negative, it is greater than 2^120 in Field.
+            // All positive numbers are less than 2^120 in Field.
+            // For example, 42 is -6 + 3 * 2^4 with wnaf algorithm, but it should be 42 = 10 + 2 * 2^4
+            // To get the actual number 10, we need to subtract the number 6 from 2^4.
+            if acc_u128 >= 0x1000000000000000000000000000000 {
+                // find the actual number needed to be subtracted.
+                let reverse = (acc * -1) as u128;
+                acc_u128 = (1 as u128 << 120) - reverse;
+                acc = acc - 0x1000000000000000000000000000000;
                 result.set_limb(
                     result.num_limbs() - i,
                     result.get_limb((result.num_limbs() - i)) - 1,
                 );
             }
-            result.set_limb(result.num_limbs() - 1 - i, acc);
+            result.set_limb(result.num_limbs() - 1 - i, acc_u128);
         }
         result.set_limb(0, result.get_limb(0) - self.skew as u128);
         result
@@ -287,9 +293,20 @@ pub(crate) unconstrained fn extract_nibbles_from_bytes<let N: u32, let M: u32>(
 mod tests {
     use crate::scalar_field::ScalarField;
     #[test]
+    // test even number of nibbles
     unconstrained fn fuzz_test_scalar_field_conversion(f: Field) {
         let scalar_field: ScalarField<64> = ScalarField::from(f);
         let scalar_field2 = scalar_field.into();
         assert(f == scalar_field2);
+    }
+    #[test]
+    // test odd number of nibbles
+    unconstrained fn fuzz_test_scalar_field_conversion2(f: u128) {
+        // 2^124 -1, 31 nibbles
+        let mask_124: u128 = 0x10000000000000000000000000000000 - 1;
+        let val: u128 = f & mask_124;
+        let scalar_field: ScalarField<31> = ScalarField::from(val as Field);
+        let scalar_field2 = scalar_field.into();
+        assert(val as Field == scalar_field2);
     }
 }

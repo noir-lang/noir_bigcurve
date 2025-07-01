@@ -69,8 +69,7 @@ where
         }
     }
 
-        ScalarField { base4_slices, skew }
-
+    ScalarField { base4_slices, skew }
 }
 
 // unconstrained fn get_modulus_slices() -> (Field, Field) {

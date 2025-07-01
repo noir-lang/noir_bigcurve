@@ -214,7 +214,7 @@ impl<let N: u32> ScalarField<N> {
             if (last_bits == 0) {
                 last_bits = 120;
             }
-            let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
+            let mut last_nibbles = (last_bits / 4) + 1 as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
                 acc = acc + (slices[count] as u128) * 2 - 15;
@@ -251,7 +251,7 @@ impl<let N: u32> ScalarField<N> {
             if (last_bits == 0) {
                 last_bits = 120;
             }
-            let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
+            let mut last_nibbles = (last_bits / 4) + 1 as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
                 acc = acc + (self.base4_slices[count] as u128) * 2 - 15;

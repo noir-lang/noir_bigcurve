@@ -15,6 +15,7 @@ use bignum::Secp256k1_Fr;
 use bignum::Secp256r1_Fr;
 use bignum::Secp384r1_Fr;
 use bignum::Vesta_Fq;
+use bignum::fields::{P192::P192 as P192_Fq, P192};
 
 pub struct BLS377PartialCurveParams {}
 
@@ -151,6 +152,34 @@ impl CurveParamsTrait<Secp256r1_Fr> for Secp256r1PartialCurveParams {
         panic(f"generator does not exist!")
     }
 }
+
+pub struct P192PartialCurveParams {}
+impl CurveParamsTrait<P192_Fq> for P192PartialCurveParams {
+    fn a() -> P192_Fq {
+        let a: Field = 0xfffffffffffffffffffffffffffffffefffffffffffffffc;
+        P192_Fq::from(a)
+    }
+    fn b() -> P192_Fq {
+        let b = 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1; 
+        P192_Fq::from(b) 
+    }
+
+    fn one() -> [P192_Fq; 2] {
+        let x = 0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012; 
+        let y = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811; 
+        [P192_Fq::from(x), P192_Fq::from(y)]
+    }
+
+    fn offset_generator_final() -> [P192_Fq; 2] {
+        panic(f"generator does not exist!")
+    }
+
+    fn offset_generator() -> [P192_Fq; 2] {
+        panic(f"generator does not exist!")
+    }
+}
+
+
 
 pub struct Secp384r1PartialCurveParams {}
 impl CurveParamsTrait<Secp384r1_Fr> for Secp384r1PartialCurveParams {
@@ -348,6 +377,8 @@ impl CurveParamsTrait<BN254_Fq> for BN254PartialCurveParams {
     }
 }
 
+
+
 pub struct PallasPartialCurveParams {}
 impl CurveParamsTrait<Pallas_Fq> for PallasPartialCurveParams {
     fn a() -> Pallas_Fq {
@@ -485,7 +516,7 @@ where
     println(
         f"  fn offset_generator_final() -> [BigNum<{n}, {paramstr}>; 2] {{ {offset_generator_final} }}",
     );
-    println("}}");
+    println("");
 }
 
 #[test]
@@ -497,6 +528,9 @@ fn test_compute_and_print_offset_generators() {
             "BN254PartialCurveParams",
             1,
         );
+
+
+        compute_and_print_offset_generators::<P192_Fq, P192PartialCurveParams, _, _, 64>(2, "P192_Fq_Params", "P192PartialCurveParams", 1); 
         // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>(3, "Pallas_Fq_Params", "Pallas_Params", 1);
         // compute_and_print_offset_generators::<VestaBN, VestaPartialCurveParams, _, _, 64>(3, "Vesta_Fq_Params", "Vesta_Params", 1);
         // compute_and_print_offset_generators::<BLS377BN, BLS377PartialCurveParams, _, _, 64>(

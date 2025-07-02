@@ -15,3 +15,4 @@ pub mod brainpoolP384r1;
 pub mod brainpoolP384t1;
 pub mod brainpoolP512r1;
 pub mod brainpoolP512t1;
+pub mod P_192;

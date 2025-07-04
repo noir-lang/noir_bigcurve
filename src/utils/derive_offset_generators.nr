@@ -15,7 +15,7 @@ use bignum::Secp256k1_Fr;
 use bignum::Secp256r1_Fr;
 use bignum::Secp384r1_Fr;
 use bignum::Vesta_Fq;
-use bignum::fields::{P192::P192 as P192_Fq, P192};
+use bignum::fields::{P192Fq::P192 as P192_Fq, P192Fr};
 
 pub struct BLS377PartialCurveParams {}
 
@@ -170,13 +170,8 @@ impl CurveParamsTrait<P192_Fq> for P192PartialCurveParams {
         [P192_Fq::from(x), P192_Fq::from(y)]
     }
 
-    fn offset_generator_final() -> [P192_Fq; 2] {
-        panic(f"generator does not exist!")
-    }
-
-    fn offset_generator() -> [P192_Fq; 2] {
-        panic(f"generator does not exist!")
-    }
+    fn offset_generator() -> [P192_Fq; 2] { [P192_Fq::from_limbs([0x2cd1ad32ee897a00308b502d4b73ed, 0x4e9f7bc59599429c4]), P192_Fq::from_limbs([0xa3f59ce015e46c1665c2b29b940e2b, 0xb343f4dacc57835d9])] }
+    fn offset_generator_final() -> [P192_Fq; 2] { [P192_Fq::from_limbs([0x2159802de6552a9f8dd88c322f3e94, 0x337387dc59578aa74f]), P192_Fq::from_limbs([0xee6981164ce518b87adb6c499e4f28, 0x975029505881daf7ed])]  }
 }
 
 
@@ -530,7 +525,7 @@ fn test_compute_and_print_offset_generators() {
         );
 
 
-        compute_and_print_offset_generators::<P192_Fq, P192PartialCurveParams, _, _, 64>(2, "P192_Fq_Params", "P192PartialCurveParams", 1); 
+        // compute_and_print_offset_generators::<P192_Fq, P192PartialCurveParams, _, _, 49>(2, "P192_Fq_Params", "P192PartialCurveParams", 1); 
         // compute_and_print_offset_generators::<PallasBN, PallasPartialCurveParams, _, _, 64>(3, "Pallas_Fq_Params", "Pallas_Params", 1);
         // compute_and_print_offset_generators::<VestaBN, VestaPartialCurveParams, _, _, 64>(3, "Vesta_Fq_Params", "Vesta_Params", 1);
         // compute_and_print_offset_generators::<BLS377BN, BLS377PartialCurveParams, _, _, 64>(

@@ -23,6 +23,8 @@ use crate::curves::secp256k1::{Secp256k1, Secp256k1Scalar};
 use crate::curves::secp256r1::{Secp256r1, Secp256r1Scalar};
 use crate::curves::secp384r1::{Secp384r1, Secp384r1Scalar};
 use crate::curves::secp521r1::{Secp521r1, Secp521r1Scalar};
+use crate::curves::P_192::{P192, P192Scalar};
+
 use crate::curves::vesta::{Vesta, VestaScalar};
 use crate::PointTable;
 use crate::scalar_field::{ScalarField, ScalarFieldTrait};
@@ -42,9 +44,9 @@ use bignum::Pallas_Fr;
 use bignum::Secp256k1_Fr;
 use bignum::Secp256r1_Fr;
 use bignum::Secp384r1_Fr;
-use bignum::Secp521r1_Fr;
+use bignum::Secp521r1_Fr;   
 use bignum::Vesta_Fr;
-
+use bignum::fields::P192Fr::P192Fr;
 type BN254J = CurveJ<BN254_Fq, BN254Params>;
 
 fn main(x: u128) {
@@ -969,6 +971,13 @@ fn test_vesta_hash_to_curve() {
 }
 
 #[test]
+fn test_p192_hash_to_curve() {
+    let r = P192::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
 fn test_bls12_377_msm() {
     let mut four = BLS12_377_Fr::zero();
     four.set_limb(0, 4);
@@ -1280,6 +1289,22 @@ fn test_vesta_msm() {
 
     let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_p192_msm() {
+    let four = P192Fr::from(4);
+    let p_minus_4_fr = P192Fr::modulus() - four;
+    let p_minus_4 = P192Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - P192Fr::one();
+    let p_minus_5 = P192Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = P192::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = P192::evaluate_linear_expression(points, scalars, [P192::one().neg()]);
     assert(result.is_infinity);
 }
 

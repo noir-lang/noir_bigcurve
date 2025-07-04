@@ -12,7 +12,6 @@ where
     let seedhash = poseidon::poseidon2::Poseidon2::hash([seedbase, seed_counter], 2);
     // TODO: assert in field?
     let seedhash: [u8; 32] = seedhash.to_le_bytes();
-
     let x = Fq::derive_from_seed(seedhash);
 
     let yy = x * x * x + a * x + b;

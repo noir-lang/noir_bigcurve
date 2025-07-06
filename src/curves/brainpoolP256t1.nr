@@ -2,7 +2,7 @@ use crate::BigCurve;
 use crate::CurveParamsTrait;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
-pub use bignum::{BrainpoolP256t1_Fq, BrainpoolP256t1_Fr};
+use bignum::fields::brainpoolP256t1Fq::BrainpoolP256t1_Fq;
 
 pub type BrainpoolP256t1 = BigCurve<BrainpoolP256t1_Fq, BrainpoolP256t1_Params>;
 pub type BrainpoolP256t1Scalar = ScalarField<BRAINPOOLP256T1_SCALAR_SLICES>;
@@ -76,7 +76,7 @@ impl CurveParamsTrait<BrainpoolP256t1_Fq> for BrainpoolP256t1_Params {
 mod test {
     use super::BRAINPOOLP256T1_SCALAR_SLICES;
     use bignum::BigNum;
-    use bignum::BrainpoolP256t1_Fq;
+    use bignum::fields::brainpoolP256t1Fq::BrainpoolP256t1_Fq;
 
     #[test]
     fn test_brainpoolP256t1_bits() {

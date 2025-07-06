@@ -10,6 +10,10 @@ use crate::curve_jac::JTranscript;
 use crate::curves::bls12_377::{BLS12_377, BLS12_377Scalar};
 use crate::curves::bls12_381::{BLS12_381, BLS12_381Scalar};
 use crate::curves::bn254::{BN254, BN254Params, BN254Scalar};
+use crate::curves::brainpoolP192r1::{BrainpoolP192r1, BrainpoolP192r1Scalar};
+use crate::curves::brainpoolP192t1::{BrainpoolP192t1, BrainpoolP192t1Scalar};
+use crate::curves::brainpoolP224r1::{BrainpoolP224r1, BrainpoolP224r1Scalar};
+use crate::curves::brainpoolP224t1::{BrainpoolP224t1, BrainpoolP224t1Scalar};
 use crate::curves::brainpoolP256r1::{BrainpoolP256r1, BrainpoolP256r1Scalar};
 use crate::curves::brainpoolP256t1::{BrainpoolP256t1, BrainpoolP256t1Scalar};
 use crate::curves::brainpoolP384r1::{BrainpoolP384r1, BrainpoolP384r1Scalar};
@@ -19,11 +23,12 @@ use crate::curves::brainpoolP512t1::{BrainpoolP512t1, BrainpoolP512t1Scalar};
 use crate::curves::mnt4_753::{MNT4_753, MNT4_753Scalar};
 use crate::curves::mnt6_753::{MNT6_753, MNT6_753Scalar};
 use crate::curves::pallas::{Pallas, PallasScalar};
+use crate::curves::secp192r1::{Secp192r1, Secp192r1Scalar};
+use crate::curves::secp224r1::{Secp224r1, Secp224r1Scalar};
 use crate::curves::secp256k1::{Secp256k1, Secp256k1Scalar};
 use crate::curves::secp256r1::{Secp256r1, Secp256r1Scalar};
 use crate::curves::secp384r1::{Secp384r1, Secp384r1Scalar};
 use crate::curves::secp521r1::{Secp521r1, Secp521r1Scalar};
-use crate::curves::P_192::{P192, P192Scalar};
 
 use crate::curves::vesta::{Vesta, VestaScalar};
 use crate::PointTable;
@@ -32,6 +37,10 @@ use crate::scalar_field::{ScalarField, ScalarFieldTrait};
 use bignum::BLS12_377_Fr;
 use bignum::BLS12_381_Fr;
 use bignum::BN254_Fq;
+use bignum::BrainpoolP192r1_Fr;
+use bignum::BrainpoolP192t1_Fr;
+use bignum::BrainpoolP224r1_Fr;
+use bignum::BrainpoolP224t1_Fr;
 use bignum::BrainpoolP256r1_Fr;
 use bignum::BrainpoolP256t1_Fr;
 use bignum::BrainpoolP384r1_Fr;
@@ -41,12 +50,13 @@ use bignum::BrainpoolP512t1_Fr;
 use bignum::MNT4_753_Fr;
 use bignum::{MNT6_753_Fq, MNT6_753_Fr};
 use bignum::Pallas_Fr;
+use bignum::Secp192r1_Fr;
+use bignum::Secp224r1_Fr;
 use bignum::Secp256k1_Fr;
 use bignum::Secp256r1_Fr;
 use bignum::Secp384r1_Fr;
-use bignum::Secp521r1_Fr;   
+use bignum::Secp521r1_Fr;
 use bignum::Vesta_Fr;
-use bignum::fields::P192Fr::P192Fr;
 type BN254J = CurveJ<BN254_Fq, BN254Params>;
 
 fn main(x: u128) {
@@ -682,6 +692,66 @@ fn test_vesta_offset_generators() {
 }
 
 #[test]
+fn test_secp192r1_offset_generators() {
+    let one = Secp192r1::one();
+    let negone = Secp192r1_Fr::one().neg();
+    let scalar = Secp192r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_secp224r1_offset_generators() {
+    let one = Secp224r1::one();
+    let negone = Secp224r1_Fr::one().neg();
+    let scalar = Secp224r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_brainpoolP192t1_offset_generators() {
+    let one = BrainpoolP192t1::one();
+    let negone = BrainpoolP192t1_Fr::one().neg();
+    let scalar = BrainpoolP192t1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_brainpoolP192r1_offset_generators() {
+    let one = BrainpoolP192r1::one();
+    let negone = BrainpoolP192r1_Fr::one().neg();
+    let scalar = BrainpoolP192r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_brainpoolP224t1_offset_generators() {
+    let one = BrainpoolP224t1::one();
+    let negone = BrainpoolP224t1_Fr::one().neg();
+    let scalar = BrainpoolP224t1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
+fn test_brainpoolP224r1_offset_generators() {
+    let one = BrainpoolP224r1::one();
+    let negone = BrainpoolP224r1_Fr::one().neg();
+    let scalar = BrainpoolP224r1Scalar::from_bignum(negone);
+    let final = one.mul(scalar);
+
+    assert(final.eq(one.neg()));
+}
+
+#[test]
 fn test_bls12_377_num_scalar_slices_in_scalar_field() {
     let x = BLS12_377_Fr::zero();
     let max_wnaf_bits = x.modulus_bits() + 1;
@@ -852,6 +922,66 @@ fn test_vesta_num_scalar_slices_in_scalar_field() {
 }
 
 #[test]
+fn test_secp192r1_num_scalar_slices_in_scalar_field() {
+    let x = Secp192r1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = Secp192r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_secp224r1_num_scalar_slices_in_scalar_field() {
+    let x = Secp224r1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = Secp224r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_brainpoolP192r1_num_scalar_slices_in_scalar_field() {
+    let x = BrainpoolP192r1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BrainpoolP192r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_brainpoolP192t1_num_scalar_slices_in_scalar_field() {
+    let x = BrainpoolP192t1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BrainpoolP192t1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_brainpoolP224r1_num_scalar_slices_in_scalar_field() {
+    let x = BrainpoolP224r1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BrainpoolP224r1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
+fn test_brainpoolP224t1_num_scalar_slices_in_scalar_field() {
+    let x = BrainpoolP224t1_Fr::zero();
+    let max_wnaf_bits = x.modulus_bits() + 1;
+    let scalar_slices = (max_wnaf_bits / 4) + (max_wnaf_bits % 4 != 0) as u32;
+    let scalar = BrainpoolP224t1Scalar::zero();
+
+    assert(scalar_slices == scalar.len());
+}
+
+#[test]
 fn test_bls12_377_hash_to_curve() {
     let r = BLS12_377::hash_to_curve("hello world".as_bytes());
 
@@ -971,8 +1101,43 @@ fn test_vesta_hash_to_curve() {
 }
 
 #[test]
-fn test_p192_hash_to_curve() {
-    let r = P192::hash_to_curve("hello world".as_bytes());
+fn test_secp192r1_hash_to_curve() {
+    let r = Secp192r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_secp224r1_hash_to_curve() {
+    let r = Secp224r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_brainpoolP192r1_hash_to_curve() {
+    let r = BrainpoolP192r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_brainpoolP192t1_hash_to_curve() {
+    let r = BrainpoolP192t1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_brainpoolP224r1_hash_to_curve() {
+    let r = BrainpoolP224r1::hash_to_curve("hello world".as_bytes());
+
+    r.validate_on_curve();
+}
+
+#[test]
+fn test_brainpoolP224t1_hash_to_curve() {
+    let r = BrainpoolP224t1::hash_to_curve("hello world".as_bytes());
 
     r.validate_on_curve();
 }
@@ -1293,18 +1458,118 @@ fn test_vesta_msm() {
 }
 
 #[test]
-fn test_p192_msm() {
-    let four = P192Fr::from(4);
-    let p_minus_4_fr = P192Fr::modulus() - four;
-    let p_minus_4 = P192Scalar::from_bignum(p_minus_4_fr);
-    let p_minus_5_fr = p_minus_4_fr - P192Fr::one();
-    let p_minus_5 = P192Scalar::from_bignum(p_minus_5_fr);
+fn test_secp192r1_msm() {
+    let four = Secp192r1_Fr::from(4);
+    let p_minus_4_fr = Secp192r1_Fr::modulus() - four;
+    let p_minus_4 = Secp192r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp192r1_Fr::one();
+    let p_minus_5 = Secp192r1Scalar::from_bignum(p_minus_5_fr);
     let mut scalars = [p_minus_4, p_minus_5];
-    let a = P192::one();
+    let a = Secp192r1::one();
     let b = a.neg();
     let mut points = [a, b];
 
-    let result = P192::evaluate_linear_expression(points, scalars, [P192::one().neg()]);
+    let result = Secp192r1::evaluate_linear_expression(points, scalars, [Secp192r1::one().neg()]);
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_secp224r1_msm() {
+    let four = Secp224r1_Fr::from(4);
+    let p_minus_4_fr = Secp224r1_Fr::modulus() - four;
+    let p_minus_4 = Secp224r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - Secp224r1_Fr::one();
+    let p_minus_5 = Secp224r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = Secp224r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = Secp224r1::evaluate_linear_expression(points, scalars, [Secp224r1::one().neg()]);
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_brainpoolP192r1_msm() {
+    let four = BrainpoolP192r1_Fr::from(4);
+    let p_minus_4_fr = BrainpoolP192r1_Fr::modulus() - four;
+    let p_minus_4 = BrainpoolP192r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BrainpoolP192r1_Fr::one();
+    let p_minus_5 = BrainpoolP192r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BrainpoolP192r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BrainpoolP192r1::evaluate_linear_expression(
+        points,
+        scalars,
+        [BrainpoolP192r1::one().neg()],
+    );
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_brainpoolP192t1_msm() {
+    let four = BrainpoolP192t1_Fr::from(4);
+    let p_minus_4_fr = BrainpoolP192t1_Fr::modulus() - four;
+    let p_minus_4 = BrainpoolP192t1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BrainpoolP192t1_Fr::one();
+    let p_minus_5 = BrainpoolP192t1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BrainpoolP192t1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BrainpoolP192t1::evaluate_linear_expression(
+        points,
+        scalars,
+        [BrainpoolP192t1::one().neg()],
+    );
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_brainpoolP224r1_msm() {
+    let four = BrainpoolP224r1_Fr::from(4);
+    let p_minus_4_fr = BrainpoolP224r1_Fr::modulus() - four;
+    let p_minus_4 = BrainpoolP224r1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BrainpoolP224r1_Fr::one();
+    let p_minus_5 = BrainpoolP224r1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BrainpoolP224r1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BrainpoolP224r1::evaluate_linear_expression(
+        points,
+        scalars,
+        [BrainpoolP224r1::one().neg()],
+    );
+
+    assert(result.is_infinity);
+}
+
+#[test]
+fn test_brainpoolP224t1_msm() {
+    let four = BrainpoolP224t1_Fr::from(4);
+    let p_minus_4_fr = BrainpoolP224t1_Fr::modulus() - four;
+    let p_minus_4 = BrainpoolP224t1Scalar::from_bignum(p_minus_4_fr);
+    let p_minus_5_fr = p_minus_4_fr - BrainpoolP224t1_Fr::one();
+    let p_minus_5 = BrainpoolP224t1Scalar::from_bignum(p_minus_5_fr);
+    let mut scalars = [p_minus_4, p_minus_5];
+    let a = BrainpoolP224t1::one();
+    let b = a.neg();
+    let mut points = [a, b];
+
+    let result = BrainpoolP224t1::evaluate_linear_expression(
+        points,
+        scalars,
+        [BrainpoolP224t1::one().neg()],
+    );
+
     assert(result.is_infinity);
 }
 

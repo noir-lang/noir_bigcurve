@@ -24,52 +24,52 @@ pub struct ScalarField<let N: u32> {
 }
 
 // 1, 2, 3, 4
-unconstrained pub fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
-    let mut result: [u8; N] = [0; N];
+unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ScalarField<N> {
+    let mut base4_slices: [u8; N] = [0; N];
     let mut nibbles = x.to_le_radix::<N>(16);
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] = nibbles[0] as u8 + (skew as u8);
-    result[N - 1] = (nibbles[0] + 15) / 2;
+    base4_slices[N - 1] = (nibbles[0] + 15) / 2;
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
-        result[N - 1 - i] = (nibble + 15) / 2;
+        base4_slices[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
-            result[N - 1 - i] += 1;
-            result[N - i] -= 8;
+            base4_slices[N - 1 - i] += 1;
+            base4_slices[N - i] -= 8;
         }
     }
 
-    (result, skew)
+    ScalarField { base4_slices, skew }
 }
 
-unconstrained fn get_wnaf_slices2<let N: u32, B>(x: B) -> ([u8; N], bool)
+unconstrained fn get_wnaf_slices2<let N: u32, B>(x: B) -> ScalarField<N>
 where
     B: BigNum,
 {
-    let mut result: [u8; N] = [0; N];
+    let mut base4_slices: [u8; N] = [0; N];
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
-    let x: [u128] = x.get_limbs().as_slice();
+    let x: [u128; _] = x.get_limbs();
     for i in 0..x.len() {
         nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
     nibbles[0][0] = nibbles[0][0] as u8 + (skew as u8);
-    result[N - 1] = (nibbles[0][0] + 15) / 2;
+    base4_slices[N - 1] = (nibbles[0][0] + 15) / 2;
 
     for i in 1..N {
         let major_index = i / 30;
         let minor_index = i % 30;
         let mut nibble: u8 = nibbles[major_index][minor_index];
-        result[N - 1 - i] = (nibble + 15) / 2;
+        base4_slices[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
-            result[N - 1 - i] += 1;
-            result[N - i] -= 8;
+            base4_slices[N - 1 - i] += 1;
+            base4_slices[N - i] -= 8;
         }
     }
 
-    (result, skew)
+    ScalarField { base4_slices, skew }
 }
 
 unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
@@ -111,19 +111,18 @@ unconstrained fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
     /// Constructs an instance from a field element.
-    fn from(x: Field) -> Self {
-        let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
-        let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
-        result.base4_slices = slices;
-        result.skew = skew;
-        let mut acc: Field = (slices[0] as Field) * 2 - 15;
-        for i in 1..N {
-            acc = acc * 16;
-            acc += (slices[i] as Field) * 2 - 15;
-        }
-        assert(acc - skew as Field == x);
-        for i in 0..N {
-            (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
+    fn from(input: Field) -> Self {
+        let result = unsafe { get_wnaf_slices(input) };
+
+        if std::runtime::is_unconstrained() {
+            // Enforce that limbs are all 4 bits.
+            for i in 0..N {
+                (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
+            }
+
+            // Enforce consistency with `input`.
+            let reconstructed_input: Field = result.into();
+            assert_eq(reconstructed_input, input);
         }
         if N >= 64 {
             unsafe { compare_scalar_field_to_bignum(result) };
@@ -138,6 +137,7 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
      * @details use this method instead of `new` if you know x/y is on the curve
      **/
     fn into(self: Self) -> Field {
+        // TODO: This is susceptible to overflow when N is large!
         let mut acc: Field = 0;
         for i in 0..N {
             acc = acc * 16;
@@ -165,9 +165,9 @@ impl<let N: u32> ScalarField<N> {
         B: BigNum,
     {
         x.validate_in_field();
-        let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
+        let result = unsafe { get_wnaf_slices2(x) };
         // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
-        Self { base4_slices: slices, skew }
+        result
     }
 
     pub fn into_bignum<B>(self) -> B

@@ -24,7 +24,7 @@ pub struct ScalarField<let N: u32> {
 }
 
 // 1, 2, 3, 4
-unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
+unconstrained pub fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
     let mut nibbles = x.to_le_radix::<N>(16);
 
@@ -72,27 +72,41 @@ where
     (result, skew)
 }
 
-// unconstrained fn get_modulus_slices() -> (Field, Field) {
-//     let bytes = std::field::modulus_be_bytes();
-//     let num_bytes = (std::field::modulus_num_bits() / 8) + ((std::field::modulus_num_bits() % 8 != 0) as u64);
-//     let mut lo: Field = 0;
-//     let mut hi: Field = 0;
-//     for i in 0..(num_bytes / 2) {
-//         hi *= 256;
-//         hi += bytes[i] as Field;
-//         lo *= 256;
-//         lo += bytes[i + (num_bytes/2)] as Field;
-//     }
-//     if (num_bytes & 1 == 1) {
-//         lo *= 256;
-//         lo += bytes[num_bytes - 1] as Field;
-//     }
-//     (lo, hi)
-// }
+unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
+    let mut expected_slices: [u8; N] = [0; N];
+    
+    if N == 64 {
+        let slice: [u8; 64] = [9, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0];
+        for i in 0..N {
+            expected_slices[i] = slice[i];
+        }
+    } else if N == 65 {
+        let slice: [u8; 65] = [8, 1, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0];
+         for i in 0..N {
+            expected_slices[i] = slice[i];
+        }
+    } else if N > 65 {
+        // For N > 65, we need to insert zeros at the beginning
+        let num_zeros = N - 65;
+        expected_slices[0] = 8;
+        for i in 1..num_zeros+1 {
+            expected_slices[i] = 0;
+        }
+        let slice: [u8; 65] = [8, 1, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0];
+        for i in num_zeros+1..N {
+            expected_slices[i] = slice[i - num_zeros];
+        }
+    }
+    expected_slices
+}
 
-// unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
-//     lhs_lo.lt(rhs_lo + 1)
-// }
+unconstrained fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
+    let expected_slices: [u8; N] = unsafe { get_modulus_slices::<N>() };
+    // Compare from left to right, fail if any number is bigger than expected
+    for i in 0..N {
+        assert(result.base4_slices[i] <= expected_slices[i]);
+    }
+}
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
@@ -110,6 +124,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
         assert(acc - skew as Field == x);
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
+        }
+        if N >= 64 {
+            unsafe { compare_scalar_field_to_bignum(result) };
         }
         result
     }
@@ -200,4 +217,19 @@ impl<let N: u32> ScalarField<N> {
     pub fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }
+}
+
+
+mod tests {
+    use crate::scalar_field::get_modulus_slices;
+    #[test]
+    fn test_get_modulus_slices() {
+        let modulus_slices: [u8; 64] = unsafe { get_modulus_slices::<64>() };
+        assert(modulus_slices == [9, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0]);
+        let modulus_slices2: [u8; 65] = unsafe { get_modulus_slices::<65>() };
+        assert(modulus_slices2 == [8, 1, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0]);
+        let modulus_slices3: [u8; 68] = unsafe { get_modulus_slices::<68>() };
+        assert(modulus_slices3 == [8, 0, 0, 0, 1, 8, 3, 2, 2, 7, 3, 9, 7, 0, 9, 8, 13, 0, 1, 4, 13, 12, 2, 8, 2, 2, 13, 11, 4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0]);
+}
+
 }

@@ -102,9 +102,20 @@ unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
 
 unconstrained fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
     let expected_slices: [u8; N] = unsafe { get_modulus_slices::<N>() };
-    // Compare from left to right, fail if any number is bigger than expected
+    
+    // Lexicographic comparison: stop when we find a strictly smaller number
+    let mut should_continue: bool = true;
     for i in 0..N {
-        assert(result.base4_slices[i] <= expected_slices[i]);
+        if should_continue {
+            if result.base4_slices[i] < expected_slices[i] {
+                // Found a strictly smaller number, we can stop - this is valid
+                should_continue = false;
+            } else if result.base4_slices[i] > expected_slices[i] {
+                // Found a strictly larger number, this is invalid
+                assert(false);
+            }
+            // If equal, continue to the next element (should_continue remains true)
+        }
     }
 }
 

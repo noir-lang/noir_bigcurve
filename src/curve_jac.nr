@@ -304,6 +304,7 @@ where
         let y_equal_predicate = S2.eq(S1);
         let lhs_infinity = self.is_infinity;
         let rhs_infinity = p2.is_infinity;
+
         let double_predicate =
             x_equal_predicate & y_equal_predicate & !lhs_infinity & !rhs_infinity;
         let add_predicate = !x_equal_predicate & !lhs_infinity & !rhs_infinity;
@@ -317,9 +318,13 @@ where
         } else if (infinity_predicate) {
             result = (CurveJ::point_at_infinity(), JTranscript::new());
         } else if (lhs_infinity & !rhs_infinity) {
-            result = (p2, JTranscript::new());
+            let new_transcript =
+                JTranscript { x3: p2.x, y3: p2.y, z3: B::one(), lambda_numerator: B::zero() };
+            result = (p2, new_transcript);
         } else if (rhs_infinity & !lhs_infinity) {
-            result = (self, JTranscript::new());
+            let new_transcript =
+                JTranscript { x3: self.x, y3: self.y, z3: B::one(), lambda_numerator: B::zero() };
+            result = (self, new_transcript);
         }
         result
         // let (_, PP): (B, B ) = B::compute_quadratic_expression([[U2, U1]], [[false, true]], [[U2, U1]], [[false, true]], [], []);

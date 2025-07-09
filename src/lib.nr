@@ -263,23 +263,15 @@ pub(crate) comptime fn derive_curve_impl(
             // Expensive witness generation! Avoid if possible
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
+                    let lhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(self) };
+                    let rhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(other) };
+                    let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
+                    let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        // Simple addition in unconstrained context - no witness generation needed
-                        let lhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(self) };
-                        let rhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(other) };
-                        let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
-                        
-                        // Convert back to affine coordinates using the transcript
-                        let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(j_transcript) };
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+
                     } else {
-                        // Full witness generation for constrained context
-                        let lhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                        let rhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
-
-                        let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(lhsJ.add(rhsJ).1) };
-
-                        crate::add_with_hint::<$field_type, $typ>(self, other, transcript)
+                        crate::add_with_hint::<$field_type, $typ>(self, other, transcript)           
                     }
                 }
             }
@@ -295,22 +287,15 @@ pub(crate) comptime fn derive_curve_impl(
 
             impl std::ops::Sub for $typ {
                 fn sub(self, other: Self) -> Self {
+                    let lhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
+                    let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
+                    
+                    // Convert back to affine coordinates using the transcript
+                    let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        // Simple subtraction in unconstrained context - no witness generation needed
-                        let lhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(self) };
-                        let rhsJ = unsafe { crate::curve_jac::CurveJ::<$field_type, $typ>::from(other) };
-                        let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
-                        
-                        // Convert back to affine coordinates using the transcript
-                        let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(j_transcript) };
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
-                        // Full witness generation for constrained context
-                        let lhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                        let rhsJ = crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
-
-                        let transcript = unsafe { crate::curve_jac::AffineTranscript::from_j(lhsJ.sub(rhsJ).1) };
-
                         crate::sub_with_hint::<$field_type, $typ>(self, other, transcript)
                     }
                 }
@@ -661,10 +646,10 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
 
     // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
     // set input operands to 0!
-    let (x1, y1, x2, y2) = if evaluate_group_operation_predicate {
-        (x1, y1, x2, y2)
+    let (x1, y1, x2, y2, x3, y3) = if evaluate_group_operation_predicate {
+        (x1, y1, x2, y2, x3, y3)
     } else {
-        (B::zero(), B::zero(), B::zero(), B::zero())
+        (B::zero(), B::zero(), B::zero(), B::zero(), B::zero(), B::zero())
     };
 
     // lambda * 2y - 3x * x = 0
@@ -790,10 +775,10 @@ pub(crate) fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
 
     // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
     // set input operands to 0!
-    let (x1, y1, x2, y2) = if evaluate_group_operation_predicate {
-        (x1, y1, x2, y2)
+    let (x1, y1, x2, y2, x3, y3) = if evaluate_group_operation_predicate {
+        (x1, y1, x2, y2, x3, y3)
     } else {
-        (B::zero(), B::zero(), B::zero(), B::zero())
+        (B::zero(), B::zero(), B::zero(), B::zero(), B::zero(), B::zero())
     };
 
     // lambda * 2y - 3x*x = 0

@@ -4,6 +4,9 @@ use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 use bignum::BigNum;
 pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
+use crate::curve_jac::CurveJ;
+
+pub(crate) type Secp256r1J = CurveJ<Secp256r1_Fq, Secp256r1>;
 
 pub global SECP256r1_PARAM: BigCurveParams<Secp256r1_Fq> = BigCurveParams {
     a: Secp256r1_Fq::from_limbs([

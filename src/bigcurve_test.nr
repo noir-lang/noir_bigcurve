@@ -10,9 +10,11 @@ use crate::curves::bn254::{BN254, BN254J};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::PointTable;
 use crate::scalar_field::ScalarField;
+use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
 
 use bignum::BN254_Fq;
 use bignum::MNT6_753_Fq;
+use bignum::Secp256r1_Fq;
 
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
     let s: (CurveJ<BN254_Fq, BN254>, [AffineTranscript<BN254_Fq>; 326]) = (P.mul(scalar));
@@ -233,6 +235,35 @@ fn test_double_with_hint() {
 
         let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine = crate::double_with_hint::<BN254_Fq, BN254>(P_affine, transcript);
+
+        assert(P2_affine.x == x3);
+        assert(P2_affine.y == y3);
+    }
+}
+
+#[test]
+fn test_double_with_hint_256() {
+    unsafe {
+        let P = Secp256r1J::one();
+
+        let P2 = P.dbl();
+
+        let P_affine = Secp256r1::one();
+
+        let Z_inverse = P2.1.z3.__invmod();
+
+        let lambda = P2.1.lambda_numerator.__mul(Z_inverse);
+
+        let X3 = P2.1.x3;
+        let Y3 = P2.1.y3;
+        let ZZ = Z_inverse.__mul(Z_inverse);
+        let ZZZ = ZZ.__mul(Z_inverse);
+
+        let x3 = X3.__mul(ZZ);
+        let y3 = Y3.__mul(ZZZ);
+
+        let transcript: AffineTranscript<Secp256r1_Fq> = AffineTranscript { lambda, x3, y3 };
+        let P2_affine = crate::double_with_hint::<Secp256r1_Fq, Secp256r1>(P_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);

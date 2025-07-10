@@ -322,7 +322,6 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
     let x3 = transcript.x3;
     let y3 = transcript.y3;
 
-    // TODO: HANDLE CURVES WHERE A != 0
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();
     y3.validate_in_range();

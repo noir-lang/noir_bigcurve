@@ -26,11 +26,15 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ScalarField<N> {
     let mut base4_slices: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix::<N>(16);
+    // let mut nibbles = x.to_le_radix::<N>(16);
+    let bytes = x.to_le_bytes::<32>();
+    let mut nibbles: [u8; N] = [0; N];
+    nibbles = extract_nibbles_from_bytes(bytes);
 
     let skew: bool = nibbles[0] & 1 == 0;
-    nibbles[0] = nibbles[0] as u8 + (skew as u8);
+    nibbles[0] = nibbles[0] + (skew as u8);
     base4_slices[N - 1] = (nibbles[0] + 15) / 2;
+
     for i in 1..N {
         let mut nibble: u8 = nibbles[i];
         base4_slices[N - 1 - i] = (nibble + 15) / 2;
@@ -51,11 +55,12 @@ where
     let mut nibbles: [[u8; 30]; (N / 30) + 1] = [[0; 30]; (N / 30) + 1];
     let x: [u128; _] = x.get_limbs();
     for i in 0..x.len() {
-        nibbles[i] = (x[i] as Field).to_le_radix::<30>(16);
+        let bytes = (x[i] as Field).to_le_bytes::<30>();
+        nibbles[i] = extract_nibbles_from_bytes(bytes);
     }
 
     let skew: bool = nibbles[0][0] & 1 == 0;
-    nibbles[0][0] = nibbles[0][0] as u8 + (skew as u8);
+    nibbles[0][0] = nibbles[0][0] + (skew as u8);
     base4_slices[N - 1] = (nibbles[0][0] + 15) / 2;
 
     for i in 1..N {
@@ -113,7 +118,7 @@ unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
 }
 
 unconstrained fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
-    let expected_slices: [u8; N] = unsafe { get_modulus_slices::<N>() };
+    let expected_slices: [u8; N] = get_modulus_slices::<N>();
 
     // Lexicographic comparison: stop when we find a strictly smaller number
     let mut should_continue: bool = true;
@@ -188,9 +193,44 @@ impl<let N: u32> ScalarField<N> {
         B: BigNum,
     {
         x.validate_in_field();
-        let result = unsafe { get_wnaf_slices2(x) };
-        // TODO: NONE OF THIS IS CONSTRAINED YET. FIX!
-        result
+        //let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
+        let mut slices_result = unsafe { get_wnaf_slices2(x) };
+        let mut slices = slices_result.base4_slices;
+        let skew = slices_result.skew;
+        for i in 0..N {
+            (slices[i] as Field).assert_max_bit_size::<4>();
+        }
+        let mut result = B::zero();
+        let mut count: u32 = 0;
+        {
+            let mut acc: u128 = 0;
+            let mut last_bits = (result.modulus_bits() % 120) as u64;
+            if (last_bits == 0) {
+                last_bits = 120;
+            }
+            let mut last_nibbles = (last_bits / 4) + 1 as u64;
+            for _ in 0..last_nibbles {
+                acc = acc * 16;
+                acc = acc + (slices[count] as u128) * 2 - 15;
+                count = count + 1;
+            }
+            result.set_limb(result.num_limbs() - 1, acc);
+        }
+        for i in 1..result.num_limbs() {
+            // Using a Field type to allow for negative numbers.
+            let mut acc: Field = 0;
+            for _ in 0..30 {
+                acc = acc * 16;
+                acc = acc + (slices[count] as Field) * 2 - 15;
+                count = count + 1;
+            }
+            // Handle overflow using helper function
+            let acc_u128 = handle_overflow::<B>(acc, &mut result, i);
+            result.set_limb(result.num_limbs() - 1 - i, acc_u128);
+        }
+        result.set_limb(0, result.get_limb(0) - skew as u128);
+        assert(result == x);
+        Self { base4_slices: slices, skew }
     }
 
     pub fn into_bignum<B>(self) -> B
@@ -205,7 +245,7 @@ impl<let N: u32> ScalarField<N> {
             if (last_bits == 0) {
                 last_bits = 120;
             }
-            let mut last_nibbles = (last_bits / 4) + (last_bits % 4 != 0) as u64;
+            let mut last_nibbles = (last_bits / 4) + 1 as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
                 acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
@@ -214,20 +254,16 @@ impl<let N: u32> ScalarField<N> {
             result.set_limb(result.num_limbs() - 1, acc);
         }
         for i in 1..result.num_limbs() {
-            let mut acc: u128 = 0;
+            // Using a Field type to allow for negative numbers.
+            let mut acc: Field = 0;
             for _ in 0..30 {
                 acc = acc * 16;
-                acc = acc + (self.base4_slices[count] as u128) * 2 - 15;
+                acc = acc + (self.base4_slices[count] as Field) * 2 - 15;
                 count = count + 1;
             }
-            if acc >= 0x1000000000000000000000000000000 {
-                acc += 0x1000000000000000000000000000000;
-                result.set_limb(
-                    result.num_limbs() - i,
-                    result.get_limb((result.num_limbs() - i)) - 1,
-                );
-            }
-            result.set_limb(result.num_limbs() - 1 - i, acc);
+            // Handle overflow using helper function
+            let acc_u128 = handle_overflow::<B>(acc, &mut result, i);
+            result.set_limb(result.num_limbs() - 1 - i, acc_u128);
         }
         result.set_limb(0, result.get_limb(0) - self.skew as u128);
         result
@@ -242,8 +278,71 @@ impl<let N: u32> ScalarField<N> {
     }
 }
 
+pub(crate) unconstrained fn extract_nibbles_from_bytes<let N: u32, let M: u32>(
+    bytes: [u8; M],
+) -> [u8; N] {
+    let mut result: [u8; N] = [0; N];
+    let mut nibble_idx = 0;
+
+    for i in 0..M {
+        if nibble_idx >= N {
+            break;
+        }
+        // Extract low nibble (bits 0-3)
+        result[nibble_idx] = bytes[i] & 0x0F;
+        nibble_idx += 1;
+
+        if nibble_idx >= N {
+            break;
+        }
+        // Extract high nibble (bits 4-7)
+        result[nibble_idx] = (bytes[i] >> 4);
+        nibble_idx += 1;
+    }
+
+    result
+}
+
+// Helper function to handle overflow in wNAF reconstruction
+fn handle_overflow<B: BigNum>(acc: Field, result: &mut B, limb_index: u32) -> u128 {
+    let mut acc_u128: u128 = acc as u128;
+
+    // Handle negative numbers. If the number is negative, it is greater than 2^120 in Field.
+    // All positive numbers are less than 2^120 in Field.
+    // For example, 42 is -6 + 3 * 2^4 with wnaf algorithm, but it should be 42 = 10 + 2 * 2^4
+    // To get the actual number 10, we need to subtract the number 6 from 2^4.
+    if acc_u128 >= 0x1000000000000000000000000000000 {
+        // find the actual number needed to be subtracted.
+        let reverse = (acc * -1) as u128;
+        acc_u128 = (1 as u128 << 120) - reverse;
+        result.set_limb(
+            result.num_limbs() - limb_index,
+            result.get_limb(result.num_limbs() - limb_index) - 1,
+        );
+    }
+    acc_u128
+}
+
 mod tests {
     use crate::scalar_field::get_modulus_slices;
+    use crate::scalar_field::ScalarField;
+    #[test]
+    // test even number of nibbles
+    unconstrained fn fuzz_test_scalar_field_conversion(f: Field) {
+        let scalar_field: ScalarField<64> = ScalarField::from(f);
+        let scalar_field2 = scalar_field.into();
+        assert(f == scalar_field2);
+    }
+    #[test]
+    // test odd number of nibbles
+    unconstrained fn fuzz_test_scalar_field_conversion2(f: u128) {
+        // 2^124 -1, 31 nibbles
+        let mask_124: u128 = 0x10000000000000000000000000000000 - 1;
+        let val: u128 = f & mask_124;
+        let scalar_field: ScalarField<31> = ScalarField::from(val as Field);
+        let scalar_field2 = scalar_field.into();
+        assert(val as Field == scalar_field2);
+    }
     #[test]
     fn test_get_modulus_slices() {
         let modulus_slices: [u8; 64] = unsafe { get_modulus_slices::<64>() };
@@ -274,5 +373,4 @@ mod tests {
                 ],
         );
     }
-
 }

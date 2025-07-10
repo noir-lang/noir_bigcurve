@@ -101,4 +101,12 @@ mod test {
         // BN254 cofactor is 1
         crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254>(1);
     }
+
+    #[test]
+    unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
+        let num: BN254_Fq = BN254_Fq::derive_from_seed(seed);
+        let scalar_field = BN254Scalar::from_bignum(num);
+        let bignum = scalar_field.into_bignum();
+        assert(bignum == num);
+    }
 }

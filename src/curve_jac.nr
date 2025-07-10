@@ -319,11 +319,11 @@ where
             result = (CurveJ::point_at_infinity(), JTranscript::new());
         } else if (lhs_infinity & !rhs_infinity) {
             let new_transcript =
-                JTranscript { x3: p2.x, y3: p2.y, z3: B::one(), lambda_numerator: B::zero() };
+                JTranscript { x3: p2.x, y3: p2.y, z3: p2.z, lambda_numerator: B::zero() };
             result = (p2, new_transcript);
         } else if (rhs_infinity & !lhs_infinity) {
             let new_transcript =
-                JTranscript { x3: self.x, y3: self.y, z3: B::one(), lambda_numerator: B::zero() };
+                JTranscript { x3: self.x, y3: self.y, z3: self.z, lambda_numerator: B::zero() };
             result = (self, new_transcript);
         }
         result
@@ -667,16 +667,17 @@ where
         mut points: [Self; Size],
         mut scalars: [ScalarField<NScalarSlices>; Size],
     ) -> (Self, [AffineTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3]) {
-        let mut (accumulator, transcript): (Self, [JTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3]) =
-            CurveJ::msm_partial(points, scalars);
-        let op = accumulator.sub(CurveJ::offset_generator_final());
-        transcript[73 * Size + 252] = op.1;
-        accumulator = op.0;
-        let affine_transcript: [AffineTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3] =
-            AffineTranscript::from_jacobian_transcript(transcript);
+        let mut (accumulator, transcript)
+            : (Self, [JTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3]) =
+                CurveJ::msm_partial(points, scalars);
+            let op = accumulator.sub(CurveJ::offset_generator_final());
+            transcript[73 * Size + 252] = op.1;
+            accumulator = op.0;
+            let affine_transcript: [AffineTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3] =
+                AffineTranscript::from_jacobian_transcript(transcript);
 
-        (accumulator, affine_transcript)
-    }
+            (accumulator, affine_transcript)
+        }
 
     pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mut mul_points: [Curve; NMuls],
@@ -692,22 +693,23 @@ where
             add_j[i] = CurveJ::from(add_points[i]);
         }
 
-        let mut (accumulator, transcript): (Self, [JTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) =
-            CurveJ::msm_partial(mul_j, scalars);
-        let mut transcript_ptr: u32 = NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 - 4;
-        for i in 0..NAdds {
-            let op = accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity);
+        let mut (accumulator, transcript)
+            : (Self, [JTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) =
+                CurveJ::msm_partial(mul_j, scalars);
+            let mut transcript_ptr: u32 = NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 - 4;
+            for i in 0..NAdds {
+                let op = accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity);
+                transcript[transcript_ptr] = op.1;
+                accumulator = op.0;
+                transcript_ptr += 1;
+            }
+
+            let op = accumulator.sub(CurveJ::offset_generator_final());
             transcript[transcript_ptr] = op.1;
             accumulator = op.0;
-            transcript_ptr += 1;
+            let affine_transcript: [AffineTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] =
+                AffineTranscript::from_jacobian_transcript(transcript);
+
+            (accumulator, affine_transcript)
         }
-
-        let op = accumulator.sub(CurveJ::offset_generator_final());
-        transcript[transcript_ptr] = op.1;
-        accumulator = op.0;
-        let affine_transcript: [AffineTranscript<B>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] =
-            AffineTranscript::from_jacobian_transcript(transcript);
-
-        (accumulator, affine_transcript)
-    }
 }

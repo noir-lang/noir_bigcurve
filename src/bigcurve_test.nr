@@ -291,7 +291,7 @@ fn test_incomplete_add_with_hint() {
 }
 
 #[test]
-fn test_add() {
+fn test_constrained_add() {
     unsafe {
         let P = BN254::one();
 
@@ -347,6 +347,73 @@ fn test_add() {
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
+}
+
+#[test]
+unconstrained fn test_unconstrained_add() {
+    let P = BN254::one();
+
+    // Q = 2P
+    let Q = BN254 {
+        x: BN254_Fq::from_limbs([
+            0x7816a916871ca8d3c208c16d87cfd3,
+            0x44e72e131a029b85045b68181585d9,
+            0x0306,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+            0x738c0e0a7c92e7845f96b2ae9c0a68,
+            0x15ed,
+        ]),
+        is_infinity: false,
+    };
+
+    let result = BN254J::from(P.add(Q));
+
+    let P_j = BN254J::from(P);
+    let Q_j = BN254J::from(Q);
+    let expected = P_j.add(Q_j).0;
+
+    assert(result.eq(expected));
+}
+#[test]
+unconstrained fn test_unconstrained_add_one_side_infinity() {
+    //Q + infinity and infinity + Q
+    let Q = BN254::one();
+    let P = BN254::point_at_infinity();
+    let expected = BN254J::from(Q);
+    let result = BN254J::from(Q.add(P));
+    assert(result.eq(expected));
+    let result = BN254J::from(P.add(Q));
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn test_unconstrained_add_doubling() {
+    // P + P
+    let P = BN254::one();
+    let Q = BN254::one();
+    let P_j = BN254J::from(P);
+    let result = BN254J::from(P.add(Q));
+    let expected = P_j.dbl().0;
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn test_unconstrained_add_infinity() {
+    // P = -Q
+    let P = BN254::one();
+    let Q = P.neg();
+    let result = BN254J::from(P.add(Q));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
+
+    // both at infinity
+    let P = BN254::point_at_infinity();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(Q.add(P));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
 }
 
 #[test]
@@ -406,6 +473,78 @@ fn test_sub() {
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
+}
+
+#[test]
+unconstrained fn test_unconstrained_sub() {
+    let P = BN254::one();
+
+    // Q = 2P
+    let Q = BN254 {
+        x: BN254_Fq::from_limbs([
+            0x7816a916871ca8d3c208c16d87cfd3,
+            0x44e72e131a029b85045b68181585d9,
+            0x0306,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+            0x738c0e0a7c92e7845f96b2ae9c0a68,
+            0x15ed,
+        ]),
+        is_infinity: false,
+    };
+
+    let result = BN254J::from(P.sub(Q));
+
+    let P_j = BN254J::from(P);
+    let Q_j = BN254J::from(Q);
+    let expected = P_j.sub(Q_j).0;
+
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn test_unconstrained_sub_doubling() {
+    // doubling
+    let P = BN254::one();
+    let Q = BN254::one();
+
+    let result = BN254J::from(P.sub(Q.neg()));
+    let P_j = BN254J::from(P);
+    let expected = P_j.dbl().0;
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn test_unconstrained_sub_infinity() {
+    // both at infinity
+    let P = BN254::one();
+    let Q = BN254::one();
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
+    // both infinity
+    let P = BN254::point_at_infinity();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(Q.sub(P));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn test_unconstrained_sub_one_side_infinity() {
+    let P = BN254::point_at_infinity();
+    let Q = BN254::one();
+
+    // lhs infinity
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::from(Q.neg());
+    assert(result.eq(expected));
+
+    // rhs infinity
+    let result = BN254J::from(Q.sub(P));
+    let expected = expected.neg();
+    assert(result.eq(expected));
 }
 
 #[test]

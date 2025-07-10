@@ -8,9 +8,9 @@ use crate::curve_jac::CurveJ;
 use crate::curve_jac::JTranscript;
 use crate::curves::bn254::{BN254, BN254J};
 use crate::curves::mnt6_753::MNT6_753;
+use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
 use crate::PointTable;
 use crate::scalar_field::ScalarField;
-use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
 
 use bignum::BN254_Fq;
 use bignum::MNT6_753_Fq;
@@ -242,7 +242,7 @@ fn test_double_with_hint() {
 }
 
 #[test]
-fn test_double_with_hint_256() {
+fn test_double_with_hint_secp256r1() {
     unsafe {
         let P = Secp256r1J::one();
 

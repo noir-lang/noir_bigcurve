@@ -1,7 +1,9 @@
-pub mod scalar_field;
+
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
+pub mod scalar_field;
+mod benchmarks;
 pub(crate) mod utils;
 pub(crate) mod curves;
 

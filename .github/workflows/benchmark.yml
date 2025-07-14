@@ -33,13 +33,6 @@ jobs:
         env:
           BACKEND: /home/runner/.bb/bb
 
-      - name: Compare gates reports
-        id: gates_diff
-        uses: noir-lang/noir-gates-diff@dbe920a8dcc3370af4be4f702ca9cef29317bec1
-        with:
-          report: gates_report.json
-          summaryQuantile: 0.9 # only display the 10% most significant circuit size diffs in the summary (defaults to 20%)
-      
       - name: Store ACIR opcode benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -90,16 +83,6 @@ jobs:
 
       - name: Generate brillig report
         run: ./scripts/build-brillig-report.sh
-
-      - name: Compare brillig reports
-        id: brillig_bytecode_diff
-        uses: noir-lang/noir-gates-diff@dbe920a8dcc3370af4be4f702ca9cef29317bec1
-        with:
-          report: brillig_report.json
-          header: |
-            # Changes to Brillig bytecode sizes
-          brillig_report: true
-          summaryQuantile: 0.9 # only display the 10% most significant circuit size diffs in the summary (defaults to 20%)
 
       - name: Store brillig benchmark result
         uses: benchmark-action/github-action-benchmark@v1

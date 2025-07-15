@@ -56,11 +56,6 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
         }
 
         #[export]
-        fn $one_bench_name() -> $typ {
-            $BigCurve::one()
-        }
-
-        #[export]
         fn $hash_to_curve_bench_name(a: [u8; 10]) -> $typ {
             $BigCurve::hash_to_curve(a)
         }

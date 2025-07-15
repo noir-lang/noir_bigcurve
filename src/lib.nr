@@ -78,6 +78,7 @@ pub comptime fn derive_curve_impl(
     let typ = struct_def.as_type();
     let CurveJ = quote { $crate::curve_jac::CurveJ };
     let AffineTranscript = quote { $crate::curve_jac::AffineTranscript };
+    let ScalarField = quote { $crate::scalar_field::ScalarField };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {
@@ -180,10 +181,10 @@ pub comptime fn derive_curve_impl(
                     $CurveJ::<$field_type, $typ>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
 };
                 let mut _inputs: [Self; NMuls] = [$crate::BigCurve::one(); NMuls];
-                let mut _scalars: [$crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [$crate::ScalarField::zero(); NMuls];
+                let mut _scalars: [$ScalarField<NScalarSlices>; NMuls] = [$ScalarField::zero(); NMuls];
                 for i in 0..NMuls {
                     let (input, scalar) = if mul_points[i].is_infinity {
-                        ($crate::BigCurve::one(), $crate::scalar_field::ScalarField::zero())
+                        ($crate::BigCurve::one(), $ScalarField::zero())
                     } else {
                         (mul_points[i], mul_scalars[i])
                     };

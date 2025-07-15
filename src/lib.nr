@@ -984,7 +984,7 @@ unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCur
 /// then `T[slice[i]]` is added to the accumulator.
 ///
 /// For small multiscalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
-struct PointTable<B> {
+pub struct PointTable<B> {
     x: [B; 16],
     y: [B; 16],
 }

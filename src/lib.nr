@@ -889,17 +889,22 @@ unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCur
     transcript
 }
 
-
 fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
 ) -> Curve {
     let transcript: [AffineTranscript<F>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
-        crate::curve_jac::CurveJ::<F, Curve>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
-};
+        crate::curve_jac::CurveJ::<F, Curve>::compute_linear_expression_transcript(
+            mul_points,
+            mul_scalars,
+            add_points,
+        )
+            .1
+    };
     let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
-    let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [crate::scalar_field::ScalarField::zero(); NMuls];
+    let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] =
+        [crate::scalar_field::ScalarField::zero(); NMuls];
     for i in 0..NMuls {
         let (input, scalar) = if mul_points[i].is_infinity() {
             (BigCurve::one(), ScalarField::zero())
@@ -923,12 +928,14 @@ fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: 
 
     // Init the accumulator from the most significant scalar slice
     let mut accumulator: Curve = BigCurve::offset_generator();
-    let mut accumulator = incomplete_add_with_hint::<F, Curve>(accumulator,
+    let mut accumulator = incomplete_add_with_hint::<F, Curve>(
+        accumulator,
         tables[0].get::<Curve>(scalars[0].base4_slices[0] as u32),
         transcript[8 * NMuls],
     );
     for i in 1..NMuls {
-        accumulator = incomplete_add_with_hint::<F, Curve>(accumulator,
+        accumulator = incomplete_add_with_hint::<F, Curve>(
+            accumulator,
             tables[i].get::<Curve>(scalars[i].base4_slices[0] as u32),
             transcript[8 * NMuls + i],
         );
@@ -936,16 +943,25 @@ fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: 
 
     // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
     for i in 1..NScalarSlices {
-        accumulator =
-            double_with_hint::<F, Curve>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1)]);
-        accumulator =
-            double_with_hint::<F, Curve>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 1]);
-        accumulator =
-            double_with_hint::<F, Curve>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 2]);
-        accumulator =
-            double_with_hint::<F, Curve>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3]);
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1)],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 1],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 2],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3],
+        );
         for j in 0..NMuls {
-            accumulator = incomplete_add_with_hint::<F, Curve>(accumulator,
+            accumulator = incomplete_add_with_hint::<F, Curve>(
+                accumulator,
                 tables[j].get::<Curve>(scalars[j].base4_slices[i] as u32),
                 transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 4 + j],
             );
@@ -957,7 +973,8 @@ fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: 
     // windowed non-adjacent form can only represent odd scalar values.
     // if value is even, the result will be off by one and we need to subtract the input point
     for i in 0..NMuls {
-        accumulator = conditional_incomplete_subtract_with_hint::<F, Curve>(accumulator,
+        accumulator = conditional_incomplete_subtract_with_hint::<F, Curve>(
+            accumulator,
             msm_points[i],
             scalars[i].skew,
             transcript[9 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
@@ -978,7 +995,6 @@ fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: 
         BigCurve::offset_generator_final(),
         transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
     );
-
 
     accumulator
 }

@@ -13,7 +13,6 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let add_bench_name = f"add_{module_name}".quoted_contents();
     let sub_bench_name = f"sub_{module_name}".quoted_contents();
     let neg_bench_name = f"neg_{module_name}".quoted_contents();
-    let one_bench_name = f"one_{module_name}".quoted_contents();
     let mul_bench_name = f"mul_{module_name}".quoted_contents();
     let eq_bench_name = f"eq_{module_name}".quoted_contents();
     let validate_on_curve_bench_name = f"validate_on_curve_{module_name}".quoted_contents();

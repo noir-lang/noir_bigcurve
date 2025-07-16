@@ -1,7 +1,7 @@
-pub mod scalar_field;
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
+pub mod scalar_field;
 pub(crate) mod utils;
 pub(crate) mod curves;
 
@@ -11,6 +11,7 @@ use bignum::bignum::evaluate_quadratic_expression;
 use crate::curve_jac::AffineTranscript;
 use crate::scalar_field::ScalarField;
 use std::ops::{Add, Neg, Sub};
+mod benchmarks;
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 

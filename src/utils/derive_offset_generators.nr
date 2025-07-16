@@ -102,7 +102,7 @@ where
 #[test]
 fn test_compute_and_print_offset_generators() {
     unsafe {
-        let _ = <BN254 as BigCurve<BN254_Fq>>::one();
+        let _ = BN254::one();
         compute_and_print_offset_generators::<BN254_Fq, _, _, 64, BN254>("BN254_Fq", "BN254", 1);
         // compute_and_print_offset_generators::<PallasBN, _, _, 64>("Pallas_Fq", "Pallas", 1);
         // compute_and_print_offset_generators::<VestaBN, _, _, 64>("Vesta_Fq", "Vesta", 1);

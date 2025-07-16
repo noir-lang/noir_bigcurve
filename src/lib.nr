@@ -1,7 +1,7 @@
-pub mod scalar_field;
 pub(crate) mod curve_jac;
 mod test_data;
 mod bigcurve_test;
+pub mod scalar_field;
 pub(crate) mod utils;
 pub(crate) mod curves;
 
@@ -11,6 +11,7 @@ use bignum::bignum::evaluate_quadratic_expression;
 use crate::curve_jac::AffineTranscript;
 use crate::scalar_field::ScalarField;
 use std::ops::{Add, Neg, Sub};
+mod benchmarks;
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 
@@ -78,6 +79,7 @@ pub comptime fn derive_curve_impl(
     let typ = struct_def.as_type();
     let CurveJ = quote { $crate::curve_jac::CurveJ };
     let AffineTranscript = quote { $crate::curve_jac::AffineTranscript };
+    let ScalarField = quote { $crate::scalar_field::ScalarField };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {
@@ -176,92 +178,7 @@ pub comptime fn derive_curve_impl(
                 mul_scalars: [ScalarField<NScalarSlices>; NMuls],
                 add_points: [Self; NAdds],
             ) -> Self {
-                let transcript: [$AffineTranscript<$field_type>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
-                    $CurveJ::<$field_type, $typ>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
-};
-                let mut _inputs: [Self; NMuls] = [$crate::BigCurve::one(); NMuls];
-                let mut _scalars: [$crate::scalar_field::ScalarField<NScalarSlices>; NMuls] = [$crate::ScalarField::zero(); NMuls];
-                for i in 0..NMuls {
-                    let (input, scalar) = if mul_points[i].is_infinity {
-                        ($crate::BigCurve::one(), $crate::scalar_field::ScalarField::zero())
-                    } else {
-                        (mul_points[i], mul_scalars[i])
-                    };
-                    _inputs[i] = input;
-                    _scalars[i] = scalar;
-                }
-                let msm_points = _inputs;
-                let scalars = _scalars;
-
-                let mut tables: [$crate::PointTable<$field_type>; NMuls] = [$crate::PointTable::empty(); NMuls];
-                for i in 0..NMuls {
-                    let mut table_transcript: [$AffineTranscript<$field_type>; 8] = [$AffineTranscript::new(); 8];
-                    for j in 0..8 {
-                        table_transcript[j] = transcript[i * 8 + j];
-                    }
-                    tables[i] = $crate::PointTable::<$field_type>::new_with_hint::<$typ>(msm_points[i], table_transcript);
-                }
-
-                // Init the accumulator from the most significant scalar slice
-                let mut accumulator: Self = $crate::BigCurve::offset_generator();
-                let mut accumulator = $crate::incomplete_add_with_hint::<$field_type, $typ>(accumulator,
-                    tables[0].get::<$typ>(scalars[0].base4_slices[0] as u32),
-                    transcript[8 * NMuls],
-                );
-                for i in 1..NMuls {
-                    accumulator = $crate::incomplete_add_with_hint::<$field_type, $typ>(accumulator,
-                        tables[i].get::<$typ>(scalars[i].base4_slices[0] as u32),
-                        transcript[8 * NMuls + i],
-                    );
-                }
-
-                // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
-                for i in 1..NScalarSlices {
-                    accumulator =
-                        $crate::double_with_hint::<$field_type, $typ>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1)]);
-                    accumulator =
-                        $crate::double_with_hint::<$field_type, $typ>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 1]);
-                    accumulator =
-                        $crate::double_with_hint::<$field_type, $typ>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 2]);
-                    accumulator =
-                        $crate::double_with_hint::<$field_type, $typ>(accumulator, transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3]);
-                    for j in 0..NMuls {
-                        accumulator = $crate::incomplete_add_with_hint::<$field_type, $typ>(accumulator,
-                            tables[j].get::<$typ>(scalars[j].base4_slices[i] as u32),
-                            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 4 + j],
-                        );
-                    }
-                }
-
-                // 9 * Size + (4 + Size) * (NScalarSlices - 1) - 1
-                // 9 + 5 * NScalarSlices - 6
-                // windowed non-adjacent form can only represent odd scalar values.
-                // if value is even, the result will be off by one and we need to subtract the input point
-                for i in 0..NMuls {
-                    accumulator = $crate::conditional_incomplete_subtract_with_hint::<$field_type, $typ>(accumulator,
-                        msm_points[i],
-                        scalars[i].skew,
-                        transcript[9 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
-                    );
-                }
-
-                for i in 0..NAdds {
-                    accumulator = $crate::conditional_incomplete_add_with_hint::<$field_type, $typ>(
-                        accumulator,
-                        add_points[i],
-                        !add_points[i].is_infinity,
-                        transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
-                    );
-                }
-
-                accumulator = $crate::sub_with_hint::<$field_type, $typ>(
-                    accumulator,
-                    $crate::BigCurve::offset_generator_final(),
-                    transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
-                );
-
-
-                accumulator
+                $crate::evaluate_linear_expression::<$field_type,$typ, _, _, _>(mul_points, mul_scalars, add_points)
             }}
 
             // Expensive witness generation! Avoid if possible
@@ -322,7 +239,6 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
     let x3 = transcript.x3;
     let y3 = transcript.y3;
 
-    // TODO: HANDLE CURVES WHERE A != 0
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();
     y3.validate_in_range();
@@ -971,6 +887,116 @@ unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCur
     let tmp: crate::curve_jac::CurveJ<B, P> = crate::curve_jac::CurveJ::from(point);
     let (_, transcript) = tmp.mul(scalar);
     transcript
+}
+
+fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+) -> Curve {
+    let transcript: [AffineTranscript<F>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
+        crate::curve_jac::CurveJ::<F, Curve>::compute_linear_expression_transcript(
+            mul_points,
+            mul_scalars,
+            add_points,
+        )
+            .1
+    };
+    let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
+    let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] =
+        [crate::scalar_field::ScalarField::zero(); NMuls];
+    for i in 0..NMuls {
+        let (input, scalar) = if mul_points[i].is_infinity() {
+            (BigCurve::one(), ScalarField::zero())
+        } else {
+            (mul_points[i], mul_scalars[i])
+        };
+        _inputs[i] = input;
+        _scalars[i] = scalar;
+    }
+    let msm_points = _inputs;
+    let scalars = _scalars;
+
+    let mut tables: [PointTable<F>; NMuls] = [PointTable::empty(); NMuls];
+    for i in 0..NMuls {
+        let mut table_transcript: [AffineTranscript<F>; 8] = [AffineTranscript::new(); 8];
+        for j in 0..8 {
+            table_transcript[j] = transcript[i * 8 + j];
+        }
+        tables[i] = PointTable::<F>::new_with_hint::<Curve>(msm_points[i], table_transcript);
+    }
+
+    // Init the accumulator from the most significant scalar slice
+    let mut accumulator: Curve = BigCurve::offset_generator();
+    let mut accumulator = incomplete_add_with_hint::<F, Curve>(
+        accumulator,
+        tables[0].get::<Curve>(scalars[0].base4_slices[0] as u32),
+        transcript[8 * NMuls],
+    );
+    for i in 1..NMuls {
+        accumulator = incomplete_add_with_hint::<F, Curve>(
+            accumulator,
+            tables[i].get::<Curve>(scalars[i].base4_slices[0] as u32),
+            transcript[8 * NMuls + i],
+        );
+    }
+
+    // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
+    for i in 1..NScalarSlices {
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1)],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 1],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 2],
+        );
+        accumulator = double_with_hint::<F, Curve>(
+            accumulator,
+            transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 3],
+        );
+        for j in 0..NMuls {
+            accumulator = incomplete_add_with_hint::<F, Curve>(
+                accumulator,
+                tables[j].get::<Curve>(scalars[j].base4_slices[i] as u32),
+                transcript[9 * NMuls + (4 + NMuls) * (i - 1) + 4 + j],
+            );
+        }
+    }
+
+    // 9 * Size + (4 + Size) * (NScalarSlices - 1) - 1
+    // 9 + 5 * NScalarSlices - 6
+    // windowed non-adjacent form can only represent odd scalar values.
+    // if value is even, the result will be off by one and we need to subtract the input point
+    for i in 0..NMuls {
+        accumulator = conditional_incomplete_subtract_with_hint::<F, Curve>(
+            accumulator,
+            msm_points[i],
+            scalars[i].skew,
+            transcript[9 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
+        );
+    }
+
+    for i in 0..NAdds {
+        accumulator = conditional_incomplete_add_with_hint::<F, Curve>(
+            accumulator,
+            add_points[i],
+            !add_points[i].is_infinity(),
+            transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
+        );
+    }
+
+    accumulator = sub_with_hint::<F, Curve>(
+        accumulator,
+        BigCurve::offset_generator_final(),
+        transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
+    );
+
+    accumulator
 }
 
 /// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).

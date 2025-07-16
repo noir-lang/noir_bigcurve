@@ -29,7 +29,6 @@ The most efficient method to evaluate curve operations is `BigCurve::evaluate_li
 - Add method to check point is in prime-order subgroup for curves with a cofactor
 - Parametrise and test with a degree-2 extension field instead of `BigNum`
 - [x] Add curve parameters for commonly used curves (BN254, BLS12-381, MNT4, MNT6, Pasta, Vella, Secp256K1, Secp256R1)
-- Create benchmarks
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)
 
 # FAQ

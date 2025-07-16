@@ -79,7 +79,6 @@ pub comptime fn derive_curve_impl(
     let typ = struct_def.as_type();
     let CurveJ = quote { $crate::curve_jac::CurveJ };
     let AffineTranscript = quote { $crate::curve_jac::AffineTranscript };
-    let ScalarField = quote { $crate::scalar_field::ScalarField };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {

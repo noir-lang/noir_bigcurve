@@ -26,7 +26,6 @@ pub struct ScalarField<let N: u32> {
 // 1, 2, 3, 4
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ScalarField<N> {
     let mut base4_slices: [u8; N] = [0; N];
-    // let mut nibbles = x.to_le_radix::<N>(16);
     let bytes = x.to_le_bytes::<32>();
     let mut nibbles: [u8; N] = [0; N];
     nibbles = extract_nibbles_from_bytes(bytes);

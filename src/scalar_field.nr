@@ -77,7 +77,7 @@ where
     ScalarField { base4_slices, skew }
 }
 
-unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
+fn get_modulus_slices<let N: u32>() -> [u8; N] {
     let mut expected_slices: [u8; N] = [0; N];
 
     if N == 64 {
@@ -117,7 +117,7 @@ unconstrained fn get_modulus_slices<let N: u32>() -> [u8; N] {
     expected_slices
 }
 
-unconstrained fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
+fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
     let expected_slices: [u8; N] = get_modulus_slices::<N>();
 
     // Lexicographic comparison: stop when we find a strictly smaller number
@@ -142,7 +142,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
     fn from(input: Field) -> Self {
         let result = unsafe { get_wnaf_slices(input) };
 
-        if std::runtime::is_unconstrained() {
+        if !std::runtime::is_unconstrained() {
             // Enforce that limbs are all 4 bits.
             for i in 0..N {
                 (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
@@ -151,9 +151,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // Enforce consistency with `input`.
             let reconstructed_input: Field = result.into();
             assert_eq(reconstructed_input, input);
-        }
-        if N >= 64 {
-            unsafe { compare_scalar_field_to_bignum(result) };
+            if N >= 64 {
+                compare_scalar_field_to_bignum(result);
+            }
         }
         result
     }

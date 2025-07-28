@@ -3,7 +3,7 @@ mod test_data;
 mod bigcurve_test;
 pub mod scalar_field;
 pub(crate) mod utils;
-pub(crate) mod curves;
+pub mod curves;
 
 use bignum::BigNum;
 use bignum::bignum::evaluate_quadratic_expression;

@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.10.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.9.0...v0.10.0) (2025-07-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump bignum to 0.7.4 ([#88](https://github.com/noir-lang/noir_bigcurve/issues/88))
+* make `derive_curve_impl` public ([#82](https://github.com/noir-lang/noir_bigcurve/issues/82))
+* remove some methods from `BigCurveTrait` ([#69](https://github.com/noir-lang/noir_bigcurve/issues/69))
+* create separate `BigCurveTrait` implementations for each curve ([#65](https://github.com/noir-lang/noir_bigcurve/issues/65))
+
+### Features
+
+* Add benchmarks ([#87](https://github.com/noir-lang/noir_bigcurve/issues/87)) ([54de613](https://github.com/noir-lang/noir_bigcurve/commit/54de613621018cd5e775b8a899c7e40013cda3f7))
+* Create separate `BigCurveTrait` implementations for each curve ([#65](https://github.com/noir-lang/noir_bigcurve/issues/65)) ([7cff316](https://github.com/noir-lang/noir_bigcurve/commit/7cff31643c621e272ffe93a54beda8f5cc105f43))
+* Make `derive_curve_impl` public ([#82](https://github.com/noir-lang/noir_bigcurve/issues/82)) ([4cfe4f6](https://github.com/noir-lang/noir_bigcurve/commit/4cfe4f6a69aee11775a33fc21d61487e8cdb5cc8))
+* Remove conditional select ([#74](https://github.com/noir-lang/noir_bigcurve/issues/74)) ([31ae850](https://github.com/noir-lang/noir_bigcurve/commit/31ae8508547eed12ecc2a614d7cdbcb147458072))
+* Remove CurveParamsTrait ([#73](https://github.com/noir-lang/noir_bigcurve/issues/73)) ([59bde3b](https://github.com/noir-lang/noir_bigcurve/commit/59bde3b603c859920f9d99b20bc44793a52d49cb))
+* Remove Trait suffix from BigCurveTrait ([#71](https://github.com/noir-lang/noir_bigcurve/issues/71)) ([4aed759](https://github.com/noir-lang/noir_bigcurve/commit/4aed759b843815af915d91bb2252bed6debdae9c))
+* Use to_le_bytes and bitwise operations to replace to_le_radix ([#75](https://github.com/noir-lang/noir_bigcurve/issues/75)) ([6adb77c](https://github.com/noir-lang/noir_bigcurve/commit/6adb77cdd13805f0b3d1fff6b4747fbdfa2dde75))
+
+
+### Bug Fixes
+
+* Avoid using private export of `ScalarField` in macro ([#89](https://github.com/noir-lang/noir_bigcurve/issues/89)) ([200362a](https://github.com/noir-lang/noir_bigcurve/commit/200362a8679758e0c634fdd3b3b8b9af9bb02a07))
+* Bump bignum v0.7.5 ([#91](https://github.com/noir-lang/noir_bigcurve/issues/91)) ([8390174](https://github.com/noir-lang/noir_bigcurve/commit/83901749ee0c9073bef2c03f4eaa31580dda7e6f))
+
+
+### Miscellaneous Chores
+
+* Bump bignum to 0.7.4 ([#88](https://github.com/noir-lang/noir_bigcurve/issues/88)) ([2dca59a](https://github.com/noir-lang/noir_bigcurve/commit/2dca59a57aa13c5f4f796564d077106cbf9d3c9a))
+* Remove some methods from `BigCurveTrait` ([#69](https://github.com/noir-lang/noir_bigcurve/issues/69)) ([832fabc](https://github.com/noir-lang/noir_bigcurve/commit/832fabc210cafcdbbb1e0fa4dc4327f1bf0aaf99))
+
 ## [0.9.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.8.0...v0.9.0) (2025-06-06)
 
 

@@ -128,7 +128,7 @@ fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
                 should_continue = false;
             } else if result.base4_slices[i] > expected_slices[i] {
                 // Found a strictly larger number, this is invalid
-                assert(false);
+                panic(f"Reconstructed number is greater than modulus");
             }
             // If equal, continue to the next element (should_continue remains true)
         }
@@ -197,7 +197,7 @@ impl<let N: u32> ScalarField<N> {
         B: BigNum,
     {
         x.validate_in_field();
-        //let mut (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices2(x) };
+        // Safety: separate verification
         let mut slices_result = unsafe { get_wnaf_slices2(x) };
         let mut slices = slices_result.base4_slices;
         let skew = slices_result.skew;
@@ -348,8 +348,8 @@ mod tests {
         assert(val as Field == scalar_field2);
     }
     #[test]
-    fn test_get_modulus_slices() {
-        let modulus_slices: [u8; 64] = unsafe { get_modulus_slices::<64>() };
+    unconstrained fn test_get_modulus_slices() {
+        let modulus_slices: [u8; 64] = get_modulus_slices::<64>();
         assert(
             modulus_slices
                 == [
@@ -358,7 +358,7 @@ mod tests {
                     10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
                 ],
         );
-        let modulus_slices2: [u8; 65] = unsafe { get_modulus_slices::<65>() };
+        let modulus_slices2: [u8; 65] = get_modulus_slices::<65>();
         assert(
             modulus_slices2
                 == [
@@ -367,7 +367,7 @@ mod tests {
                     10, 1, 15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
                 ],
         );
-        let modulus_slices3: [u8; 68] = unsafe { get_modulus_slices::<68>() };
+        let modulus_slices3: [u8; 68] = get_modulus_slices::<68>();
         assert(
             modulus_slices3
                 == [
@@ -377,7 +377,7 @@ mod tests {
                 ],
         );
     }
-    #[test(should_fail)]
+    #[test(should_fail_with = "Reconstructed number is greater than modulus")]
     fn test_get_modulus_slices_fail_64() {
         //13th nibble is 14, which is greater than the modulus
         let modulus_slices: [u8; 64] = [
@@ -385,13 +385,10 @@ mod tests {
             0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15,
             10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
-        let mut result: ScalarField<64> = ScalarField { base4_slices: [0; 64], skew: true };
-        for i in 0..64 {
-            result.base4_slices[i] = modulus_slices[i];
-        }
+        let mut result: ScalarField<64> = ScalarField { base4_slices: modulus_slices, skew: true };
         let _ = result.into();
     }
-    #[test(should_fail)]
+    #[test(should_fail_with = "Reconstructed number is greater than modulus")]
     fn test_get_modulus_slices_fail_65() {
         //modulus slice represents a number that is greater than the modulus
         let modulus_slices2 = [
@@ -399,14 +396,11 @@ mod tests {
             12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0,
             15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
-        let mut result: ScalarField<65> = ScalarField { base4_slices: [0; 65], skew: true };
-        for i in 0..64 {
-            result.base4_slices[i] = modulus_slices2[i];
-        }
+        let mut result: ScalarField<65> = ScalarField { base4_slices: modulus_slices2, skew: true };
         let _ = result.into();
     }
 
-    #[test(should_fail)]
+    #[test(should_fail_with = "Reconstructed number is greater than modulus")]
     fn test_get_modulus_slices_fail_68() {
         //modulus slice represents a number that is greater than the modulus
         let modulus_slices3 = [
@@ -414,10 +408,7 @@ mod tests {
             4, 0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1,
             15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
-        let mut result: ScalarField<68> = ScalarField { base4_slices: [0; 68], skew: true };
-        for i in 0..68 {
-            result.base4_slices[i] = modulus_slices3[i];
-        }
+        let mut result: ScalarField<68> = ScalarField { base4_slices: modulus_slices3, skew: true };
         let _ = result.into();
     }
 

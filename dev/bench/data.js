@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753719213382,
+  "lastUpdate": 1755632699203,
   "repoUrl": "https://github.com/noir-lang/noir_bigcurve",
   "entries": {
     "ACIR Opcodes": [
@@ -2917,6 +2917,430 @@ window.BENCHMARK_DATA = {
           {
             "name": "sub_Vesta_Bench.json/main",
             "value": 367,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_BLS12_377_Bench.json/main",
+            "value": 114,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_BLS12_381_Bench.json/main",
+            "value": 114,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_BN254_Bench.json/main",
+            "value": 78,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_MNT4_753_Bench.json/main",
+            "value": 246,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_MNT6_753_Bench.json/main",
+            "value": 246,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_Pallas_Bench.json/main",
+            "value": 78,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_Secp256k1_Bench.json/main",
+            "value": 78,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_Secp256r1_Bench.json/main",
+            "value": 78,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_Secp384r1_Bench.json/main",
+            "value": 114,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "validate_on_curve_Vesta_Bench.json/main",
+            "value": 78,
+            "unit": "acir_opcodes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "26174818+jialinli98@users.noreply.github.com",
+            "name": "Jialin Li",
+            "username": "jialinli98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c13415f175bfe938c8507943a37180e972a6c9ce",
+          "message": "chore: add ScalarField WNAF validation for N >= 64 (#80)\n\nCo-authored-by: Tom French <15848336+TomAFrench@users.noreply.github.com>",
+          "timestamp": "2025-08-19T20:36:36+01:00",
+          "tree_id": "918fc7e4fd58b1db6146c040587381643912dc36",
+          "url": "https://github.com/noir-lang/noir_bigcurve/commit/c13415f175bfe938c8507943a37180e972a6c9ce"
+        },
+        "date": 1755632698364,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "add_BLS12_377_Bench.json/main",
+            "value": 513,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_BLS12_381_Bench.json/main",
+            "value": 513,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_BN254_Bench.json/main",
+            "value": 373,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_MNT4_753_Bench.json/main",
+            "value": 972,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_MNT6_753_Bench.json/main",
+            "value": 972,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_Pallas_Bench.json/main",
+            "value": 373,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_Secp256k1_Bench.json/main",
+            "value": 373,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_Secp256r1_Bench.json/main",
+            "value": 376,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_Secp384r1_Bench.json/main",
+            "value": 516,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "add_Vesta_Bench.json/main",
+            "value": 373,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_BLS12_377_Bench.json/main",
+            "value": 121,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_BLS12_381_Bench.json/main",
+            "value": 121,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_BN254_Bench.json/main",
+            "value": 93,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_MNT4_753_Bench.json/main",
+            "value": 205,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_MNT6_753_Bench.json/main",
+            "value": 205,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_Pallas_Bench.json/main",
+            "value": 93,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_Secp256k1_Bench.json/main",
+            "value": 93,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_Secp256r1_Bench.json/main",
+            "value": 93,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_Secp384r1_Bench.json/main",
+            "value": 121,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "eq_Vesta_Bench.json/main",
+            "value": 93,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_BLS12_377_Bench.json/main",
+            "value": 74597,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_BLS12_381_Bench.json/main",
+            "value": 74597,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_BN254_Bench.json/main",
+            "value": 50646,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_MNT4_753_Bench.json/main",
+            "value": 163515,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_MNT6_753_Bench.json/main",
+            "value": 163515,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_Pallas_Bench.json/main",
+            "value": 50646,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp256k1_Bench.json/main",
+            "value": 50646,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp256r1_Bench.json/main",
+            "value": 50647,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp384r1_Bench.json/main",
+            "value": 74598,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "evaluate_linear_expression_Vesta_Bench.json/main",
+            "value": 50646,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_BLS12_377_Bench.json/main",
+            "value": 3139,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_BLS12_381_Bench.json/main",
+            "value": 3143,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_BN254_Bench.json/main",
+            "value": 2423,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_MNT4_753_Bench.json/main",
+            "value": 5363,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_MNT6_753_Bench.json/main",
+            "value": 5363,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_Pallas_Bench.json/main",
+            "value": 2423,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_Secp256k1_Bench.json/main",
+            "value": 2417,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_Secp256r1_Bench.json/main",
+            "value": 2417,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_Secp384r1_Bench.json/main",
+            "value": 3137,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "hash_to_curve_Vesta_Bench.json/main",
+            "value": 2423,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_BLS12_377_Bench.json/main",
+            "value": 49162,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_BLS12_381_Bench.json/main",
+            "value": 49162,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_BN254_Bench.json/main",
+            "value": 33086,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_MNT4_753_Bench.json/main",
+            "value": 109127,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_MNT6_753_Bench.json/main",
+            "value": 109127,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_Pallas_Bench.json/main",
+            "value": 33086,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_Secp256k1_Bench.json/main",
+            "value": 33086,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_Secp256r1_Bench.json/main",
+            "value": 33087,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_Secp384r1_Bench.json/main",
+            "value": 49163,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "mul_Vesta_Bench.json/main",
+            "value": 33086,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_BLS12_377_Bench.json/main",
+            "value": 66,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_BLS12_381_Bench.json/main",
+            "value": 66,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_BN254_Bench.json/main",
+            "value": 48,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_MNT4_753_Bench.json/main",
+            "value": 120,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_MNT6_753_Bench.json/main",
+            "value": 120,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_Pallas_Bench.json/main",
+            "value": 48,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_Secp256k1_Bench.json/main",
+            "value": 48,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_Secp256r1_Bench.json/main",
+            "value": 48,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_Secp384r1_Bench.json/main",
+            "value": 66,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "neg_Vesta_Bench.json/main",
+            "value": 48,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_BLS12_377_Bench.json/main",
+            "value": 510,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_BLS12_381_Bench.json/main",
+            "value": 510,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_BN254_Bench.json/main",
+            "value": 371,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_MNT4_753_Bench.json/main",
+            "value": 966,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_MNT6_753_Bench.json/main",
+            "value": 966,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_Pallas_Bench.json/main",
+            "value": 371,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_Secp256k1_Bench.json/main",
+            "value": 371,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_Secp256r1_Bench.json/main",
+            "value": 374,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_Secp384r1_Bench.json/main",
+            "value": 513,
+            "unit": "acir_opcodes"
+          },
+          {
+            "name": "sub_Vesta_Bench.json/main",
+            "value": 371,
             "unit": "acir_opcodes"
           },
           {

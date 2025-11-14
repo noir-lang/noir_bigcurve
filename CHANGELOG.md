@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.11.0...v0.12.0) (2025-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* update bignum dependency to version 0.8.2 ([#95](https://github.com/noir-lang/noir_bigcurve/issues/95))
+
+### Bug Fixes
+
+* Add `ScalarField` WNAF validation for `N >= 64` ([#80](https://github.com/noir-lang/noir_bigcurve/issues/80)) ([c13415f](https://github.com/noir-lang/noir_bigcurve/commit/c13415f175bfe938c8507943a37180e972a6c9ce))
+
+
+### Miscellaneous Chores
+
+* Update bignum dependency to version 0.8.2 ([#95](https://github.com/noir-lang/noir_bigcurve/issues/95)) ([cecb6b6](https://github.com/noir-lang/noir_bigcurve/commit/cecb6b62b85be0907e85c13411d8359c797f0d7f))
+
 ## [0.11.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.10.0...v0.11.0) (2025-08-14)
 
 

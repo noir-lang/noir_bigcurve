@@ -80,7 +80,6 @@ pub comptime fn derive_curve_impl(
     params: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
-    let CurveJ = quote { $crate::CurveJ };
     let AffineTranscript = quote { $crate::AffineTranscript };
 
     quote {

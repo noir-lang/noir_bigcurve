@@ -6,12 +6,15 @@ pub(crate) mod utils;
 pub mod curves;
 
 use bignum::BigNum;
-use bignum::bignum::evaluate_quadratic_expression;
 
-use crate::curve_jac::AffineTranscript;
 use crate::scalar_field::ScalarField;
 use std::ops::{Add, Neg, Sub};
 mod benchmarks;
+
+// Re-exports for derive_curve_impl macro
+pub use bignum::bignum::evaluate_quadratic_expression;
+pub use curve_jac::{AffineTranscript, CurveJ};
+pub use utils::hash_to_curve::hash_to_curve;
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 
@@ -77,8 +80,8 @@ pub comptime fn derive_curve_impl(
     params: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
-    let CurveJ = quote { $crate::curve_jac::CurveJ };
-    let AffineTranscript = quote { $crate::curve_jac::AffineTranscript };
+    let CurveJ = quote { $crate::CurveJ };
+    let AffineTranscript = quote { $crate::AffineTranscript };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {
@@ -168,7 +171,7 @@ pub comptime fn derive_curve_impl(
             }
 
             fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
-                let r = $crate::utils::hash_to_curve::hash_to_curve::<$field_type, N>(seed, $params.a, $params.b);
+                let r = $crate::hash_to_curve::<$field_type, N>(seed, $params.a, $params.b);
                 Self { x: r.0, y: r.1, is_infinity: false }
             }
 
@@ -183,15 +186,15 @@ pub comptime fn derive_curve_impl(
             // Expensive witness generation! Avoid if possible
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $crate::CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $crate::CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
-                    let transcript = unsafe { $crate::curve_jac::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $crate::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
 
                     } else {
-                        $crate::add_with_hint::<$field_type, $typ>(self, other, transcript)           
+                        $crate::add_with_hint::<$field_type, $typ>(self, other, transcript)
                     }
                 }
             }
@@ -207,12 +210,12 @@ pub comptime fn derive_curve_impl(
 
             impl std::ops::Sub for $typ {
                 fn sub(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $crate::CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $crate::CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
-                    
+
                     // Convert back to affine coordinates using the transcript
-                    let transcript = unsafe { $crate::curve_jac::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $crate::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
@@ -528,7 +531,7 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
-pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
+pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -658,7 +661,7 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     result
 }
 
-pub(crate) fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
+pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -807,7 +810,7 @@ pub(crate) fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
 /// # Note
 ///
 /// This function assumes the transcript is generated using unconstrained functions.
-pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, P: BigCurve<B>>(
+pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
     transcript: [AffineTranscript<B>; NTranscriptSlices],
@@ -888,7 +891,7 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
     accumulator
 }
 
-unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCurve<B>>(
+pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
 ) -> [AffineTranscript<B>; 6 + NScalarSlices * 5] {
@@ -897,7 +900,7 @@ unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCur
     transcript
 }
 
-fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+pub fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],

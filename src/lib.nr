@@ -1,10 +1,12 @@
-//mod benchmarks;
-mod tests;
-
-mod data;
-
 mod bigcurve;
 mod scalar_field;
+
+// Pre-defined curves and `BigCurve`s for people to use:
+pub mod curves;
+
+mod tests;
+mod benchmarks;
+mod data;
 
 // Free functions and other utils, called by the BigCurve structs
 pub(crate) mod utils;
@@ -30,9 +32,6 @@ pub use bigcurve::BigCurve;
 pub use bigcurve::BigCurveParams;
 pub use bigcurve::derive_curve_impl;
 pub use scalar_field::ScalarField;
-
-// Pre-defined curves and `BigCurve`s for people to use:
-pub mod curves;
 
 // Re-export the pre-defied bigcurve types, for easier access:
 pub use curves::bls12_377::BLS12_377;

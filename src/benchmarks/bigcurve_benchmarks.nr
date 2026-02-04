@@ -20,8 +20,8 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let evaluate_linear_expression_bench_name =
         f"evaluate_linear_expression_{module_name}".quoted_contents();
     let hash_to_curve_bench_name = f"hash_to_curve_{module_name}".quoted_contents();
-    let BigCurve = quote { crate::BigCurve };
-    let ScalarField = quote { crate::ScalarField };
+    let BigCurve = quote { crate::bigcurve::BigCurve };
+    let ScalarField = quote { crate::scalar_field::ScalarField };
 
     let typ = params.as_type();
 

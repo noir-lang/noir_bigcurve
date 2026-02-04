@@ -8,6 +8,7 @@ use crate::curves::secp256k1::Secp256k1;
 use crate::curves::secp256r1::Secp256r1;
 use crate::curves::secp384r1::Secp384r1;
 use crate::curves::vesta::Vesta;
+
 comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let module_name = m.name();
     let add_bench_name = f"add_{module_name}".quoted_contents();

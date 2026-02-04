@@ -1,10 +1,10 @@
+use dep::bignum::BigNum;
+pub use dep::bignum::{BLS12_377_Fq, BLS12_377_Fr};
+
 use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-
-pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
+use crate::ScalarField;
 
 pub global BLS12_377_SCALAR_SLICES: u32 = 64;
 pub global BLS12_377_PARAMS: BigCurveParams<BLS12_377_Fq> = BigCurveParams {

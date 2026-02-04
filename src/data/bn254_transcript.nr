@@ -1,4 +1,5 @@
-use crate::curve_jac::AffineTranscript;
+use crate::curve_jac::types::AffineTranscript;
+
 use bignum::BigNum;
 use bignum::BN254_Fq;
 

@@ -1,5 +1,5 @@
 use crate::BigCurve;
-use crate::curve_jac::CurveJ;
+use crate::curve_jac::types::CurveJ;
 
 use crate::curves::bn254::BN254;
 use bignum::BigNum;

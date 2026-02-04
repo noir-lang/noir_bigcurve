@@ -1,9 +1,10 @@
-use crate::BigCurveParams;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use dep::bignum::BigNum;
+pub use dep::bignum::{MNT6_753_Fq, MNT6_753_Fr};
+
 use crate::BigCurve;
+use crate::BigCurveParams;
 use crate::derive_curve_impl;
+use crate::ScalarField;
 
 pub global MNT6_753_SCALAR_SLICES: u32 = 189;
 pub global MNT6_753_PARAMS: BigCurveParams<MNT6_753_Fq> = BigCurveParams {

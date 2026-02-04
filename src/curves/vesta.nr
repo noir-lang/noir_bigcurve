@@ -1,9 +1,10 @@
+use dep::bignum::BigNum;
+pub use dep::bignum::{Vesta_Fq, Vesta_Fr};
+
 use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{Vesta_Fq, Vesta_Fr};
+use crate::ScalarField;
 
 pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
     a: Vesta_Fq::from_limbs([0x00, 0x00, 0x00]),

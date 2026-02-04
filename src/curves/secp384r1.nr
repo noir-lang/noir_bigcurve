@@ -1,9 +1,10 @@
+use dep::bignum::BigNum;
+pub use dep::bignum::{Secp384r1_Fq, Secp384r1_Fr};
+
 use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
+use crate::ScalarField;
 
 pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
     a: Secp384r1_Fq::from_limbs([

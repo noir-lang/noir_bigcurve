@@ -1,10 +1,12 @@
+use dep::bignum::BigNum;
+pub use dep::bignum::{Secp256r1_Fq, Secp256r1_Fr};
+
 use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
-use crate::curve_jac::CurveJ;
+use crate::ScalarField;
+
+use crate::curve_jac::types::CurveJ;
 
 pub(crate) type Secp256r1J = CurveJ<Secp256r1_Fq, Secp256r1>;
 

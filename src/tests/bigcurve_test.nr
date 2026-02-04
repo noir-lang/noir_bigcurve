@@ -1,20 +1,18 @@
-use bignum::BigNum;
-use std::ops::{Add, Neg, Sub};
-
-use crate::BigCurve;
-use crate::curve_jac;
-use crate::curve_jac::AffineTranscript;
-use crate::curve_jac::CurveJ;
-use crate::curve_jac::JTranscript;
-use crate::curves::bn254::{BN254, BN254J};
-use crate::curves::mnt6_753::MNT6_753;
-use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
-use crate::PointTable;
-use crate::scalar_field::ScalarField;
-
+use dep::bignum::BigNum;
 use bignum::BN254_Fq;
 use bignum::MNT6_753_Fq;
 use bignum::Secp256r1_Fq;
+
+use crate::BigCurve;
+use crate::curve_jac;
+use crate::curve_jac::types::AffineTranscript;
+use crate::curve_jac::types::CurveJ;
+use crate::curve_jac::types::JTranscript;
+use crate::curves::bn254::{BN254, BN254J};
+use crate::curves::mnt6_753::MNT6_753;
+use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
+use crate::ops::point_table::PointTable;
+use crate::scalar_field::ScalarField;
 
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
     let s: (CurveJ<BN254_Fq, BN254>, [AffineTranscript<BN254_Fq>; 326]) = (P.mul(scalar));

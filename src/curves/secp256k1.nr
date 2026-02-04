@@ -1,10 +1,11 @@
+use dep::bignum::BigNum;
+use dep::bignum::Secp256k1_Fq;
+
+use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-use bignum::Secp256k1_Fq;
 
-use crate::BigCurve;
 pub global SECP256k1_SCALAR_SLICES: u32 = 65;
 
 pub global SECP256k1_PARAM: BigCurveParams<Secp256k1_Fq> = BigCurveParams {

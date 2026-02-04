@@ -1,10 +1,10 @@
+use dep::bignum::BigNum;
+pub use bignum::{Pallas_Fq, Pallas_Fr};
+
 use crate::BigCurve;
 use crate::BigCurveParams;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-
-pub use bignum::{Pallas_Fq, Pallas_Fr};
+use crate::ScalarField;
 
 pub global PALLAS_SCALAR_SLICES: u32 = 64;
 

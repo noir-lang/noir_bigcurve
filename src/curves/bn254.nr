@@ -1,10 +1,12 @@
+use dep::bignum::BigNum;
+pub use dep::bignum::BN254_Fq;
+
 use crate::BigCurve;
 use crate::BigCurveParams;
-use crate::curve_jac::CurveJ;
 use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::BN254_Fq;
+use crate::ScalarField;
+
+use crate::curve_jac::types::CurveJ;
 
 pub global BN254_PARAMS: BigCurveParams<BN254_Fq> = BigCurveParams {
     a: BN254_Fq::from_limbs([0x00, 0x00, 0x00]),

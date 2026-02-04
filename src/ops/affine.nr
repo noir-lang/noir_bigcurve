@@ -1,4 +1,4 @@
-use crate::BigCurve;
+use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
 use dep::bignum::BigNum;
 use dep::bignum::bignum::evaluate_quadratic_expression;

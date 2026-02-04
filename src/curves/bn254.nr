@@ -1,10 +1,10 @@
 use dep::bignum::BigNum;
 pub use dep::bignum::BN254_Fq;
 
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
-use crate::ScalarField;
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
+use crate::scalar_field::ScalarField;
 
 use crate::curve_jac::types::CurveJ;
 
@@ -50,7 +50,7 @@ pub struct BN254 {
 }
 
 mod test {
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
     use bignum::{BigNum, BN254_Fq};
     use std::ops::Neg;
 

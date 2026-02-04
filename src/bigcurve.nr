@@ -1,5 +1,5 @@
 use crate::curve_jac::types::AffineTranscript;
-use crate::ScalarField;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 
 use std::ops::{Add, Neg, Sub};

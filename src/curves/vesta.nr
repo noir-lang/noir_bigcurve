@@ -1,10 +1,10 @@
 use dep::bignum::BigNum;
 pub use dep::bignum::{Vesta_Fq, Vesta_Fr};
 
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
-use crate::ScalarField;
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
+use crate::scalar_field::ScalarField;
 
 pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
     a: Vesta_Fq::from_limbs([0x00, 0x00, 0x00]),
@@ -53,7 +53,7 @@ mod test {
     use bignum::{BigNum, Vesta_Fq, Vesta_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
     use super::{Vesta, VESTA_SCALAR_SLICES, VestaScalar};
 
     #[test]

@@ -1,4 +1,5 @@
-use crate::{BigCurve, ScalarField};
+use crate::bigcurve::BigCurve;
+use crate::scalar_field::ScalarField;
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use crate::ops::affine::{
     conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,

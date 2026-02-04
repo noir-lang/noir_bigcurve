@@ -1,9 +1,9 @@
 use dep::bignum::BigNum;
 use dep::bignum::Secp256k1_Fq;
 
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
 use crate::scalar_field::ScalarField;
 
 pub global SECP256k1_SCALAR_SLICES: u32 = 65;
@@ -62,7 +62,7 @@ mod test {
     use bignum::{BigNum, Secp256k1_Fq, Secp256k1_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
 
     use super::{Secp256k1, SECP256k1_SCALAR_SLICES, Secp256k1Scalar};
 

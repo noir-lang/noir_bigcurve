@@ -1,10 +1,10 @@
 use dep::bignum::BigNum;
 pub use dep::bignum::{Secp384r1_Fq, Secp384r1_Fr};
 
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
-use crate::ScalarField;
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
+use crate::scalar_field::ScalarField;
 
 pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
     a: Secp384r1_Fq::from_limbs([
@@ -77,7 +77,7 @@ mod test {
     use bignum::{BigNum, Secp384r1_Fq, Secp384r1_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
     use super::Secp384r1;
     use super::SECP384r1_SCALAR_SLICES;
     use super::Secp384r1Scalar;

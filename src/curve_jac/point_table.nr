@@ -1,4 +1,4 @@
-use crate::BigCurve;
+use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::{CurveJ, JTranscript};
 use dep::bignum::BigNum;
 

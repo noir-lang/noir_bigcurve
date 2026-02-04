@@ -1,7 +1,7 @@
-use dep::bignum::BigNum;
 use crate::BigCurve;
-use crate::ScalarField;
 use crate::curve_jac::types::AffineTranscript;
+use crate::ScalarField;
+use dep::bignum::BigNum;
 
 /// Multiplies a point by a scalar field value, returning the resulting point.
 pub fn msm<P: BigCurve<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(

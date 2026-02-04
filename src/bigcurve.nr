@@ -1,7 +1,7 @@
-use dep::bignum::BigNum;
 use crate::ScalarField;
+use dep::bignum::BigNum;
 
-use std::ops::{Add, Sub, Neg};
+use std::ops::{Add, Neg, Sub};
 
 /// Implements an elliptic curve over a prime field that is not the circuit's native field.
 

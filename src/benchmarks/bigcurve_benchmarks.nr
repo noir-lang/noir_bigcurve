@@ -33,7 +33,7 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
 
         #[export] 
         fn $sub_bench_name(a: $typ, b: $typ) -> $typ {
-            a-b
+            a - b
         }
 
         #[export]
@@ -43,7 +43,7 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
 
         #[export]
         fn $eq_bench_name(a: $typ, b: $typ) -> bool {
-            a==b
+            a == b
         }
         #[export]
         fn $validate_on_curve_bench_name(a: $typ) {

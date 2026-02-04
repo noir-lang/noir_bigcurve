@@ -1,6 +1,6 @@
-use dep::bignum::BigNum;
 use crate::{BigCurve, ScalarField};
-use crate::curve_jac::types::{CurveJ, JTranscript, AffineTranscript};
+use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
+use dep::bignum::BigNum;
 
 /**
  * @brief construct from BigCurve

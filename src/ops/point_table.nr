@@ -1,7 +1,7 @@
-use dep::bignum::BigNum;
-use crate::curve_jac::types::AffineTranscript;
 use crate::BigCurve;
+use crate::curve_jac::types::AffineTranscript;
 use crate::ops::affine::{double_with_hint, incomplete_add_with_hint};
+use dep::bignum::BigNum;
 
 /// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
 ///

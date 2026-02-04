@@ -11,13 +11,10 @@ pub(crate) mod utils;
 pub(crate) mod ops;
 pub(crate) mod curve_jac;
 
-
-
 // Internal functions required by derive macros for external crates
 // Exported through the `internal` submodule to make it clear they are not
 // intended for direct use by end users
-pub mod internal {
-}
+pub mod internal {}
 
 //// Re-export affine PointTable so tests and external callers can use crate::PointTable
 //pub(crate) use crate::ops::point_table::PointTable;
@@ -30,9 +27,6 @@ pub mod internal {
 //pub(crate) use crate::ops::msm::{
 //    evaluate_linear_expression, get_mul_transcript, mul_with_hint,
 //};
-
-
-
 
 // Re-export the main structs so that users on't have to specify the paths
 pub use bigcurve::BigCurve;

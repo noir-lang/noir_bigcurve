@@ -1,7 +1,7 @@
 use dep::bignum::BigNum;
-use bignum::BN254_Fq;
-use bignum::MNT6_753_Fq;
-use bignum::Secp256r1_Fq;
+use dep::bignum::BN254_Fq;
+use dep::bignum::MNT6_753_Fq;
+use dep::bignum::Secp256r1_Fq;
 
 use crate::BigCurve;
 use crate::curve_jac;
@@ -581,7 +581,7 @@ fn test_make_table() {
     unsafe {
         let P: BN254J = BN254J::one();
 
-        let mut transcript: [JTranscript<BN254_Fq>] = &[];
+        let mut transcript: [JTranscript<BN254_Fq>] = @[];
         let T: curve_jac::PointTable<BN254_Fq> = curve_jac::PointTable::new(P);
         for i in 0..8 {
             transcript = transcript.push_back(T.transcript[i]);

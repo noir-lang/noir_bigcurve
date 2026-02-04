@@ -1,6 +1,6 @@
-use dep::bignum::BigNum;
 use crate::BigCurve;
-use crate::curve_jac::types::{JTranscript, CurveJ};
+use crate::curve_jac::types::{CurveJ, JTranscript};
+use dep::bignum::BigNum;
 
 /// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
 ///

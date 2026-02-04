@@ -1,6 +1,6 @@
-use dep::bignum::BigNum;
 use crate::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
+use dep::bignum::BigNum;
 
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
 ///

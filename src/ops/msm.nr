@@ -1,11 +1,11 @@
 use crate::bigcurve::BigCurve;
-use crate::scalar_field::ScalarField;
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use crate::ops::affine::{
     conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
     double_with_hint, incomplete_add_with_hint, sub_with_hint,
 };
 use crate::ops::point_table::PointTable;
+use crate::scalar_field::ScalarField;
 use dep::bignum::BigNum;
 
 /// Multiplies a point by a scalar field value, returning the resulting point.

@@ -587,7 +587,7 @@ fn test_make_table() {
     unsafe {
         let P: BN254J = BN254J::one();
 
-        let mut transcript: [JTranscript<BN254_Fq>] = @[];
+        let mut transcript: [JTranscript<BN254_Fq>] = &[];
         let T: curve_jac::point_table::PointTable<BN254_Fq> =
             curve_jac::point_table::PointTable::new(P);
         for i in 0..8 {

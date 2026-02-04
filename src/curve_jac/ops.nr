@@ -1,6 +1,6 @@
 use crate::{BigCurve, ScalarField};
-use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
 use crate::curve_jac::point_table::PointTable;
+use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
 use dep::bignum::BigNum;
 
 /**

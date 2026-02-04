@@ -17,25 +17,13 @@ pub(crate) mod curve_jac;
 pub mod internal {
     pub use dep::bignum::bignum::evaluate_quadratic_expression;
 
+    pub use crate::ops::msm::evaluate_linear_expression;
     pub use crate::ops::msm::get_mul_transcript;
     pub use crate::ops::msm::mul_with_hint;
-    pub use crate::ops::msm::evaluate_linear_expression;
 
     pub use crate::ops::affine::add_with_hint;
     pub use crate::ops::affine::sub_with_hint;
 }
-
-//// Re-export affine PointTable so tests and external callers can use crate::PointTable
-//pub(crate) use crate::ops::point_table::PointTable;
-//
-//// Re-export ops so derive macro and tests can use crate::add_with_hint, crate::mul_with_hint, etc.
-//pub(crate) use crate::ops::affine::{
-//    add_with_hint, double_with_hint, incomplete_add_with_hint, sub_with_hint,
-//    conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
-//};
-//pub(crate) use crate::ops::msm::{
-//    evaluate_linear_expression, get_mul_transcript, mul_with_hint,
-//};
 
 // Re-export the main structs so that users on't have to specify the paths
 pub use bigcurve::BigCurve;

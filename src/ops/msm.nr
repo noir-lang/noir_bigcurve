@@ -1,8 +1,11 @@
 use crate::{BigCurve, ScalarField};
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
+use crate::ops::affine::{
+    conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
+    double_with_hint, incomplete_add_with_hint, sub_with_hint,
+};
 use crate::ops::point_table::PointTable;
 use dep::bignum::BigNum;
-use crate::ops::affine::{incomplete_add_with_hint, double_with_hint, conditional_incomplete_subtract_with_hint, sub_with_hint, conditional_incomplete_add_with_hint};
 
 /// Multiplies a point by a scalar field value, returning the resulting point.
 pub fn msm<P: BigCurve<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
@@ -218,8 +221,7 @@ pub fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlic
             .1
     };
     let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
-    let mut _scalars: [ScalarField<NScalarSlices>; NMuls] =
-        [ScalarField::zero(); NMuls];
+    let mut _scalars: [ScalarField<NScalarSlices>; NMuls] = [ScalarField::zero(); NMuls];
     for i in 0..NMuls {
         let (input, scalar) = if mul_points[i].is_infinity() {
             (BigCurve::one(), ScalarField::zero())

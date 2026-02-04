@@ -4,6 +4,7 @@ use dep::bignum::MNT6_753_Fq;
 use dep::bignum::Secp256r1_Fq;
 
 use crate::BigCurve;
+use crate::bigcurve;
 use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
@@ -37,7 +38,7 @@ fn test_mul() {
     ); // p - 2
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
 
     // -2
     let mut expected = BN254 {
@@ -100,7 +101,7 @@ fn test_mul_by_0() {
     assert(foo == 0);
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
     assert(result.is_infinity == true);
 }
 
@@ -113,7 +114,7 @@ fn test_mul_a_point_at_infinity() {
     ); // p - 2
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
-    let result = crate::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
     assert(result.is_infinity == true);
 }
 
@@ -232,7 +233,7 @@ fn test_double_with_hint() {
         let y3 = Y3.__mul(ZZZ);
 
         let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
-        let P2_affine = crate::double_with_hint::<BN254_Fq, BN254>(P_affine, transcript);
+        let P2_affine = crate::ops::affine::double_with_hint::<BN254_Fq, BN254>(P_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
@@ -261,7 +262,7 @@ fn test_double_with_hint_secp256r1() {
         let y3 = Y3.__mul(ZZZ);
 
         let transcript: AffineTranscript<Secp256r1_Fq> = AffineTranscript { lambda, x3, y3 };
-        let P2_affine = crate::double_with_hint::<Secp256r1_Fq, Secp256r1>(P_affine, transcript);
+        let P2_affine = crate::ops::affine::double_with_hint::<Secp256r1_Fq, Secp256r1>(P_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
@@ -306,7 +307,7 @@ fn test_incomplete_add_with_hint() {
 
         let transcript: AffineTranscript<BN254_Fq> = AffineTranscript { lambda, x3, y3 };
         let P2_affine =
-            crate::incomplete_add_with_hint::<BN254_Fq, BN254>(P_affine, Q_affine, transcript);
+            crate::ops::affine::incomplete_add_with_hint::<BN254_Fq, BN254>(P_affine, Q_affine, transcript);
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
@@ -582,7 +583,7 @@ fn test_make_table() {
         let P: BN254J = BN254J::one();
 
         let mut transcript: [JTranscript<BN254_Fq>] = @[];
-        let T: curve_jac::PointTable<BN254_Fq> = curve_jac::PointTable::new(P);
+        let T: curve_jac::point_table::PointTable<BN254_Fq> = curve_jac::point_table::PointTable::new(P);
         for i in 0..8 {
             transcript = transcript.push_back(T.transcript[i]);
         }
@@ -669,6 +670,6 @@ fn test_bigcurve_sub_with_hint() {
         y3: MNT6_753_Fq::from_limbs([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
     };
     let result =
-        crate::sub_with_hint::<MNT6_753_Fq, MNT6_753>(accumulator, offset_generator, transcript);
+        crate::ops::affine::sub_with_hint::<MNT6_753_Fq, MNT6_753>(accumulator, offset_generator, transcript);
     assert(result.is_infinity);
 }

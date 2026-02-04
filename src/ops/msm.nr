@@ -1,7 +1,8 @@
-use crate::BigCurve;
-use crate::curve_jac::types::AffineTranscript;
-use crate::ScalarField;
+use crate::{BigCurve, ScalarField};
+use crate::curve_jac::types::{AffineTranscript, CurveJ};
+use crate::ops::point_table::PointTable;
 use dep::bignum::BigNum;
+use crate::ops::affine::{incomplete_add_with_hint, double_with_hint, conditional_incomplete_subtract_with_hint, sub_with_hint, conditional_incomplete_add_with_hint};
 
 /// Multiplies a point by a scalar field value, returning the resulting point.
 pub fn msm<P: BigCurve<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(
@@ -113,7 +114,7 @@ fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscript
 /// # Note
 ///
 /// This function assumes the transcript is generated using unconstrained functions.
-pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, P: BigCurve<B>>(
+pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, B: BigNum, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
     transcript: [AffineTranscript<B>; NTranscriptSlices],
@@ -140,7 +141,7 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
 
     // Init the accumulator from the most significant scalar slice
     let mut accumulator: P = P::offset_generator();
-    let mut accumulator = crate::incomplete_add_with_hint::<B, P>(
+    let mut accumulator = incomplete_add_with_hint::<B, P>(
         accumulator,
         T.get::<P>(scalar.base4_slices[0] as u32),
         transcript[3 + 5],
@@ -148,11 +149,11 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
 
     // Perform the "double and add" algorithm but in steps of 4 bits, using the lookup table T to extract 4-bit multiples of P
     for i in 1..NScalarSlices {
-        accumulator = crate::double_with_hint::<B, P>(accumulator, transcript[4 + 5 * i]);
-        accumulator = crate::double_with_hint::<B, P>(accumulator, transcript[5 + 5 * i]);
-        accumulator = crate::double_with_hint::<B, P>(accumulator, transcript[6 + 5 * i]);
-        accumulator = crate::double_with_hint::<B, P>(accumulator, transcript[7 + 5 * i]);
-        accumulator = crate::incomplete_add_with_hint::<B, P>(
+        accumulator = double_with_hint::<B, P>(accumulator, transcript[4 + 5 * i]);
+        accumulator = double_with_hint::<B, P>(accumulator, transcript[5 + 5 * i]);
+        accumulator = double_with_hint::<B, P>(accumulator, transcript[6 + 5 * i]);
+        accumulator = double_with_hint::<B, P>(accumulator, transcript[7 + 5 * i]);
+        accumulator = incomplete_add_with_hint::<B, P>(
             accumulator,
             T.get::<P>(scalar.base4_slices[i] as u32),
             transcript[8 + 5 * i],
@@ -161,14 +162,14 @@ pub(crate) fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, 
 
     // windowed non-adjacent form can only represent odd scalar values.
     // if value is even, the result will be off by one and we need to subtract the input point
-    accumulator = crate::conditional_incomplete_subtract_with_hint::<B, P>(
+    accumulator = conditional_incomplete_subtract_with_hint::<B, P>(
         accumulator,
         input,
         scalar.skew,
         transcript[4 + 5 * NScalarSlices],
     );
 
-    accumulator = crate::sub_with_hint::<B, P>(
+    accumulator = sub_with_hint::<B, P>(
         accumulator,
         P::offset_generator_final(),
         transcript[5 + 5 * NScalarSlices],
@@ -181,12 +182,12 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
     mut scalars: [ScalarField<NScalarSlices>; Size],
     transcript: [AffineTranscript<B>; NTranscriptSlices],
 ) -> P {
-    let mut accumulator = crate::msm_with_hint_internal::<Size, NScalarSlices, NTranscriptSlices, B, P>(
+    let mut accumulator = msm_with_hint_internal::<Size, NScalarSlices, NTranscriptSlices, B, P>(
         points,
         scalars,
         transcript,
     );
-    accumulator = crate::sub_with_hint::<B, P>(
+    accumulator = sub_with_hint::<B, P>(
         P::offset_generator_final(),
         accumulator,
         transcript[10 * Size + (4 + Size) * (NScalarSlices - 1)],
@@ -194,22 +195,22 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
     accumulator
 }
 
-unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCurve<B>>(
+pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, B: BigNum, P: BigCurve<B>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
 ) -> [AffineTranscript<B>; 6 + NScalarSlices * 5] {
-    let tmp: crate::curve_jac::CurveJ<B, P> = crate::curve_jac::CurveJ::from(point);
+    let tmp: CurveJ<B, P> = CurveJ::from(point);
     let (_, transcript) = tmp.mul(scalar);
     transcript
 }
 
-fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+pub fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
 ) -> Curve {
     let transcript: [AffineTranscript<F>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
-        crate::curve_jac::CurveJ::<F, Curve>::compute_linear_expression_transcript(
+        CurveJ::<F, Curve>::compute_linear_expression_transcript(
             mul_points,
             mul_scalars,
             add_points,
@@ -217,8 +218,8 @@ fn evaluate_linear_expression<F: BigNum, Curve: BigCurve<F>, let NScalarSlices: 
             .1
     };
     let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
-    let mut _scalars: [crate::scalar_field::ScalarField<NScalarSlices>; NMuls] =
-        [crate::scalar_field::ScalarField::zero(); NMuls];
+    let mut _scalars: [ScalarField<NScalarSlices>; NMuls] =
+        [ScalarField::zero(); NMuls];
     for i in 0..NMuls {
         let (input, scalar) = if mul_points[i].is_infinity() {
             (BigCurve::one(), ScalarField::zero())

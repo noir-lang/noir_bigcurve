@@ -1,4 +1,4 @@
-mod benchmarks;
+//mod benchmarks;
 mod tests;
 
 mod data;
@@ -14,7 +14,16 @@ pub(crate) mod curve_jac;
 // Internal functions required by derive macros for external crates
 // Exported through the `internal` submodule to make it clear they are not
 // intended for direct use by end users
-pub mod internal {}
+pub mod internal {
+    pub use dep::bignum::bignum::evaluate_quadratic_expression;
+
+    pub use crate::ops::msm::get_mul_transcript;
+    pub use crate::ops::msm::mul_with_hint;
+    pub use crate::ops::msm::evaluate_linear_expression;
+
+    pub use crate::ops::affine::add_with_hint;
+    pub use crate::ops::affine::sub_with_hint;
+}
 
 //// Re-export affine PointTable so tests and external callers can use crate::PointTable
 //pub(crate) use crate::ops::point_table::PointTable;

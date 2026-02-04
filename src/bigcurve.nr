@@ -1,5 +1,6 @@
 use crate::ScalarField;
 use dep::bignum::BigNum;
+use crate::curve_jac::types::AffineTranscript;
 
 use std::ops::{Add, Neg, Sub};
 
@@ -68,7 +69,7 @@ pub comptime fn derive_curve_impl(
 ) -> Quoted {
     let typ = struct_def.as_type();
     let CurveJ = quote { $crate::curve_jac::CurveJ };
-    let AffineTranscript = quote { $crate::curve_jac::AffineTranscript };
+    let AffineTranscript = quote { $crate::curve_jac::types::AffineTranscript };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {
@@ -141,7 +142,7 @@ pub comptime fn derive_curve_impl(
                 //  xxx - yy + ax + b = 0
                 // (xx + a) * x - y*y + b = 0
                 // validate the provided value of `y3` is correct
-                $crate::evaluate_quadratic_expression(
+                $crate::internal::evaluate_quadratic_expression(
                     [[xx, $params.a], [y, $field_type::zero()]],
                     [[false, false], [false, false]],
                     [[x], [y]],
@@ -153,8 +154,8 @@ pub comptime fn derive_curve_impl(
 
             fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
                 let transcript: [$AffineTranscript<$field_type>; (NScalarSlices * 5) + 6] =
-                    unsafe { $crate::get_mul_transcript::<NScalarSlices, $field_type, $typ>(self, scalar) };
-                $crate::mul_with_hint::<NScalarSlices, (NScalarSlices * 5) + 6, $field_type, $typ>(self, scalar, transcript)
+                    unsafe { $crate::internal::get_mul_transcript::<NScalarSlices, $field_type, $typ>(self, scalar) };
+                $crate::internal::mul_with_hint::<NScalarSlices, (NScalarSlices * 5) + 6, $field_type, $typ>(self, scalar, transcript)
             }
 
             fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
@@ -167,21 +168,20 @@ pub comptime fn derive_curve_impl(
                 mul_scalars: [ScalarField<NScalarSlices>; NMuls],
                 add_points: [Self; NAdds],
             ) -> Self {
-                $crate::evaluate_linear_expression::<$field_type,$typ, _, _, _>(mul_points, mul_scalars, add_points)
+                $crate::internal::evaluate_linear_expression::<$field_type,$typ, _, _, _>(mul_points, mul_scalars, add_points)
             }}
 
             // Expensive witness generation! Avoid if possible
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
-                    let transcript = unsafe { $crate::curve_jac::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
-
                     } else {
-                        $crate::add_with_hint::<$field_type, $typ>(self, other, transcript)           
+                        $crate::internal::add_with_hint::<$field_type, $typ>(self, other, transcript)           
                     }
                 }
             }
@@ -197,16 +197,16 @@ pub comptime fn derive_curve_impl(
 
             impl std::ops::Sub for $typ {
                 fn sub(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
                     
                     // Convert back to affine coordinates using the transcript
-                    let transcript = unsafe { $crate::curve_jac::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
                         $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
-                        $crate::sub_with_hint::<$field_type, $typ>(self, other, transcript)
+                        $crate::internal::sub_with_hint::<$field_type, $typ>(self, other, transcript)
                     }
                 }
             }

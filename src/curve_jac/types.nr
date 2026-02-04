@@ -46,7 +46,7 @@ impl<B> JTranscript<B>
 where
     B: BigNum,
 {
-    unconstrained fn new() -> Self {
+    pub unconstrained fn new() -> Self {
         JTranscript { lambda_numerator: B::zero(), x3: B::zero(), y3: B::zero(), z3: B::zero() }
     }
 }
@@ -91,7 +91,7 @@ where
         AffineTranscript { x3, y3, lambda }
     }
 
-    unconstrained fn from_jacobian_transcript<let NumEntries: u32>(
+    pub(crate) unconstrained fn from_jacobian_transcript<let NumEntries: u32>(
         j_tx: [JTranscript<B>; NumEntries],
     ) -> [AffineTranscript<B>; NumEntries] {
         let mut result: [AffineTranscript<B>; NumEntries] = [AffineTranscript::new(); NumEntries];

@@ -1,6 +1,7 @@
 use crate::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
 use dep::bignum::BigNum;
+use dep::bignum::bignum::evaluate_quadratic_expression;
 
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
 ///
@@ -133,7 +134,7 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     }
 }
 
-fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
+pub(crate) fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     point: P,
     other: P,
     predicate: bool,
@@ -201,7 +202,7 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
-pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
+pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,
@@ -331,7 +332,7 @@ pub(crate) fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     result
 }
 
-pub(crate) fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
+pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
     point: P,
     other: P,
     transcript: AffineTranscript<B>,

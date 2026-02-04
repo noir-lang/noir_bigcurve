@@ -1,5 +1,6 @@
 use crate::{BigCurve, ScalarField};
 use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
+use crate::curve_jac::point_table::PointTable;
 use dep::bignum::BigNum;
 
 /**
@@ -392,7 +393,7 @@ where
     /**
      * @brief Perform an ecc scalar multiplication and output the generated AffineTranscript
      **/
-    unconstrained fn msm_partial<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
+    pub(crate) unconstrained fn msm_partial<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
         points: [Self; Size],
         scalars: [ScalarField<NScalarSlices>; Size],
     ) -> (Self, [JTranscript<B>; TranscriptEntries])/*(Self, [JTranscript<B>; NScalarSlices * Size + NScalarSlices * 4 + Size * 9 - 3]) */

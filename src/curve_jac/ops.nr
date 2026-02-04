@@ -82,11 +82,11 @@ where
         CurveJ { x: B::zero(), y: B::zero(), z: B::zero(), is_infinity: true }
     }
 
-    pub(crate) unconstrained fn sub(self, p2: Self) -> (Self, JTranscript<B>) {
+    pub unconstrained fn sub(self, p2: Self) -> (Self, JTranscript<B>) {
         self.add(p2.neg())
     }
 
-    pub(crate) unconstrained fn add(self, p2: Self) -> (Self, JTranscript<B>) {
+    pub unconstrained fn add(self, p2: Self) -> (Self, JTranscript<B>) {
         let X1 = self.x;
         let X2 = p2.x;
         let Y1 = self.y;

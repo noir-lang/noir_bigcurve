@@ -26,7 +26,7 @@ pub struct CurveJ<B, BigCurve> {
     pub(crate) x: B,
     pub(crate) y: B,
     pub(crate) z: B,
-    pub(crate) is_infinity: bool,
+    pub is_infinity: bool,
 }
 
 /// A transcript of a group operation in Jacobian coordinates.
@@ -64,9 +64,9 @@ where
 /// # Optimization
 /// If you have an array of `JTranscript` objects, you can convert them into `AffineTranscript` objects using only one modular inverse.
 pub struct AffineTranscript<B> {
-    pub(crate) lambda: B,
-    pub(crate) x3: B,
-    pub(crate) y3: B,
+    pub lambda: B,
+    pub x3: B,
+    pub y3: B,
 }
 
 impl<B> AffineTranscript<B>
@@ -77,7 +77,7 @@ where
         AffineTranscript { lambda: B::zero(), x3: B::zero(), y3: B::zero() }
     }
 
-    pub(crate) unconstrained fn from_j(j_tx: JTranscript<B>) -> Self {
+    pub unconstrained fn from_j(j_tx: JTranscript<B>) -> Self {
         AffineTranscript::from_jacobian_transcript([j_tx])[0]
     }
 

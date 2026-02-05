@@ -68,7 +68,7 @@ pub comptime fn derive_curve_impl(
     params: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
-    let CurveJ = quote { $crate::curve_jac::CurveJ };
+    let CurveJ = quote { $crate::curve_jac::types::CurveJ };
     let AffineTranscript = quote { $crate::curve_jac::types::AffineTranscript };
 
     quote {
@@ -174,8 +174,8 @@ pub comptime fn derive_curve_impl(
             // Expensive witness generation! Avoid if possible
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
                     let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
@@ -197,8 +197,8 @@ pub comptime fn derive_curve_impl(
 
             impl std::ops::Sub for $typ {
                 fn sub(self, other: Self) -> Self {
-                    let lhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(self);
-                    let rhsJ = $crate::curve_jac::types::CurveJ::<$field_type, $typ>::from(other);
+                    let lhsJ = $CurveJ::<$field_type, $typ>::from(self);
+                    let rhsJ = $CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
                     
                     // Convert back to affine coordinates using the transcript

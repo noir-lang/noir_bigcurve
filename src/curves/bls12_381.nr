@@ -124,13 +124,6 @@ mod test {
     }
 
     #[test]
-    unconstrained fn print_offset_generators() {
-        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<BLS12_381_Fq, BLS12_381_SCALAR_SLICES, BLS12_381>(0x396C8C005555E1568C00AAAB0000AAAB);
-        println(f"offset_generator: {initial}");
-        println(f"offset_generator_final: {final_gen}");
-    }
-
-    #[test]
     unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
         let num: BLS12_381_Fr = BLS12_381_Fr::derive_from_seed(seed);
         let scalar_field = BLS12_381Scalar::from_bignum(num);

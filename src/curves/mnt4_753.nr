@@ -150,13 +150,6 @@ mod test {
     }
 
     #[test]
-    unconstrained fn print_offset_generators() {
-        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<MNT4_753_Fq, MNT4_753_SCALAR_SLICES, MNT4_753>(1);
-        println(f"offset_generator: {initial}");
-        println(f"offset_generator_final: {final_gen}");
-    }
-
-    #[test]
     unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
         let num: MNT4_753_Fr = MNT4_753_Fr::derive_from_seed(seed);
         let scalar_field = MNT4_753Scalar::from_bignum(num);

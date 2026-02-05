@@ -131,13 +131,6 @@ mod test {
     }
 
     #[test]
-    unconstrained fn print_offset_generators() {
-        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<Secp256r1_Fq, SECP256r1_SCALAR_SLICES, Secp256r1>(1);
-        println(f"offset_generator: {initial}");
-        println(f"offset_generator_final: {final_gen}");
-    }
-
-    #[test]
     unconstrained fn test_scalar_field_conversion(seed: [u8; 10]) {
         let num: Secp256r1_Fr = Secp256r1_Fr::derive_from_seed(seed);
         let scalar_field = Secp256r1Scalar::from_bignum(num);

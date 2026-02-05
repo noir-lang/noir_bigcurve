@@ -17,26 +17,26 @@ pub global PALLAS_PARAM: BigCurveParams<Pallas_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Pallas_Fq::from_limbs([
-            0xd2422812b398350c1aebba48ec188a,
-            0xb131381b40fe8f0a2a6379eb41d224,
+            0x23b6bd3aa81bb54676c6f0df64b08a,
+            0xb30c817a6940c0aea027ae1673f040,
             0x241a,
         ]),
         Pallas_Fq::from_limbs([
-            0x0b9046b0869b1629091d1fa9f16692,
-            0xc5dec5f6d150a01e8529316736e0fa,
-            0x2c49,
+            0x510986b026c0897b7579aaf7752fbc,
+            0xe40f2f0681582eca3b6bd8623a6820,
+            0x3d7c,
         ]),
     ],
     offset_generator_final: [
         Pallas_Fq::from_limbs([
-            0x8d735ee60f0b794209ba47e69517b5,
-            0x0268fe41698522f06c1f464e5425f6,
-            0x1e33,
+            0x4c3b04ed4a7d7c886d039d32162035,
+            0x9cb2da6794cd9cbd2c85f2c805157f,
+            0x2a84,
         ]),
         Pallas_Fq::from_limbs([
-            0xbd45401bf9c27bf9dd24a5ce54ce87,
-            0x47abf9cd0515d86bf76d53b264cfcc,
-            0x072a,
+            0x96c3ab1a5c0adef0431c522083d854,
+            0x8e1c9c43f468571d01e2549281ce25,
+            0x0480,
         ]),
     ],
 };
@@ -100,10 +100,17 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Pallas cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, Pallas>(1);
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, PALLAS_SCALAR_SLICES, Pallas>(1);
+    }
+
+    #[test]
+    unconstrained fn print_offset_generators() {
+        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<Pallas_Fq, PALLAS_SCALAR_SLICES, Pallas>(1);
+        println(f"offset_generator: {initial}");
+        println(f"offset_generator_final: {final_gen}");
     }
 
     #[test]

@@ -35,30 +35,30 @@ pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Secp384r1_Fq::from_limbs([
-            0xba62f5015d975e9c847349dc8a58f7,
-            0xcfe0a3905b8dafff0226cbfddee8d3,
-            0xce72424b249140226ac9b8afb0ab3c,
-            0xffb219,
+            0xd68ec92657e3401b10862bdfa76fb6,
+            0x4f5244943254ad6a59c7c802d66b75,
+            0xb0f8c657bb5346f6d6526bf0b0bfef,
+            0x4445b4,
         ]),
         Secp384r1_Fq::from_limbs([
-            0x889e51064a7515c4b3a96a397501de,
-            0xfe7bbfa55a3b86cf38c1e0bce169de,
-            0xb19d05c22e1590952e5a956ddcb3bd,
-            0x462005,
+            0xa74bdf110f4cf113899d846bcc9528,
+            0xa014c66a73213dee9e45fac23434b4,
+            0x4b57166c9280a05515cb22c1efdeb0,
+            0xaf65de,
         ]),
     ],
     offset_generator_final: [
         Secp384r1_Fq::from_limbs([
-            0xce701d9971f92d5e54d393c5e68585,
-            0x7075dbe299c8708a1e0ec78c96a60f,
-            0x393d1f969e37931c99fb298e53630d,
-            0x364fe7,
+            0x375e4d0a23e5d33af27762b3a9ba39,
+            0x8ca34d9af67da7563350597a555c8e,
+            0xc9a546932ad79926633aa4bfe473dc,
+            0xd8c921,
         ]),
         Secp384r1_Fq::from_limbs([
-            0x8301c0d245c908e4f5c4e20c98a696,
-            0xb48327458c410785bab4bd29b71040,
-            0xe9536dfb1bd0b1c80c04e2e1ef404e,
-            0x40d30a,
+            0xff7f5b7c5b5d78f0328715852acc49,
+            0x7502ccb0fd045541f123dbc849e2fb,
+            0xaf68320088dd92a6f6af8c636c5113,
+            0xd03cb3,
         ]),
     ],
 };
@@ -126,12 +126,19 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Secp384r1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, SECP384r1_SCALAR_SLICES, Secp384r1>(
             1,
         );
+    }
+
+    #[test]
+    unconstrained fn print_offset_generators() {
+        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<Secp384r1_Fq, SECP384r1_SCALAR_SLICES, Secp384r1>(1);
+        println(f"offset_generator: {initial}");
+        println(f"offset_generator_final: {final_gen}");
     }
 
     #[test]

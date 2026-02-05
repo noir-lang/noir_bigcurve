@@ -35,26 +35,26 @@ pub global SECP256r1_PARAM: BigCurveParams<Secp256r1_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Secp256r1_Fq::from_limbs([
-            0x43a84352fdbca907cb6bcdc31f4784,
-            0x02b728fe767007b08d0ced4ccf0591,
+            0x43a8e852fdbd4e07cb6c72c31f4784,
+            0x0c828fe752607b08c67ed4ccf0591,
             0x5c14,
         ]),
         Secp256r1_Fq::from_limbs([
-            0x664a12c8ee78446ee947a8a109adfe,
-            0x445dd71ff484b877a5bf3df6263bfc,
-            0x841b,
+            0x2b76d2ff272fd261ba54dfd41d669,
+            0xe5b90742aaeda5849b4a39a7d2af97,
+            0x72e7,
         ]),
     ],
     offset_generator_final: [
         Secp256r1_Fq::from_limbs([
-            0x4e53e542bc502419d0cb4b99c0aa48,
-            0x74d3a045b26542b1a5931d721650ab,
-            0x6982,
+            0x55a43f85fc252e28724b4b6209010a,
+            0x2566cc4a1228cf54d4925711711e7,
+            0xb8dd,
         ]),
         Secp256r1_Fq::from_limbs([
-            0xbe3c1ef0581c8f76517e499277b269,
-            0xfd562740986614ce3b7025c0dfb8aa,
-            0xfc88,
+            0xddd9ef25e5d8ed3373efb221dbe372,
+            0x3627ec21abb4a0c2b4371b182886e2,
+            0xfcab,
         ]),
     ],
 };
@@ -122,12 +122,19 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Secp256r1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256r1_Fq, Secp256r1>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256r1_Fq, SECP256r1_SCALAR_SLICES, Secp256r1>(
             1,
         );
+    }
+
+    #[test]
+    unconstrained fn print_offset_generators() {
+        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<Secp256r1_Fq, SECP256r1_SCALAR_SLICES, Secp256r1>(1);
+        println(f"offset_generator: {initial}");
+        println(f"offset_generator_final: {final_gen}");
     }
 
     #[test]

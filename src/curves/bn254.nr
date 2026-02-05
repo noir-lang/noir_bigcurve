@@ -101,7 +101,7 @@ mod test {
     #[test]
     unconstrained fn verify_offset_generators() {
         // BN254 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254>(1);
+        crate::utils::derive_offset_generators::verify_offset_generators::<BN254_Fq, BN254_SCALAR_SLICES, BN254>(1);
     }
 
     #[test]

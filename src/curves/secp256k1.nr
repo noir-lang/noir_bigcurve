@@ -25,26 +25,26 @@ pub global SECP256k1_PARAM: BigCurveParams<Secp256k1_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Secp256k1_Fq::from_limbs([
-            0x7f497cc0b274831d60a9a05d29677e,
-            0x08726557bf1dd4a0bfdc80ba0f6f13,
-            0x9046,
+            0x7f497cc0b274831d60a8fb5d26f1c9,
+            0x92bd6557bf1dd4a0bfdc80ba0f6f13,
+            0x9043,
         ]),
         Secp256k1_Fq::from_limbs([
-            0xfc449b9f63f4ec1c94bd9e3d802229,
-            0x63b03856445a4b7d349c9a184f81ac,
-            0x8d48,
+            0xe6fd77ab9da2eb43544ce4b8323b6d,
+            0x91eb081b62dbfb91560250ea9fe76e,
+            0x7529,
         ]),
     ],
     offset_generator_final: [
         Secp256k1_Fq::from_limbs([
-            0x36e6c375bf85dd5b9f64e908eedd44,
-            0xddca5c990b1b1000dfc199cb21c0e9,
-            0xd913,
+            0x83a8c54582283ad8673c090d3a1f0b,
+            0x08e71ec5537cf681ac0c1013e936b,
+            0x8527,
         ]),
         Secp256k1_Fq::from_limbs([
-            0xf863897dd8147d74af6c9b62d49be6,
-            0xc1388d9280f314b0acd7fb4ce979b9,
-            0x2bf7,
+            0x172849e69e7d7ac4e0f047bf45cc05,
+            0xef389b175bf171eba4adb99b774f2d,
+            0xe8f2,
         ]),
     ],
 };
@@ -110,12 +110,19 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Secp256k1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, Secp256k1>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, SECP256k1_SCALAR_SLICES, Secp256k1>(
             1,
         );
+    }
+
+    #[test]
+    unconstrained fn print_offset_generators() {
+        let (initial, final_gen) = crate::utils::derive_offset_generators::compute_offset_generators::<Secp256k1_Fq, SECP256k1_SCALAR_SLICES, Secp256k1>(1);
+        println(f"offset_generator: {initial}");
+        println(f"offset_generator_final: {final_gen}");
     }
 
     #[test]

@@ -109,7 +109,7 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Secp256k1 cofactor is 1
         crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, Secp256k1>(

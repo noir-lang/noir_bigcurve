@@ -103,7 +103,9 @@ mod test {
     #[test]
     unconstrained fn verify_offset_generators() {
         // Pallas cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, PALLAS_SCALAR_SLICES, Pallas>(1);
+        crate::utils::derive_offset_generators::verify_offset_generators::<Pallas_Fq, PALLAS_SCALAR_SLICES, Pallas>(
+            1,
+        );
     }
 
     #[test]

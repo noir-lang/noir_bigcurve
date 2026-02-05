@@ -102,7 +102,9 @@ mod test {
     #[test]
     unconstrained fn verify_offset_generators() {
         // Vesta cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, VESTA_SCALAR_SLICES, Vesta>(1);
+        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, VESTA_SCALAR_SLICES, Vesta>(
+            1,
+        );
     }
 
     #[test]

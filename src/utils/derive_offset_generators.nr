@@ -88,14 +88,6 @@ where
     );
 
     let expected_final = Curve::offset_generator_final();
-    assert_eq(
-        offset_generator_final[0],
-        expected_final.x(),
-        "Final offset generator x mismatch",
-    );
-    assert_eq(
-        offset_generator_final[1],
-        expected_final.y(),
-        "Final offset generator y mismatch",
-    );
+    assert_eq(offset_generator_final[0], expected_final.x(), "Final offset generator x mismatch");
+    assert_eq(offset_generator_final[1], expected_final.y(), "Final offset generator y mismatch");
 }

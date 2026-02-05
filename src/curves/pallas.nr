@@ -1,10 +1,10 @@
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
-use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-
+use dep::bignum::BigNum;
 pub use bignum::{Pallas_Fq, Pallas_Fr};
+
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
+use crate::scalar_field::ScalarField;
 
 pub global PALLAS_SCALAR_SLICES: u32 = 64;
 
@@ -54,7 +54,7 @@ mod test {
     use bignum::{BigNum, Pallas_Fq, Pallas_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
 
     use super::{Pallas, PALLAS_SCALAR_SLICES, PallasScalar};
 

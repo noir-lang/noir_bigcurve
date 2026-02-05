@@ -8,6 +8,7 @@ use crate::curves::secp256k1::Secp256k1;
 use crate::curves::secp256r1::Secp256r1;
 use crate::curves::secp384r1::Secp384r1;
 use crate::curves::vesta::Vesta;
+
 comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let module_name = m.name();
     let add_bench_name = f"add_{module_name}".quoted_contents();
@@ -19,8 +20,8 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let evaluate_linear_expression_bench_name =
         f"evaluate_linear_expression_{module_name}".quoted_contents();
     let hash_to_curve_bench_name = f"hash_to_curve_{module_name}".quoted_contents();
-    let BigCurve = quote { crate::BigCurve };
-    let ScalarField = quote { crate::ScalarField };
+    let BigCurve = quote { crate::bigcurve::BigCurve };
+    let ScalarField = quote { crate::scalar_field::ScalarField };
 
     let typ = params.as_type();
 
@@ -32,7 +33,7 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
 
         #[export] 
         fn $sub_bench_name(a: $typ, b: $typ) -> $typ {
-            a-b
+            a - b
         }
 
         #[export]
@@ -42,7 +43,7 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
 
         #[export]
         fn $eq_bench_name(a: $typ, b: $typ) -> bool {
-            a==b
+            a == b
         }
         #[export]
         fn $validate_on_curve_bench_name(a: $typ) {

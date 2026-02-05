@@ -1,9 +1,10 @@
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
+use dep::bignum::BigNum;
+pub use dep::bignum::{MNT4_753_Fq, MNT4_753_Fr};
+
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{MNT4_753_Fq, MNT4_753_Fr};
 
 pub global MNT4_753_SCALAR_SLICES: u32 = 189;
 
@@ -93,7 +94,7 @@ mod test {
     use bignum::{BigNum, MNT4_753_Fq, MNT4_753_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
 
     use super::{MNT4_753, MNT4_753_SCALAR_SLICES, MNT4_753Scalar};
 

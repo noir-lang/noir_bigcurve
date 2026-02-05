@@ -1,9 +1,10 @@
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
+use dep::bignum::BigNum;
+use dep::bignum::BLS12_381_Fq;
+
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-use bignum::BLS12_381_Fq;
 
 pub global BLS12_381_SCALAR_SLICES: u32 = 64;
 pub global BLS12_381_PARAMS: BigCurveParams<BLS12_381_Fq> = BigCurveParams {
@@ -66,7 +67,7 @@ mod test {
     use bignum::{BigNum, BLS12_381_Fq, BLS12_381_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
 
     use super::{BLS12_381, BLS12_381_SCALAR_SLICES, BLS12_381Scalar};
 

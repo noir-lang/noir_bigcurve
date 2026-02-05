@@ -1,10 +1,12 @@
-use crate::BigCurve;
-use crate::BigCurveParams;
-use crate::derive_curve_impl;
+use dep::bignum::BigNum;
+pub use dep::bignum::{Secp256r1_Fq, Secp256r1_Fr};
+
+use crate::bigcurve::BigCurve;
+use crate::bigcurve::BigCurveParams;
+use crate::bigcurve::derive_curve_impl;
 use crate::scalar_field::ScalarField;
-use bignum::BigNum;
-pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
-use crate::curve_jac::CurveJ;
+
+use crate::curve_jac::types::CurveJ;
 
 pub(crate) type Secp256r1J = CurveJ<Secp256r1_Fq, Secp256r1>;
 
@@ -72,7 +74,7 @@ mod test {
     use bignum::{BigNum, Secp256r1_Fq, Secp256r1_Fr};
     use std::ops::Neg;
 
-    use crate::BigCurve;
+    use crate::bigcurve::BigCurve;
 
     use super::{Secp256r1, SECP256r1_SCALAR_SLICES, Secp256r1Scalar};
 

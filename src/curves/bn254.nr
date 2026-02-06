@@ -95,7 +95,7 @@ mod test {
 
         let result = BN254::evaluate_linear_expression(points, scalars, [b]);
 
-        assert(result.is_infinity);
+        assert(result.is_infinity());
     }
 
     #[test]

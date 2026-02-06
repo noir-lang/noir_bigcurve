@@ -35,30 +35,30 @@ pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Secp384r1_Fq::from_limbs([
-            0xba62f5015d975e9c847349dc8a58f7,
-            0xcfe0a3905b8dafff0226cbfddee8d3,
-            0xce72424b249140226ac9b8afb0ab3c,
-            0xffb219,
+            0x73cd2e68625413888458c69d9d5eff,
+            0x4f0a3034f7df46484e62514705c526,
+            0x9fe80d97838f68b8ba707dc1e8e3e8,
+            0x78f774,
         ]),
         Secp384r1_Fq::from_limbs([
-            0x889e51064a7515c4b3a96a397501de,
-            0xfe7bbfa55a3b86cf38c1e0bce169de,
-            0xb19d05c22e1590952e5a956ddcb3bd,
-            0x462005,
+            0x65f1517db606145d4589eeb922e915,
+            0x4b94cea0abdf0fbfdf40d65968c74e,
+            0x7ef92cafe2393a4482aaf66c9ea58,
+            0xd78421,
         ]),
     ],
     offset_generator_final: [
         Secp384r1_Fq::from_limbs([
-            0xce701d9971f92d5e54d393c5e68585,
-            0x7075dbe299c8708a1e0ec78c96a60f,
-            0x393d1f969e37931c99fb298e53630d,
-            0x364fe7,
+            0xc595db98e378aaa77bd3e8beea4866,
+            0x2120c8b589cb1b19b536599b894e28,
+            0x578526dbb6012303bca8e8fdce156f,
+            0x799498,
         ]),
         Secp384r1_Fq::from_limbs([
-            0x8301c0d245c908e4f5c4e20c98a696,
-            0xb48327458c410785bab4bd29b71040,
-            0xe9536dfb1bd0b1c80c04e2e1ef404e,
-            0x40d30a,
+            0xa328d0cb998251d464d404dbf8c1fb,
+            0x9a947c898ad812ca11e4b35f38a07e,
+            0x6f0ad9010babeb55f59efd264eacaf,
+            0x1679b8,
         ]),
     ],
 };
@@ -126,10 +126,10 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Secp384r1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, Secp384r1>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp384r1_Fq, SECP384r1_SCALAR_SLICES, Secp384r1>(
             1,
         );
     }

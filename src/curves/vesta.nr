@@ -15,26 +15,26 @@ pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Vesta_Fq::from_limbs([
-            0xd6286ae8e92203a8122b1827a9b6d1,
-            0xcd21322ea03ceea814cfd7137b4a13,
-            0x0116,
+            0x2a08258bbb9322c6e46beb916b91da,
+            0x4466d28e1b7fd04dfcd6d4e2d4521f,
+            0x317a,
         ]),
         Vesta_Fq::from_limbs([
-            0x6c4531e4384d03f3c0febb060cbe74,
-            0xabaae719efbfcf4a24508d1596c758,
-            0x2190,
+            0x88d3739ad798a283f893273fb5143e,
+            0xb586319dcd287a53be1003e0b68390,
+            0x0c45,
         ]),
     ],
     offset_generator_final: [
         Vesta_Fq::from_limbs([
-            0xa87902cfed63db9fdaa5a570a4938d,
-            0x1d99860422926bca663f59f047ce18,
-            0x1083,
+            0xc0fb1a86cb8e0bc8ad7eaf62e6d124,
+            0x6b01caa829295cba59967ba2ac76a2,
+            0x0dd5,
         ]),
         Vesta_Fq::from_limbs([
-            0x9fa3943f857b1178d7242101da6c4c,
-            0xa67fd5354fcf62d204d7ad617adb6c,
-            0x0a9f,
+            0x4170dfe01bf0eafa30bb54c8d58ce8,
+            0xdb8581fed84cf8e86b996f60767e86,
+            0x09fa,
         ]),
     ],
 };
@@ -99,10 +99,12 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // Vesta cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, Vesta>(1);
+        crate::utils::derive_offset_generators::verify_offset_generators::<Vesta_Fq, VESTA_SCALAR_SLICES, Vesta>(
+            1,
+        );
     }
 
     #[test]

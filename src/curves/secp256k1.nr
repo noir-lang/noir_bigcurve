@@ -26,7 +26,7 @@ pub global SECP256k1_PARAM: BigCurveParams<Secp256k1_Fq> = BigCurveParams {
     offset_generator: [
         Secp256k1_Fq::from_limbs([
             0x7f497cc0b274831d60a9a05d29677e,
-            0x08726557bf1dd4a0bfdc80ba0f6f13,
+            0x8726557bf1dd4a0bfdc80ba0f6f13,
             0x9046,
         ]),
         Secp256k1_Fq::from_limbs([
@@ -113,7 +113,7 @@ mod test {
     #[test]
     unconstrained fn verify_offset_generators() {
         // Secp256k1 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, Secp256k1>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<Secp256k1_Fq, SECP256k1_SCALAR_SLICES, Secp256k1>(
             1,
         );
     }

@@ -12,30 +12,30 @@ pub global BLS12_377_PARAMS: BigCurveParams<BLS12_377_Fq> = BigCurveParams {
     b: BLS12_377_Fq::from_limbs([0x01, 0x00, 0x00, 0x00]),
     offset_generator: [
         BLS12_377_Fq::from_limbs([
-            0xba342dd2e8a57e30e4fab3aac114b2,
-            0x6e7346ab4fea7f55a1f08939754a50,
-            0x6412e09f423388a318b8a4d36a0072,
-            0x3eb8,
+            0xe279ebba7403b4462b83f55c265caf,
+            0xeccaa64d9d21701f5b0ca5e3ed8363,
+            0xb86dab1a5897538643a2d539c40a9c,
+            0xdb1a,
         ]),
         BLS12_377_Fq::from_limbs([
-            0x8a796bd31648b17a897fce57b28356,
-            0x2e1d2547bb3228e76b01175312545b,
-            0x9accab8b8165af3afa1a90cb152ecd,
-            0xa0e9,
+            0xe8a8c7e4a7ed2355b8f369a91dcd3a,
+            0xf1d66715d4202ab869250fbffe6d30,
+            0x89fd4105959d8ff4f750b2a2cf6ace,
+            0xf224,
         ]),
     ],
     offset_generator_final: [
         BLS12_377_Fq::from_limbs([
-            0x671498ee656f13e9b769355538d6a5,
-            0x50f93aaeb8c9ffbd231d89d655a66e,
-            0xab51ed158495b9e4459d72be5ef856,
-            0x01ab35,
+            0xe4adcfc2ba97d7dec96a1d0c9eae67,
+            0x4084f9cefdc75fa8f2b81a6a4e7d94,
+            0xecdabbc2ffa672d388dcdc5b9fb2a6,
+            0x169e6,
         ]),
         BLS12_377_Fq::from_limbs([
-            0x7e1116c8a65727559685d7c70063ff,
-            0xf16bb13f725cac296ddbd1bd54515c,
-            0x892af9d72f0a7eeeee28cce211e07c,
-            0x9991,
+            0x33efbc5d6f58dbe4e6736d6eebfc86,
+            0xdbd2fd5433292a37d9d7ed79778913,
+            0x8f102a12aa4738a7ca299cae45f99,
+            0x12b1b,
         ]),
     ],
     one: [
@@ -117,10 +117,10 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // BLS12-377 cofactor is 0x170b5d44300000000000000000000000
-        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<BLS12_377_Fq, BLS12_377_SCALAR_SLICES, BLS12_377>(
             0x170b5d44300000000000000000000000,
         );
     }

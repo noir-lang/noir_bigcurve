@@ -21,42 +21,42 @@ pub global MNT4_753_PARAMS: BigCurveParams<MNT4_753_Fq> = BigCurveParams {
     ]),
     offset_generator: [
         MNT4_753_Fq::from_limbs([
-            0x626a3f756e21d88542b02626edba28,
-            0x4e5fcb24def435b831b168d03ffa17,
-            0x37176e9c4f71cf8b3d7dd158ff79d6,
-            0x02a27192bd63ff0ae75b427f371e0f,
-            0x19d7d1a5ec40d8c9e958c8ff2851b5,
-            0x4f67020973b5ef46536489d2168c1d,
-            0x0165cd5cb7,
+            0x7096d4ad83e62149a57b630c729c93,
+            0x43e5fc6f8171a07a06ed1facf93bec,
+            0x47ef121ca5433e8cf6d741daa58f79,
+            0x8329a61a232ff555c1ddd38dda3a0c,
+            0x735e040c13d5aeaa86a2c9916965e0,
+            0x8c9a5e148acb24eb637d489a298876,
+            0xd9387342,
         ]),
         MNT4_753_Fq::from_limbs([
-            0xa30942007a5fd26683b2666547b8ac,
-            0x2b81278933c31d48aedf581d9cc73f,
-            0xd4a7583126a808f4f6b39b9fab6392,
-            0x6dd10e9d210364c99c4313dc900447,
-            0xff95481ef076765ab79c10181db9d9,
-            0x524ad0a6e34b47375458acac5dfb50,
-            0xd39ff56b,
+            0x276d34b05b02dbb35a29ff8f4e52a4,
+            0x135737e49cb43ec95ab4afe7dda831,
+            0x2b24c2a0e16c027ea2d43fcca370fa,
+            0xb338f0b48d80f0c6db4e8b3da62a7c,
+            0x1c389c535875341ce204435407b123,
+            0x88e500765474d085539bf29fe1b198,
+            0x1491b2a17,
         ]),
     ],
     offset_generator_final: [
         MNT4_753_Fq::from_limbs([
-            0xa58e0356b1875bb057efadc335d7ef,
-            0xf9f6bb7070e70c1f52aa90c2eea40b,
-            0x79f3748370ac445ba29c746935278f,
-            0x2583c367ac3bf38902abcbd7d1f96b,
-            0xb0d541577618ab033e51c0197e9892,
-            0xa1defaff53c883c79edd0f16db9cb7,
-            0x976315b5,
+            0x45e8d0587792f9fee63cfdf4a964e3,
+            0xf8ac8cb84063a10018bffcb9db7f29,
+            0x5655e6aa735382c27d472b62c8fc4b,
+            0x750bb680f220d69de7e0d36ea11f0a,
+            0xa16f3f5ee91371e7b28804ec92bf72,
+            0xf754a159fff22611c5aa1f01658ef3,
+            0x81167e44,
         ]),
         MNT4_753_Fq::from_limbs([
-            0x09a86892894b8aa69ee96bf1fc249e,
-            0x53fe404e91c85ad0f982aa10a9d9d8,
-            0x424af093cf222be97190fecb7e9f8b,
-            0x63e2ab17ef6aa3fb2db6bed30f61f0,
-            0x7e39a85475a73215ab0576a69ab318,
-            0x87258dcaaec7d994b10b88828830c5,
-            0x01215baa38,
+            0xa4d10fd529b54742901579fadff979,
+            0x189599dbd258f0957de75f1aa933a1,
+            0xaf45d2ed682ee9962a210121b78392,
+            0x86a0076e059c92e19b26a8e0a736ec,
+            0xd33ecf3330fce365ab33f16fa90700,
+            0x42217eabdac6b165662a43fd5085,
+            0x198c06b38,
         ]),
     ],
     one: [
@@ -141,10 +141,10 @@ mod test {
         assert(result.is_infinity);
     }
 
-    #[test(should_fail)]
+    #[test]
     unconstrained fn verify_offset_generators() {
         // MNT4-753 cofactor is 1
-        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753>(
+        crate::utils::derive_offset_generators::verify_offset_generators::<MNT4_753_Fq, MNT4_753_SCALAR_SLICES, MNT4_753>(
             1,
         );
     }

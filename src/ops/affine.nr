@@ -13,9 +13,9 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
 ) -> P {
     let x1 = point.x();
     let y1 = point.y();
-    let lambda = transcript.lambda;
-    let x3 = transcript.x3;
-    let y3 = transcript.y3;
+    let lambda = transcript.lambda();
+    let x3 = transcript.x3();
+    let y3 = transcript.y3();
 
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();
@@ -75,9 +75,9 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     let y1: B = point.y();
     let x2: B = other.x();
     let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let lambda: B = transcript.lambda();
+    let x3: B = transcript.x3();
+    let y3: B = transcript.y3();
 
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();
@@ -157,9 +157,9 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     let y1: B = point.y();
     let x2: B = other.x();
     let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let lambda: B = transcript.lambda();
+    let x3: B = transcript.x3();
+    let y3: B = transcript.y3();
 
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed BigNum objects!
     x3.validate_in_range();
@@ -211,9 +211,9 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     let y1: B = point.y();
     let x2: B = other.x();
     let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let lambda: B = transcript.lambda();
+    let x3: B = transcript.x3();
+    let y3: B = transcript.y3();
 
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();
@@ -341,9 +341,9 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
     let y1: B = point.y();
     let x2: B = other.x();
     let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let lambda: B = transcript.lambda();
+    let x3: B = transcript.x3();
+    let y3: B = transcript.y3();
 
     // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
     x3.validate_in_range();

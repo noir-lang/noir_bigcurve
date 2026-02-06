@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.12.0...v0.13.0) (2026-02-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* update dependencies and bump CI Noir version ([#102](https://github.com/noir-lang/noir_bigcurve/issues/102))
+
+### Bug Fixes
+
+* Enforce correctness of generator points ([#104](https://github.com/noir-lang/noir_bigcurve/issues/104)) ([e834c82](https://github.com/noir-lang/noir_bigcurve/commit/e834c82a1f10521ae29b839b589e3645f7a1b30e))
+
+
+### Miscellaneous Chores
+
+* Update dependencies and bump CI Noir version ([#102](https://github.com/noir-lang/noir_bigcurve/issues/102)) ([44064d0](https://github.com/noir-lang/noir_bigcurve/commit/44064d02f7c1e036751c9756b0b50a3704cd02e3))
+
 ## [0.12.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.11.0...v0.12.0) (2025-11-14)
 
 

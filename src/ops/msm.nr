@@ -191,6 +191,7 @@ fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u
         scalars,
         transcript,
     );
+    // TODO: not used anywhere. The result is wrong though
     accumulator = sub_with_hint::<B, P>(
         P::offset_generator_final(),
         accumulator,

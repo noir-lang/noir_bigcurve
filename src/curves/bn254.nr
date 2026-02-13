@@ -13,26 +13,26 @@ pub global BN254_PARAMS: BigCurveParams<BN254_Fq> = BigCurveParams {
     b: BN254_Fq::from_limbs([0x03, 0x00, 0x00]),
     offset_generator: [
         BN254_Fq::from_limbs([
-            0x377f339fa8372d1d3adc42a3d4901c,
-            0x96cbfde252d4502d20fe63e6eb2b52,
-            0x0666,
+            0x19998c2e95c7eecba81c31993de8b7,
+            0x2ebe26f821663be1cf34e96079fa4d,
+            0x2481,
         ]),
         BN254_Fq::from_limbs([
-            0x06d5ac65dd163514b69bb7b45a8c52,
-            0xa20295561f2b500335be517e2f9ddf,
-            0x1390,
+            0x311c631d596bd8c0049700dab194dc,
+            0xb2aa98c6aef93be81741c0c31b4e09,
+            0x2569,
         ]),
     ],
     offset_generator_final: [
         BN254_Fq::from_limbs([
-            0x876f472cd3289fef9f11dc404e447f,
-            0x7b083434c2a69effc4cb7fce9fecb6,
-            0x0336,
+            0x10c45a2891194d5c8e74d6c994202d,
+            0x2b56904605b59ff403fc13f5cd9312,
+            0x16d5,
         ]),
         BN254_Fq::from_limbs([
-            0xa33149d0f82e5335a130fd3baf1bf4,
-            0x37bbf991eefb0b04d52e689358228b,
-            0x178e,
+            0xb3c07f2df2b6177eeeee0668211c54,
+            0x501b52311a29ca4b08f86cb1e18439,
+            0x0765,
         ]),
     ],
     one: [BN254_Fq::from_limbs([0x01, 0x00, 0x00]), BN254_Fq::from_limbs([0x02, 0x00, 0x00])],

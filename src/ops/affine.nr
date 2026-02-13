@@ -126,7 +126,36 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     predicate: bool,
     transcript: AffineTranscript<B>,
 ) -> P {
-    let operand_output = incomplete_add_with_hint::<B, P>(point, other, transcript);
+    // In case predicate is false, `incomplete_add_with_hint` still enforces x1 != x2.
+    // We fix this by introducing intermediate values that satisfy all four constraints:
+    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
+    //
+    // 1. x1 != x2:                              0 != 1
+    // 2. lambda * (x2 - x1) - (y2 - y1) = 0:    0 * (1 - 0) - (0 - 0) = 0
+    // 3. lambda^2 - x3 - x2 - x1 = 0:           0 - (-1) - 1 - 0 = 0
+    // 4. lambda * (x3 - x1) + y3 + y1 = 0:      0 * (-1 - 0) + 0 + 0 = 0
+    let x1 = if predicate { point.x() } else { B::zero() };
+    let y1 = if predicate { point.y() } else { B::zero() };
+    let x2 = if predicate { other.x() } else { B::one() };
+    let y2 = if predicate { other.y() } else { B::zero() };
+    let lambda = if predicate {
+        transcript.lambda
+    } else {
+        B::zero()
+    };
+    let x3 = if predicate {
+        transcript.x3
+    } else {
+        B::one().neg()
+    };
+    let y3 = if predicate { transcript.y3 } else { B::zero() };
+
+    let eff_point = P::from_coordinates(x1, y1, false);
+    let eff_other = P::from_coordinates(x2, y2, false);
+    let eff_transcript = AffineTranscript { lambda, x3, y3 };
+
+    let operand_output = incomplete_add_with_hint::<B, P>(eff_point, eff_other, eff_transcript);
+
     if predicate {
         operand_output
     } else {
@@ -140,7 +169,37 @@ pub(crate) fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B
     predicate: bool,
     transcript: AffineTranscript<B>,
 ) -> P {
-    let operand_output = incomplete_subtract_with_hint::<B, P>(point, other, transcript);
+    // In case predicate is false, `incomplete_subtract_with_hint` still enforces x1 != x2.
+    // We fix this by introducing intermediate values that satisfy all four constraints:
+    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
+    //
+    // 1. x1 != x2:                            0 != 1
+    // 2. lambda * (x2 - x1) + y2 + y1 = 0:    0 * (1 - 0) + 0 + 0 = 0
+    // 3. lambda^2 - x3 - x2 - x1 = 0:         0 - (-1) - 1 - 0 = 0
+    // 4. lambda * (x3 - x1) + y3 + y1 = 0:    0 * (-1 - 0) + 0 + 0 = 0
+    let x1 = if predicate { point.x() } else { B::zero() };
+    let y1 = if predicate { point.y() } else { B::zero() };
+    let x2 = if predicate { other.x() } else { B::one() };
+    let y2 = if predicate { other.y() } else { B::zero() };
+    let lambda = if predicate {
+        transcript.lambda
+    } else {
+        B::zero()
+    };
+    let x3 = if predicate {
+        transcript.x3
+    } else {
+        B::one().neg()
+    };
+    let y3 = if predicate { transcript.y3 } else { B::zero() };
+
+    let eff_point = P::from_coordinates(x1, y1, false);
+    let eff_other = P::from_coordinates(x2, y2, false);
+    let eff_transcript = AffineTranscript { lambda, x3, y3 };
+
+    let operand_output =
+        incomplete_subtract_with_hint::<B, P>(eff_point, eff_other, eff_transcript);
+
     if predicate {
         operand_output
     } else {

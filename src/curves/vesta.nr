@@ -15,26 +15,26 @@ pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Vesta_Fq::from_limbs([
-            0x2a08258bbb9322c6e46beb916b91da,
-            0x4466d28e1b7fd04dfcd6d4e2d4521f,
-            0x317a,
+            0x0292e4f0d960b7839ceeb9ddde67a0,
+            0x7d56cad674d955675b7d1325a295c8,
+            0x2c23,
         ]),
         Vesta_Fq::from_limbs([
-            0x88d3739ad798a283f893273fb5143e,
-            0xb586319dcd287a53be1003e0b68390,
-            0x0c45,
+            0xcf5a9a7dcb29e00f25ddacaf334bf2,
+            0x89f3ee00756edbe58bff3d940a3575,
+            0x3c07,
         ]),
     ],
     offset_generator_final: [
         Vesta_Fq::from_limbs([
-            0xc0fb1a86cb8e0bc8ad7eaf62e6d124,
-            0x6b01caa829295cba59967ba2ac76a2,
-            0x0dd5,
+            0x56c4ead2bbfe224e0466042ba94fcd,
+            0x1612b514b2daf2b053ef3a56fa25ad,
+            0x3a72,
         ]),
         Vesta_Fq::from_limbs([
-            0x4170dfe01bf0eafa30bb54c8d58ce8,
-            0xdb8581fed84cf8e86b996f60767e86,
-            0x09fa,
+            0x33e0fe36b0da773a0405364a5cfeb9,
+            0x52e9037a6ed7adcd762d9e2dc57569,
+            0x3976,
         ]),
     ],
 };

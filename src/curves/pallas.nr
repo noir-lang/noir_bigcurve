@@ -17,26 +17,26 @@ pub global PALLAS_PARAM: BigCurveParams<Pallas_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Pallas_Fq::from_limbs([
-            0x23b6bd3aa81bb54676c6f0df64b08a,
-            0xb30c817a6940c0aea027ae1673f040,
-            0x241a,
+            0x2ec121a505ace9e56afda9b8cfdebe,
+            0x205a6bc9e624e4d9a0216d364993c1,
+            0x3e03,
         ]),
         Pallas_Fq::from_limbs([
-            0x510986b026c0897b7579aaf7752fbc,
-            0xe40f2f0681582eca3b6bd8623a6820,
-            0x3d7c,
+            0xd32e2dda53d63c52d0bf246f34c5bc,
+            0x6a400bb6173f46915669005d5919b6,
+            0x06bb,
         ]),
     ],
     offset_generator_final: [
         Pallas_Fq::from_limbs([
-            0x4c3b04ed4a7d7c886d039d32162035,
-            0x9cb2da6794cd9cbd2c85f2c805157f,
-            0x2a84,
+            0x165b3f592311649e822ebeac1177e5,
+            0xc707dec0fca09ddf0dc06d26d2bf37,
+            0x1ca5,
         ]),
         Pallas_Fq::from_limbs([
-            0x96c3ab1a5c0adef0431c522083d854,
-            0x8e1c9c43f468571d01e2549281ce25,
-            0x0480,
+            0x8acbca03f97328d73ab6a207b99a68,
+            0xa2564e1150602960c55ef6d4d0979a,
+            0x2186,
         ]),
     ],
 };

@@ -133,7 +133,10 @@ pub fn compare_scalar_field_to_grumpkin<let N: u32>(result: ScalarField<N>) {
             // If equal, continue to the next element (should_continue remains true)
         }
     }
-    assert(!should_continue, "Scalar field representation must be strictly less than modulus");
+    assert(
+        !should_continue | result.skew,
+        "Scalar field representation must be strictly less than modulus",
+    );
 }
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {

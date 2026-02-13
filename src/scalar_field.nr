@@ -116,7 +116,7 @@ pub(crate) fn get_modulus_slices<let N: u32>() -> [u8; N] {
     expected_slices
 }
 
-pub fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
+pub fn compare_scalar_field_to_grumpkin<let N: u32>(result: ScalarField<N>) {
     let expected_slices: [u8; N] = get_modulus_slices::<N>();
 
     // Lexicographic comparison: stop when we find a strictly smaller number
@@ -133,6 +133,7 @@ pub fn compare_scalar_field_to_bignum<let N: u32>(result: ScalarField<N>) {
             // If equal, continue to the next element (should_continue remains true)
         }
     }
+    assert(!should_continue, "Scalar field representation must be strictly less than modulus");
 }
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
@@ -150,9 +151,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // Enforce consistency with `input`.
             let reconstructed_input: Field = result.into();
             assert_eq(reconstructed_input, input);
-            if N >= 64 {
-                compare_scalar_field_to_bignum(result);
-            }
+            // .into already forces the result to be < GRUMPKIN_MODULUS
         }
         result
     }
@@ -167,7 +166,7 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
         // TODO: This is susceptible to overflow when N is large!
         if !std::runtime::is_unconstrained() {
             if N >= 64 {
-                compare_scalar_field_to_bignum(self);
+                compare_scalar_field_to_grumpkin(self);
             }
         }
         let mut acc: Field = 0;

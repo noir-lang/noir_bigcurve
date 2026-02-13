@@ -277,7 +277,7 @@ where
             [],
         );
 
-        if (Curve::a().get_limb(0) != 0) {
+        if (!Curve::a().is_zero()) {
             let ZZ = Z1.__mul(Z1);
             let AZZZZ = ZZ.__mul(ZZ).__mul(Curve::a());
             XX_mul_3 = XX_mul_3.__add(AZZZZ);

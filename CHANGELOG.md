@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.0...v0.13.1) (2026-02-19)
+
+
+### Bug Fixes
+
+* Update dependencies ([#107](https://github.com/noir-lang/noir_bigcurve/issues/107)) ([f4de268](https://github.com/noir-lang/noir_bigcurve/commit/f4de26856d17ff4a1e2479e2e496293ed0dfedfe))
+
 ## [0.13.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.12.0...v0.13.0) (2026-02-06)
 
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771588455156,
+  "lastUpdate": 1771588456097,
   "repoUrl": "https://github.com/noir-lang/noir_bigcurve",
   "entries": {
     "ACIR Opcodes": [
@@ -16137,6 +16137,430 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/noir-lang/noir_bigcurve/commit/cca92c79fe5e5252c034e6c917e94c5d9e060207"
         },
         "date": 1771523512657,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "add_BLS12_377_Bench.json/main",
+            "value": 4042,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_BLS12_381_Bench.json/main",
+            "value": 5342,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_BN254_Bench.json/main",
+            "value": 3635,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_MNT4_753_Bench.json/main",
+            "value": 5359,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_MNT6_753_Bench.json/main",
+            "value": 5359,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_Pallas_Bench.json/main",
+            "value": 3654,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_Secp256k1_Bench.json/main",
+            "value": 3625,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_Secp256r1_Bench.json/main",
+            "value": 3644,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_Secp384r1_Bench.json/main",
+            "value": 4148,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "add_Vesta_Bench.json/main",
+            "value": 3654,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_BLS12_377_Bench.json/main",
+            "value": 3062,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_BLS12_381_Bench.json/main",
+            "value": 3082,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_BN254_Bench.json/main",
+            "value": 3001,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_MNT4_753_Bench.json/main",
+            "value": 3225,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_MNT6_753_Bench.json/main",
+            "value": 3225,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_Pallas_Bench.json/main",
+            "value": 3007,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_Secp256k1_Bench.json/main",
+            "value": 3002,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_Secp256r1_Bench.json/main",
+            "value": 3002,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_Secp384r1_Bench.json/main",
+            "value": 3232,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "eq_Vesta_Bench.json/main",
+            "value": 3007,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_BLS12_377_Bench.json/main",
+            "value": 204297,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_BLS12_381_Bench.json/main",
+            "value": 205597,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_BN254_Bench.json/main",
+            "value": 139120,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_MNT4_753_Bench.json/main",
+            "value": 419249,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_MNT6_753_Bench.json/main",
+            "value": 419249,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_Pallas_Bench.json/main",
+            "value": 139600,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp256k1_Bench.json/main",
+            "value": 139569,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp256r1_Bench.json/main",
+            "value": 139586,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_Secp384r1_Bench.json/main",
+            "value": 204755,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "evaluate_linear_expression_Vesta_Bench.json/main",
+            "value": 139600,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_BLS12_377_Bench.json/main",
+            "value": 6501,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_BLS12_381_Bench.json/main",
+            "value": 7776,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_BN254_Bench.json/main",
+            "value": 5618,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_MNT4_753_Bench.json/main",
+            "value": 9190,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_MNT6_753_Bench.json/main",
+            "value": 9190,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_Pallas_Bench.json/main",
+            "value": 5618,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_Secp256k1_Bench.json/main",
+            "value": 5595,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_Secp256r1_Bench.json/main",
+            "value": 5599,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_Secp384r1_Bench.json/main",
+            "value": 6571,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "hash_to_curve_Vesta_Bench.json/main",
+            "value": 5618,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_BLS12_377_Bench.json/main",
+            "value": 134832,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_BLS12_381_Bench.json/main",
+            "value": 136132,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_BN254_Bench.json/main",
+            "value": 91809,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_MNT4_753_Bench.json/main",
+            "value": 277002,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_MNT6_753_Bench.json/main",
+            "value": 277002,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_Pallas_Bench.json/main",
+            "value": 92106,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_Secp256k1_Bench.json/main",
+            "value": 92075,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_Secp256r1_Bench.json/main",
+            "value": 92091,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_Secp384r1_Bench.json/main",
+            "value": 135179,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "mul_Vesta_Bench.json/main",
+            "value": 92106,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_BLS12_377_Bench.json/main",
+            "value": 2942,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_BLS12_381_Bench.json/main",
+            "value": 2962,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_BN254_Bench.json/main",
+            "value": 2913,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_MNT4_753_Bench.json/main",
+            "value": 3020,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_MNT6_753_Bench.json/main",
+            "value": 3020,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_Pallas_Bench.json/main",
+            "value": 2919,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_Secp256k1_Bench.json/main",
+            "value": 2913,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_Secp256r1_Bench.json/main",
+            "value": 2913,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_Secp384r1_Bench.json/main",
+            "value": 3111,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "neg_Vesta_Bench.json/main",
+            "value": 2919,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_BLS12_377_Bench.json/main",
+            "value": 4042,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_BLS12_381_Bench.json/main",
+            "value": 5342,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_BN254_Bench.json/main",
+            "value": 3635,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_MNT4_753_Bench.json/main",
+            "value": 5359,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_MNT6_753_Bench.json/main",
+            "value": 5359,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_Pallas_Bench.json/main",
+            "value": 3654,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_Secp256k1_Bench.json/main",
+            "value": 3625,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_Secp256r1_Bench.json/main",
+            "value": 3644,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_Secp384r1_Bench.json/main",
+            "value": 4148,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "sub_Vesta_Bench.json/main",
+            "value": 3654,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_BLS12_377_Bench.json/main",
+            "value": 3211,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_BLS12_381_Bench.json/main",
+            "value": 4511,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_BN254_Bench.json/main",
+            "value": 3045,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_MNT4_753_Bench.json/main",
+            "value": 3756,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_MNT6_753_Bench.json/main",
+            "value": 3756,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_Pallas_Bench.json/main",
+            "value": 3061,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_Secp256k1_Bench.json/main",
+            "value": 3029,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_Secp256r1_Bench.json/main",
+            "value": 3029,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_Secp384r1_Bench.json/main",
+            "value": 3293,
+            "unit": "circuit_size"
+          },
+          {
+            "name": "validate_on_curve_Vesta_Bench.json/main",
+            "value": 3061,
+            "unit": "circuit_size"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "15848336+TomAFrench@users.noreply.github.com",
+            "name": "Tom French",
+            "username": "TomAFrench"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f116f404ea2645ca84d92be1bf3d2a17b492a924",
+          "message": "feat: Update dependency versions for bignum and poseidon (#109)",
+          "timestamp": "2026-02-20T11:46:47Z",
+          "tree_id": "bdeace4581f7e07279ccd2d49b6333fa99c80dc2",
+          "url": "https://github.com/noir-lang/noir_bigcurve/commit/f116f404ea2645ca84d92be1bf3d2a17b492a924"
+        },
+        "date": 1771588456076,
         "tool": "customSmallerIsBetter",
         "benches": [
           {

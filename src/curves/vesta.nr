@@ -96,7 +96,7 @@ mod test {
 
         let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 
-        assert(result.is_infinity);
+        assert(result.is_infinity());
     }
 
     #[test]

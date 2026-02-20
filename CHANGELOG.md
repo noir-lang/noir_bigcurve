@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.1...v0.13.2) (2026-02-20)
+
+
+### Features
+
+* Update dependency versions for bignum and poseidon ([#109](https://github.com/noir-lang/noir_bigcurve/issues/109)) ([f116f40](https://github.com/noir-lang/noir_bigcurve/commit/f116f404ea2645ca84d92be1bf3d2a17b492a924))
+
 ## [0.13.1](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.0...v0.13.1) (2026-02-19)
 
 

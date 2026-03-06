@@ -68,8 +68,8 @@ pub comptime fn derive_curve_impl(
     params: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
-    let CurveJ = quote { $crate::curve_jac::types::CurveJ };
-    let AffineTranscript = quote { $crate::curve_jac::types::AffineTranscript };
+    let CurveJ = quote { $crate::internal::CurveJ };
+    let AffineTranscript = quote { $crate::internal::AffineTranscript };
 
     quote {
         impl $crate::BigCurve<$field_type> for $typ {
@@ -159,7 +159,7 @@ pub comptime fn derive_curve_impl(
             }
 
             fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
-                let r = $crate::utils::hash_to_curve::hash_to_curve::<$field_type, N>(seed, $params.a, $params.b);
+                let r = $crate::internal::hash_to_curve::<$field_type, N>(seed, $params.a, $params.b);
                 Self { x: r.0, y: r.1, is_infinity: false }
             }
 
@@ -177,11 +177,11 @@ pub comptime fn derive_curve_impl(
                     let lhsJ = $CurveJ::<$field_type, $typ>::from(self);
                     let rhsJ = $CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.add(rhsJ) };
-                    let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates(transcript.x3(), transcript.y3(), result_jac.is_infinity())
                     } else {
-                        $crate::internal::add_with_hint::<$field_type, $typ>(self, other, transcript)           
+                        $crate::internal::add_with_hint::<$field_type, $typ>(self, other, transcript)
                     }
                 }
             }
@@ -200,11 +200,11 @@ pub comptime fn derive_curve_impl(
                     let lhsJ = $CurveJ::<$field_type, $typ>::from(self);
                     let rhsJ = $CurveJ::<$field_type, $typ>::from(other);
                     let (result_jac, j_transcript) = unsafe { lhsJ.sub(rhsJ) };
-                    
+
                     // Convert back to affine coordinates using the transcript
-                    let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
+                    let transcript = unsafe { $AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates(transcript.x3(), transcript.y3(), result_jac.is_infinity())
                     } else {
                         $crate::internal::sub_with_hint::<$field_type, $typ>(self, other, transcript)
                     }

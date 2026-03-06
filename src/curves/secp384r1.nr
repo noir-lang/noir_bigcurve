@@ -123,7 +123,7 @@ mod test {
         let result =
             Secp384r1::evaluate_linear_expression(points, scalars, [Secp384r1::one().neg()]);
 
-        assert(result.is_infinity);
+        assert(result.is_infinity());
     }
 
     #[test]

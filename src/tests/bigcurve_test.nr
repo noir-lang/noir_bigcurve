@@ -102,7 +102,7 @@ fn test_mul_by_0() {
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
-    assert(result.is_infinity == true);
+    assert(result.is_infinity() == true);
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn test_mul_a_point_at_infinity() {
     let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
 
     let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
-    assert(result.is_infinity == true);
+    assert(result.is_infinity() == true);
 }
 
 #[test]
@@ -680,5 +680,5 @@ fn test_bigcurve_sub_with_hint() {
         offset_generator,
         transcript,
     );
-    assert(result.is_infinity);
+    assert(result.is_infinity());
 }

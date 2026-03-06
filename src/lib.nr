@@ -23,8 +23,10 @@ pub mod internal {
     pub use crate::ops::msm::get_mul_transcript;
     pub use crate::ops::msm::mul_with_hint;
 
+    pub use crate::curve_jac::types::{AffineTranscript, CurveJ};
     pub use crate::ops::affine::add_with_hint;
     pub use crate::ops::affine::sub_with_hint;
+    pub use crate::utils::hash_to_curve::hash_to_curve;
 }
 
 // Re-export the main structs so that users on't have to specify the paths

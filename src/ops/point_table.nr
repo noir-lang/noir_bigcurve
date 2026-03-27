@@ -1,7 +1,7 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
 use crate::ops::affine::{double_with_hint, incomplete_add_with_hint};
-use dep::bignum::BigNum;
+use ::bignum::BigNum;
 
 /// Affine-coordinate lookup table for wNAF scalar multiplication (constrained side).
 ///

@@ -26,7 +26,7 @@ Predefined curves are included, and tools are provided to define custom curves.
 ### Using a predefined curve
 
 ```rust
-use dep::bigcurve::BLS12_377;
+use ::bigcurve::BLS12_377;
 ```
 
 See:
@@ -71,8 +71,8 @@ Points produced by `hash_to_curve` or `one` already include these checks and do 
 ## Example
 
 ```rust
-use dep::bigcurve::BigCurve;
-use dep::bigcurve::{BLS12_377, BLS12_377Scalar};
+use ::bigcurve::BigCurve;
+use ::bigcurve::{BLS12_377, BLS12_377Scalar};
 
 fn main() {
     let one = BLS12_377::one();
@@ -158,10 +158,10 @@ For example, for the earlier example we wanted to calculate `S = a * G + b * Q +
 #### Example usage evaluate_linear_expression
 
 ```rust
-use dep::bigcurve::BigCurve;
-use dep::bigcurve::{BLS12_377, BLS12_377Scalar};
-use dep::bignum::BigNum;
-use dep::bignum::BLS12_377_Fr;
+use ::bigcurve::BigCurve;
+use ::bigcurve::{BLS12_377, BLS12_377Scalar};
+use ::bignum::BigNum;
+use ::bignum::BLS12_377_Fr;
 
 fn main(s1: [u8; 4], s2: [u8; 3], s3: [u8; 4], s4: [u8; 4]) -> pub BLS12_377 {
     let G = BLS12_377::hash_to_curve(s1);

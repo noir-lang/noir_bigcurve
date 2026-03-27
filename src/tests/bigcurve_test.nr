@@ -223,7 +223,7 @@ fn incomplete_add_with_hint() {
 }
 
 #[test]
-fn conditional_incomplete_add_with_hint() {
+fn conditional_incomplete_add_with_hint_predicate_true() {
     // Safety: test code
     unsafe {
         let P_affine = BN254::one();
@@ -257,6 +257,34 @@ fn conditional_incomplete_add_with_hint() {
         );
         assert(result_true.x == transcript.x3);
         assert(result_true.y == transcript.y3);
+    }
+}
+
+#[test]
+fn conditional_incomplete_add_with_hint_predicate_false() {
+    // Safety: test code
+    unsafe {
+        let P_affine = BN254::one();
+
+        // Q = 2P
+        let Q_affine = BN254 {
+            x: BN254_Fq::from_limbs([
+                0x7816a916871ca8d3c208c16d87cfd3,
+                0x44e72e131a029b85045b68181585d9,
+                0x0306,
+            ]),
+            y: BN254_Fq::from_limbs([
+                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+                0x738c0e0a7c92e7845f96b2ae9c0a68,
+                0x15ed,
+            ]),
+            is_infinity: false,
+        };
+
+        let P = BN254J::from(P_affine);
+        let Q = BN254J::from(Q_affine);
+        let R = P.incomplete_add(Q);
+        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
 
         // predicate = false: should return P unchanged
         let result_false = crate::ops::affine::conditional_incomplete_add_with_hint::<BN254_Fq, BN254>(
@@ -271,7 +299,7 @@ fn conditional_incomplete_add_with_hint() {
 }
 
 #[test]
-fn conditional_incomplete_subtract_with_hint() {
+fn conditional_incomplete_subtract_with_hint_predicate_true() {
     // Safety: test code
     unsafe {
         let P_affine = BN254::one();
@@ -305,6 +333,34 @@ fn conditional_incomplete_subtract_with_hint() {
         );
         assert(result_true.x == transcript.x3);
         assert(result_true.y == transcript.y3);
+    }
+}
+
+#[test]
+fn conditional_incomplete_subtract_with_hint_predicate_false() {
+    // Safety: test code
+    unsafe {
+        let P_affine = BN254::one();
+
+        // Q = 2P
+        let Q_affine = BN254 {
+            x: BN254_Fq::from_limbs([
+                0x7816a916871ca8d3c208c16d87cfd3,
+                0x44e72e131a029b85045b68181585d9,
+                0x0306,
+            ]),
+            y: BN254_Fq::from_limbs([
+                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+                0x738c0e0a7c92e7845f96b2ae9c0a68,
+                0x15ed,
+            ]),
+            is_infinity: false,
+        };
+
+        let P = BN254J::from(P_affine);
+        let Q = BN254J::from(Q_affine);
+        let R = P.sub(Q);
+        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
 
         // predicate = false: should return P unchanged
         let result_false = crate::ops::affine::conditional_incomplete_subtract_with_hint::<BN254_Fq, BN254>(

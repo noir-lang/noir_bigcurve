@@ -6,7 +6,7 @@ use crate::ops::affine::{
 };
 use crate::ops::point_table::PointTable;
 use crate::scalar_field::ScalarField;
-use dep::bignum::BigNum;
+use bignum::BigNum;
 
 /// Perform a multi-scalar multiplication (constrained)
 ///

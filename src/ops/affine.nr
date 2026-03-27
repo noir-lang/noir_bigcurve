@@ -1,7 +1,7 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
-use dep::bignum::BigNum;
-use dep::bignum::bignum::evaluate_quadratic_expression;
+use bignum::BigNum;
+use bignum::bignum::evaluate_quadratic_expression;
 
 /// Double a point using an `AffineTranscript` witness (constrained)
 ///

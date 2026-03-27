@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.3](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.2...v0.13.3) (2026-03-27)
+
+
+### Bug Fixes
+
+* Remove deprecated dep:: path prefix and unnecessary mut ([#112](https://github.com/noir-lang/noir_bigcurve/issues/112)) ([db37a3a](https://github.com/noir-lang/noir_bigcurve/commit/db37a3ad5a61fc3d378658ea535156aa7d69771e))
+
 ## [0.13.2](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.1...v0.13.2) (2026-02-20)
 
 

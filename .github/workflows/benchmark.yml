@@ -2,8 +2,8 @@ name: Benchmarks
 
 on:
   push:
-   branches:
-    - main
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Install bb
         run: |
           curl -L https://bbup.aztec.network | bash
-          ~/.bb/bbup -nv 1.0.0-beta.18
+          ~/.bb/bbup -v 4.1.2
           sudo apt install libc++-dev
 
       - name: Build Noir benchmark programs
@@ -49,9 +49,9 @@ jobs:
           comment-always: ${{ contains( github.event.pull_request.labels.*.name, 'bench-show') }}
           comment-on-alert: true
           alert-threshold: "101%"
-          fail-on-alert: false 
+          fail-on-alert: false
           max-items-in-chart: 50
-      
+
       - name: Store gates benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -65,7 +65,7 @@ jobs:
           comment-always: ${{ contains( github.event.pull_request.labels.*.name, 'bench-show') }}
           comment-on-alert: true
           alert-threshold: "101%"
-          fail-on-alert: false 
+          fail-on-alert: false
           max-items-in-chart: 50
           skip-fetch-gh-pages: true
 
@@ -100,7 +100,7 @@ jobs:
           comment-always: ${{ contains( github.event.pull_request.labels.*.name, 'bench-show') }}
           comment-on-alert: true
           alert-threshold: "101%"
-          fail-on-alert: false 
+          fail-on-alert: false
           max-items-in-chart: 50
           skip-fetch-gh-pages: true
 

@@ -2,13 +2,13 @@ name: Noir tests
 
 on:
   push:
-   branches:
-    - main
+    branches:
+      - main
   pull_request:
 
 env:
   CARGO_TERM_COLOR: always
-  MINIMUM_NOIR_VERSION: v1.0.0-beta.18
+  MINIMUM_NOIR_VERSION: v1.0.0-beta.19
 
 jobs:
   noir-version-list:
@@ -65,7 +65,6 @@ jobs:
       - name: Run formatter
         run: nargo fmt --check
 
-
   # This is a job which depends on all test jobs and reports the overall status.
   # This allows us to add/remove test jobs without having to update the required workflows.
   tests-end:
@@ -73,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     # We want this job to always run (even if the dependant jobs fail) as we want this job to fail rather than skipping.
     if: ${{ always() }}
-    needs: 
+    needs:
       - test
       - format
 

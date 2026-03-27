@@ -56,7 +56,8 @@ unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
 
 #[test]
 fn add_dbl() {
-    let P = BN254J::one();
+    // Safety: test code
+    let P = unsafe { BN254J::one() };
     // Safety: test code
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
     // Safety: test code
@@ -333,7 +334,8 @@ fn mul_a_point_at_infinity() {
 #[test]
 fn mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
+    // Safety: test code
+    let P: CurveJ<BN254_Fq, BN254> = unsafe { BN254J::one() };
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 

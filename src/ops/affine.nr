@@ -1,32 +1,33 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
-use bignum::BigNum;
-use bignum::bignum::evaluate_quadratic_expression;
+use dep::bignum::BigNum;
+use dep::bignum::bignum::evaluate_quadratic_expression;
 
-/// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
+/// Double a point using an `AffineTranscript` witness (constrained)
 ///
-/// This method is optimized to minimize the number of calls to `evaluate_quadratic_expression`,
-/// which is not necessarily the same as minimizing the number of multiplications.
-pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Verifies three constraints against the transcript values `(lambda, x3, y3)`:
+///
+///   1. `lambda * 2*y1 - 3*x1^2 - a = 0`   (tangent slope)
+///   2. `lambda^2 - x3 - 2*x1 = 0`         (output x-coordinate)
+///   3. `lambda * (x3 - x1) + y3 + y1 = 0` (output y-coordinate)
+pub(crate) fn double_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let x1 = point.x();
-    let y1 = point.y();
-    let lambda = transcript.lambda;
-    let x3 = transcript.x3;
-    let y3 = transcript.y3;
+    let x1: BN = point.x();
+    let y1: BN = point.y();
+    let lambda: BN = transcript.lambda;
+    let x3: BN = transcript.x3;
+    let y3: BN = transcript.y3;
 
-    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    // Witness values must be well-formed BigNum elements
     x3.validate_in_range();
     y3.validate_in_range();
     lambda.validate_in_range();
 
-    // -lambda * 2y + 3*x*x + a = 0
-    // validate the provided value of `lambda` is correct
-    // n.b. if CurveParams::a() == 0, its inclusion shouldn't cost extra constraints...I thnk
+    // Constraint 1: lambda * 2*y1 - 3*x1^2 - a = 0
     evaluate_quadratic_expression(
-        [[x1, x1, x1], [y1, y1, B::zero()]],
+        [[x1, x1, x1], [y1, y1, BN::zero()]],
         [[false, false, false], [false, false, false]],
         [[x1], [lambda]],
         [[false], [true]],
@@ -34,7 +35,7 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
         [false],
     );
 
-    // validate the provided value of `x3` is correct
+    // Constraint 2: lambda^2 - x3 - 2*x1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -44,7 +45,7 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, true, true],
     );
 
-    // validate the provided value of `y3` is correct
+    // Constraint 3: lambda * (x3 - x1) + y3 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -57,37 +58,38 @@ pub(crate) fn double_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
-/// Adds two points together using an `AffineTranscript` that contains inverses and output witnesses.
+/// Add two points using incomplete formulae (constrained)
 ///
-/// Only incomplete formulae are used. With the use of offset generators, an honest prover should never
-/// need to handle edge cases. Therefore, completeness is sacrificed for cheap soundness: instead of
-/// handling edge cases, the function asserts that they do not exist by validating `x2 != x1`.
+/// With offset generators, an honest prover never encounters edge cases.
+/// Instead of handling them, we assert `x1 != x2` for soundness.
 ///
-/// This method minimizes the number of calls to `evaluate_quadratic_expression`, which is not the same
-/// as minimizing the number of multiplications. The expensive operation in `BigNum` is the modular
-/// reduction. For example, `(a * b + c * d = e mod p)` is not much more expensive than `(a * b = c mod p)`.
-pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Verifies three constraints against the transcript values `(lambda, x3, y3)`:
+///
+///   1. `lambda * (x2 - x1) - (y2 - y1) = 0`  (chord slope)
+///   2. `lambda^2 - x3 - x2 - x1 = 0`         (output x-coordinate)
+///   3. `lambda * (x3 - x1) + y3 + y1 = 0`    (output y-coordinate)
+pub(crate) fn incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let x1: B = point.x();
-    let y1: B = point.y();
-    let x2: B = other.x();
-    let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let x1: BN = point.x();
+    let y1: BN = point.y();
+    let x2: BN = other.x();
+    let y2: BN = other.y();
+    let lambda: BN = transcript.lambda;
+    let x3: BN = transcript.x3;
+    let y3: BN = transcript.y3;
 
-    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    // Witness values must be well-formed BigNum elements
     x3.validate_in_range();
     y3.validate_in_range();
     lambda.validate_in_range();
 
-    // no incomplete Weierstrass shenanigans here
+    // Incomplete addition requires distinct x-coordinates
     x1.assert_is_not_equal(x2);
 
-    // validate the provided value of `lambda` is correct
+    // Constraint 1: lambda * (x2 - x1) - (y2 - y1) = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -97,7 +99,7 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, false],
     );
 
-    // validate the provided value of `x3` is correct
+    // Constraint 2: lambda^2 - x3 - x2 - x1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -107,7 +109,7 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, true, true],
     );
 
-    // validate the provided value of `y3` is correct
+    // Constraint 3: lambda * (x3 - x1) + y3 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -120,13 +122,48 @@ pub(crate) fn incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
-pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Conditionally add two points using incomplete formulae (constrained)
+///
+/// If `predicate` is true, returns `point + other`. Otherwise returns `point` unchanged.
+///
+/// When `predicate` is false, substitutes dummy values `(0,0) + (1,0)` with
+/// `lambda=0, x3=-1, y3=0` that satisfy all constraints of `incomplete_add_with_hint`.
+pub(crate) fn conditional_incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
     predicate: bool,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let operand_output = incomplete_add_with_hint::<B, P>(point, other, transcript);
+    // When predicate is false, `incomplete_add_with_hint` still enforces x1 != x2.
+    // Dummy values that satisfy all four constraints:
+    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
+    //
+    // 1. x1 != x2:                              0 != 1
+    // 2. lambda * (x2 - x1) - (y2 - y1) = 0:    0 * (1 - 0) - (0 - 0) = 0
+    // 3. lambda^2 - x3 - x2 - x1 = 0:           0 - (-1) - 1 - 0 = 0
+    // 4. lambda * (x3 - x1) + y3 + y1 = 0:      0 * (-1 - 0) + 0 + 0 = 0
+    let x1: BN = if predicate { point.x() } else { BN::zero() };
+    let y1: BN = if predicate { point.y() } else { BN::zero() };
+    let x2: BN = if predicate { other.x() } else { BN::one() };
+    let y2: BN = if predicate { other.y() } else { BN::zero() };
+    let lambda: BN = if predicate {
+        transcript.lambda
+    } else {
+        BN::zero()
+    };
+    let x3: BN = if predicate {
+        transcript.x3
+    } else {
+        BN::one().neg()
+    };
+    let y3: BN = if predicate { transcript.y3 } else { BN::zero() };
+
+    let eff_point: P = P::from_coordinates(x1, y1, false);
+    let eff_other: P = P::from_coordinates(x2, y2, false);
+    let eff_transcript: AffineTranscript<BN> = AffineTranscript { lambda, x3, y3 };
+
+    let operand_output: P = incomplete_add_with_hint::<BN, P>(eff_point, eff_other, eff_transcript);
+
     if predicate {
         operand_output
     } else {
@@ -134,13 +171,49 @@ pub(crate) fn conditional_incomplete_add_with_hint<B: BigNum, P: BigCurve<B>>(
     }
 }
 
-pub(crate) fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Conditionally subtract a point using incomplete formulae (constrained)
+///
+/// If `predicate` is true, returns `point - other`. Otherwise returns `point` unchanged.
+///
+/// When `predicate` is false, substitutes dummy values `(0,0) - (1,0)` with
+/// `lambda=0, x3=-1, y3=0` that satisfy all constraints of `incomplete_subtract_with_hint`.
+pub(crate) fn conditional_incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
     predicate: bool,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let operand_output = incomplete_subtract_with_hint::<B, P>(point, other, transcript);
+    // When predicate is false, `incomplete_subtract_with_hint` still enforces x1 != x2.
+    // Dummy values that satisfy all four constraints:
+    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
+    //
+    // 1. x1 != x2:                            0 != 1
+    // 2. lambda * (x2 - x1) + y2 + y1 = 0:    0 * (1 - 0) + 0 + 0 = 0
+    // 3. lambda^2 - x3 - x2 - x1 = 0:         0 - (-1) - 1 - 0 = 0
+    // 4. lambda * (x3 - x1) + y3 + y1 = 0:    0 * (-1 - 0) + 0 + 0 = 0
+    let x1: BN = if predicate { point.x() } else { BN::zero() };
+    let y1: BN = if predicate { point.y() } else { BN::zero() };
+    let x2: BN = if predicate { other.x() } else { BN::one() };
+    let y2: BN = if predicate { other.y() } else { BN::zero() };
+    let lambda: BN = if predicate {
+        transcript.lambda
+    } else {
+        BN::zero()
+    };
+    let x3: BN = if predicate {
+        transcript.x3
+    } else {
+        BN::one().neg()
+    };
+    let y3: BN = if predicate { transcript.y3 } else { BN::zero() };
+
+    let eff_point: P = P::from_coordinates(x1, y1, false);
+    let eff_other: P = P::from_coordinates(x2, y2, false);
+    let eff_transcript: AffineTranscript<BN> = AffineTranscript { lambda, x3, y3 };
+
+    let operand_output: P =
+        incomplete_subtract_with_hint::<BN, P>(eff_point, eff_other, eff_transcript);
+
     if predicate {
         operand_output
     } else {
@@ -148,28 +221,38 @@ pub(crate) fn conditional_incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B
     }
 }
 
-fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Subtract two points using incomplete formulae (constrained)
+///
+/// Computes `point - other` by verifying the subtraction transcript.
+/// Asserts `x1 != x2` (offset generators guarantee this for an honest prover).
+///
+/// Verifies three constraints:
+///
+///   1. `lambda * (x2 - x1) + y2 + y1 = 0`    (chord slope for subtraction)
+///   2. `lambda^2 - x3 - x2 - x1 = 0`         (output x-coordinate)
+///   3. `lambda * (x3 - x1) + y3 + y1 = 0`    (output y-coordinate)
+fn incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let x1: B = point.x();
-    let y1: B = point.y();
-    let x2: B = other.x();
-    let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let x1: BN = point.x();
+    let y1: BN = point.y();
+    let x2: BN = other.x();
+    let y2: BN = other.y();
+    let lambda: BN = transcript.lambda;
+    let x3: BN = transcript.x3;
+    let y3: BN = transcript.y3;
 
-    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed BigNum objects!
+    // Witness values must be well-formed BigNum elements
     x3.validate_in_range();
     y3.validate_in_range();
     lambda.validate_in_range();
 
-    // no incomplete Weierstrass shenanigans here
+    // Incomplete subtraction requires distinct x-coordinates
     x1.assert_is_not_equal(x2);
 
-    // validate the provided value of `lambda` is correct
+    // Constraint 1: lambda * (x2 - x1) + y2 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -179,7 +262,7 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
         [false, false],
     );
 
-    // validate the provided value of `x3` is correct
+    // Constraint 2: lambda^2 - x3 - x2 - x1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -189,7 +272,7 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, true, true],
     );
 
-    // validate the provided value of `y3` is correct
+    // Constraint 3: lambda * (x3 - x1) + y3 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -202,68 +285,74 @@ fn incomplete_subtract_with_hint<B: BigNum, P: BigCurve<B>>(
     P::from_coordinates(x3, y3, false)
 }
 
-pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Complete point addition with edge-case handling (constrained)
+///
+/// Handles all cases: distinct points, doubling (`x1 == x2, y1 == y2`),
+/// inverse points (`x1 == x2, y1 != y2` -> infinity), and infinity inputs.
+///
+/// Dynamically selects between addition and doubling constraints via conditional
+/// operand substitution, so only one `evaluate_quadratic_expression` call validates
+/// the lambda constraint regardless of the case.
+pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let x1: B = point.x();
-    let y1: B = point.y();
-    let x2: B = other.x();
-    let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let x1: BN = point.x();
+    let y1: BN = point.y();
+    let x2: BN = other.x();
+    let y2: BN = other.y();
+    let lambda: BN = transcript.lambda;
+    let x3: BN = transcript.x3;
+    let y3: BN = transcript.y3;
 
-    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    // Witness values must be well-formed BigNum elements
     x3.validate_in_range();
     y3.validate_in_range();
     lambda.validate_in_range();
 
-    // TODO: we can probably optimize this boolean flag jenga mess
-    let x_equal_predicate = x2.eq(x1);
-    let y_equal_predicate = y2.eq(y1);
-    let double_predicate = x_equal_predicate | (point.is_infinity() | other.is_infinity()); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
-    let infinity_predicate =
+    // Determine which case applies
+    let x_equal_predicate: bool = x2.eq(x1);
+    let y_equal_predicate: bool = y2.eq(y1);
+    // If x1 == x2, use doubling formula. Also use it when either input is infinity (operands are zeroed below).
+    let double_predicate: bool = x_equal_predicate | (point.is_infinity() | other.is_infinity());
+    let infinity_predicate: bool =
         (x_equal_predicate & !y_equal_predicate) | (point.is_infinity() & other.is_infinity());
     let evaluate_group_operation_predicate: bool =
         !infinity_predicate & !point.is_infinity() & !other.is_infinity();
 
-    // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
-    // set input operands to 0!
+    // Zero all operands when skipping the group operation (inverse points or infinity inputs)
     let (x1, y1, x2, y2, x3, y3) = if evaluate_group_operation_predicate {
         (x1, y1, x2, y2, x3, y3)
     } else {
-        (B::zero(), B::zero(), B::zero(), B::zero(), B::zero(), B::zero())
+        (BN::zero(), BN::zero(), BN::zero(), BN::zero(), BN::zero(), BN::zero())
     };
 
-    // lambda * 2y - 3x * x = 0
-    // or
-    // lambda * (x2 - x1) - (y2 - y1) = 0
-    let product_1_rhs_t0 = if double_predicate { y1 } else { x2 };
-    let product_1_rhs_t1 = if double_predicate { y1 } else { x1.neg() };
-    let product_2_lhs_t0 = if double_predicate { x1 } else { B::one() };
-    let product_2_rhs_t0 = if double_predicate { x1 } else { y2 };
-    let product_2_rhs_t1 = if double_predicate { x1 } else { y1.neg() };
-    let product_2_rhs_t2 = if double_predicate { x1 } else { B::zero() };
+    // Select operands for a unified lambda constraint:
+    //   double: lambda * (y1 + y1) + x1 * (-x1 - x1 - x1) - a = 0
+    //   add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0
+    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2 };
+    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1.neg() };
+    let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
+    let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
+    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1.neg() };
+    let product_2_rhs_t2: BN = if double_predicate { x1 } else { BN::zero() };
 
-    // validate the provided value of `lambda` is correct
-    // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
-    // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
-    let a_term = if x_equal_predicate
+    // Constraint 1: lambda is correct (unified double/add)
+    let a_term: BN = if x_equal_predicate
         & y_equal_predicate
         & !point.is_infinity()
         & !other.is_infinity() {
         P::a()
     } else {
-        B::zero()
+        BN::zero()
     };
 
     evaluate_quadratic_expression(
         [[lambda], [product_2_lhs_t0]],
         [[false], [false]],
         [
-            [product_1_rhs_t0, product_1_rhs_t1, B::zero()],
+            [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
         [[false, false, false], [true, true, true]],
@@ -271,8 +360,7 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
         [true],
     );
 
-    // x3 = lambda * lambda - x2 - x1
-    // if double, then x2 = x1 so we good
+    // Constraint 2: lambda^2 - x3 - x2 - x1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -282,7 +370,7 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, true, true],
     );
 
-    // y3 = lambda * (x1 - x3) - y1
+    // Constraint 3: lambda * (x3 - x1) + y3 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -292,26 +380,35 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
         [false, false],
     );
 
-    let output_is_lhs = other.is_infinity() & !point.is_infinity();
-    let output_is_rhs = point.is_infinity() & !other.is_infinity();
-    let mut x_out = if evaluate_group_operation_predicate {
+    // Select output based on edge cases
+    let output_is_lhs: bool = other.is_infinity() & !point.is_infinity();
+    let output_is_rhs: bool = point.is_infinity() & !other.is_infinity();
+    let mut x_out: BN = if evaluate_group_operation_predicate {
         x3
     } else {
         x1
     };
     x_out = if output_is_lhs { point.x() } else { x_out };
     x_out = if output_is_rhs { other.x() } else { x_out };
-    x_out = if infinity_predicate { B::zero() } else { x_out };
-    let mut y_out = if evaluate_group_operation_predicate {
+    x_out = if infinity_predicate {
+        BN::zero()
+    } else {
+        x_out
+    };
+    let mut y_out: BN = if evaluate_group_operation_predicate {
         y3
     } else {
         y1
     };
     y_out = if output_is_lhs { point.y() } else { y_out };
     y_out = if output_is_rhs { other.y() } else { y_out };
-    y_out = if infinity_predicate { B::zero() } else { y_out };
+    y_out = if infinity_predicate {
+        BN::zero()
+    } else {
+        y_out
+    };
 
-    let mut infinity_out = !evaluate_group_operation_predicate;
+    let mut infinity_out: bool = !evaluate_group_operation_predicate;
     infinity_out = if infinity_predicate {
         true
     } else {
@@ -328,74 +425,73 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
         infinity_out
     };
 
-    let result: P = P::from_coordinates(x_out, y_out, infinity_out);
-    result
+    P::from_coordinates(x_out, y_out, infinity_out)
 }
 
-pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
+/// Complete point subtraction with edge-case handling (constrained)
+///
+/// Computes `point - other`. Handles all cases: distinct points, doubling
+/// (`x1 == x2, y1 == -y2`), inverse points (`x1 == x2, y1 == y2` -> infinity),
+/// and infinity inputs.
+pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
-    transcript: AffineTranscript<B>,
+    transcript: AffineTranscript<BN>,
 ) -> P {
-    let x1: B = point.x();
-    let y1: B = point.y();
-    let x2: B = other.x();
-    let y2: B = other.y();
-    let lambda: B = transcript.lambda;
-    let x3: B = transcript.x3;
-    let y3: B = transcript.y3;
+    let x1: BN = point.x();
+    let y1: BN = point.y();
+    let x2: BN = other.x();
+    let y2: BN = other.y();
+    let lambda: BN = transcript.lambda;
+    let x3: BN = transcript.x3;
+    let y3: BN = transcript.y3;
 
-    // we pulled x3, y3, lambda out of the ether - we need to make sure they are well-formed B objects!
+    // Witness values must be well-formed BigNum elements
     x3.validate_in_range();
     y3.validate_in_range();
     lambda.validate_in_range();
 
-    let x_equal_predicate = x2.eq(x1);
-    let y_equal_predicate = y2.eq(y1) == false;
-    let double_predicate = x_equal_predicate | (point.is_infinity() | other.is_infinity()); // if x1 == x2, evaluate double operation. If y1 = -y2 then we set all input/output parameters to be 0
+    // Determine which case applies (subtraction: y_equal means inverse points -> infinity)
+    let x_equal_predicate: bool = x2.eq(x1);
+    let y_equal_predicate: bool = y2.eq(y1) == false;
+    let double_predicate: bool = x_equal_predicate | (point.is_infinity() | other.is_infinity());
     let infinity_predicate: bool =
         (x_equal_predicate & !y_equal_predicate) | (point.is_infinity() & other.is_infinity());
     let evaluate_group_operation_predicate: bool =
         !infinity_predicate & !point.is_infinity() & !other.is_infinity();
 
-    // If we are skipping the evaluation of a group operation (x2 == x1, y2 == -y1 OR any input points are at infinity),
-    // set input operands to 0!
+    // Zero all operands when skipping the group operation
     let (x1, y1, x2, y2, x3, y3) = if evaluate_group_operation_predicate {
         (x1, y1, x2, y2, x3, y3)
     } else {
-        (B::zero(), B::zero(), B::zero(), B::zero(), B::zero(), B::zero())
+        (BN::zero(), BN::zero(), BN::zero(), BN::zero(), BN::zero(), BN::zero())
     };
 
-    // lambda * 2y - 3x*x = 0
-    // 3 x * x - lambda * 2y
-    // lambda * (x2 - x1) - (y2 - y1) = 0
-    // y1 - (y2.neg()) - lambda * (x1 - x2) = 0
-    // y1 + y2 - lambda * (x1 - x2) = 0
-    // 3 * x * x - lambda * 2 * y
-    let product_1_rhs_t0 = if double_predicate { y1 } else { x2.neg() };
-    let product_1_rhs_t1 = if double_predicate { y1 } else { x1 };
-    let product_2_lhs_t0 = if double_predicate { x1 } else { B::one() };
-    let product_2_rhs_t0 = if double_predicate { x1 } else { y2 };
-    let product_2_rhs_t1 = if double_predicate { x1 } else { y1 };
-    let product_2_rhs_t2 = if double_predicate { x1 } else { B::zero() };
+    // Select operands for a unified lambda constraint:
+    //   double: -lambda * (y1 + y1) + x1 * (x1 + x1 + x1) + a = 0
+    //   sub:    -lambda * (-x2 + x1) + 1 * (y2 + y1) = 0
+    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2.neg() };
+    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1 };
+    let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
+    let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
+    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1 };
+    let product_2_rhs_t2: BN = if double_predicate { x1 } else { BN::zero() };
 
-    // validate the provided value of `lambda` is correct
-    // if double: -lambda * (y1 + y1) + x1 * (x1 x1 x1) + a= 0 => lambda * 2y - 3x*x = 0
-    // if add:    -lambda * (x1 - x2) + 1 * (y2 + y1) = 0 => lambda * (x2 - x1) - (-y2 - y1) = 0
-    let a_term = if x_equal_predicate
+    // Constraint 1: lambda is correct (unified double/sub)
+    let a_term: BN = if x_equal_predicate
         & y_equal_predicate
         & !point.is_infinity()
         & !other.is_infinity() {
         P::a()
     } else {
-        B::zero()
+        BN::zero()
     };
 
     evaluate_quadratic_expression(
         [[lambda], [product_2_lhs_t0]],
         [[true], [false]],
         [
-            [product_1_rhs_t0, product_1_rhs_t1, B::zero()],
+            [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
         [[false, false, false], [false, false, false]],
@@ -403,7 +499,7 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
         [false],
     );
 
-    // x3 = lambda * lambda - x2 - x1
+    // Constraint 2: lambda^2 - x3 - x2 - x1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -413,7 +509,7 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
         [true, true, true],
     );
 
-    // y3 = lambda * (x1 - x3) - y1
+    // Constraint 3: lambda * (x3 - x1) + y3 + y1 = 0
     evaluate_quadratic_expression(
         [[lambda]],
         [[false]],
@@ -423,17 +519,22 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
         [false, false],
     );
 
-    let output_is_lhs = other.is_infinity() & !point.is_infinity();
-    let output_is_rhs = point.is_infinity() & !other.is_infinity();
-    let mut x_out = if evaluate_group_operation_predicate {
+    // Select output based on edge cases
+    let output_is_lhs: bool = other.is_infinity() & !point.is_infinity();
+    let output_is_rhs: bool = point.is_infinity() & !other.is_infinity();
+    let mut x_out: BN = if evaluate_group_operation_predicate {
         x3
     } else {
         x1
     };
     x_out = if output_is_lhs { point.x() } else { x_out };
     x_out = if output_is_rhs { other.x() } else { x_out };
-    x_out = if infinity_predicate { B::zero() } else { x_out };
-    let mut y_out = if evaluate_group_operation_predicate {
+    x_out = if infinity_predicate {
+        BN::zero()
+    } else {
+        x_out
+    };
+    let mut y_out: BN = if evaluate_group_operation_predicate {
         y3
     } else {
         y1
@@ -444,9 +545,13 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
     } else {
         y_out
     };
-    y_out = if infinity_predicate { B::zero() } else { y_out };
+    y_out = if infinity_predicate {
+        BN::zero()
+    } else {
+        y_out
+    };
 
-    let mut infinity_out = !evaluate_group_operation_predicate;
+    let mut infinity_out: bool = !evaluate_group_operation_predicate;
     infinity_out = if infinity_predicate {
         true
     } else {
@@ -463,6 +568,5 @@ pub fn sub_with_hint<B: BigNum, P: BigCurve<B>>(
         infinity_out
     };
 
-    let result: P = P::from_coordinates(x_out, y_out, infinity_out);
-    result
+    P::from_coordinates(x_out, y_out, infinity_out)
 }

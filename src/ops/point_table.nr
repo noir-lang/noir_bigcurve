@@ -1,55 +1,50 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
 use crate::ops::affine::{double_with_hint, incomplete_add_with_hint};
-use bignum::BigNum;
+use dep::bignum::BigNum;
 
-/// A lookup table used for scalar multiplications using windowed non-adjacent form (WNAF).
+/// Affine-coordinate lookup table for wNAF scalar multiplication (constrained side).
 ///
-/// The scalar multiplier is sliced into 4-bit chunks, each represented in WNAF (values in the range [-15, -13, ..., 15]).
-/// A table `T` is computed containing point multiples corresponding to these 4-bit WNAF values: `T = ([-15[P], -13[P], ..., 15[P]])`.
+/// Stores 16 entries `[-15P, -13P, ..., -P, P, ..., 15P]` in affine `(x, y)` form.
+/// The wNAF slice value `s` maps to table index `(s + 15) / 2`.
 ///
-/// The accumulator is initialized with `T[most significant WNAF slice]`.
-/// For each remaining slice (starting from the most significant), the accumulator is doubled 4 times,
-/// then `T[slice[i]]` is added to the accumulator.
-///
-/// For small multiscalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
-
-pub(crate) struct PointTable<B> {
-    x: [B; 16],
-    y: [B; 16],
+/// For MSMs with fewer than 512 points, a per-point table minimizes addition operations.
+pub(crate) struct PointTable<BN> {
+    x: [BN; 16],
+    y: [BN; 16],
 }
 
-impl<B: BigNum> PointTable<B> {
+impl<BN: BigNum> PointTable<BN> {
     pub(crate) fn empty() -> Self {
-        PointTable { x: [B::zero(); 16], y: [B::zero(); 16] }
+        PointTable { x: [BN::zero(); 16], y: [BN::zero(); 16] }
     }
 
-    /// Constructs a `PointTable` from an input point and an `AffineTranscript` containing the required modular inverses.
+    /// Build a `PointTable` from an input point, verifying the transcript (constrained)
     ///
-    /// # Arguments
+    /// ## Algorithm
     ///
-    /// * `point` - The input point to be used for constructing the table.
-    /// * `transcript` - An `AffineTranscript` object that holds the necessary modular inverses.
+    /// Same symmetry trick as the Jacobian `PointTable`: `-kP` shares the same `x`
+    /// with negated `y`. Each step is verified via `double_with_hint` / `incomplete_add_with_hint`.
     ///
-    /// # Details
-    ///
-    /// See [`CurveJ::mul`] for an example of how `AffineTranscript` objects are generated and used.
-    pub(crate) fn new_with_hint<P: BigCurve<B>>(
+    ///   1. `D = 2P` (one constrained doubling)
+    ///   2. `table[8] = P`, `table[7] = -P`
+    ///   3. For `i = 1..8`: `A = A + D`, `table[8+i] = A`, `table[7-i] = -A`
+    pub(crate) fn new_with_hint<P: BigCurve<BN>>(
         point: P,
-        transcript: [AffineTranscript<B>; 8],
+        transcript: [AffineTranscript<BN>; 8],
     ) -> Self {
-        let mut result = PointTable { x: [B::zero(); 16], y: [B::zero(); 16] };
+        let mut result: PointTable<BN> = PointTable { x: [BN::zero(); 16], y: [BN::zero(); 16] };
 
-        let D2: P = double_with_hint::<B, P>(point, transcript[0]);
+        let D2: P = double_with_hint::<BN, P>(point, transcript[0]);
 
         result.x[8] = point.x();
         result.y[8] = point.y();
         result.x[7] = point.x();
         result.y[7] = point.y().neg();
 
-        let mut A = point;
+        let mut A: P = point;
         for i in 1..8 {
-            A = incomplete_add_with_hint::<B, P>(A, D2, transcript[i]);
+            A = incomplete_add_with_hint::<BN, P>(A, D2, transcript[i]);
             result.x[8 + i] = A.x();
             result.y[8 + i] = A.y();
             result.x[7 - i] = A.x();
@@ -58,12 +53,11 @@ impl<B: BigNum> PointTable<B> {
         result
     }
 
-    /// Retrieves a value from the lookup table.
+    /// Look up a point by wNAF table index (constrained)
     ///
-    /// If the backend supports efficient memory lookups, this operation can be highly efficient.
-    /// For example, using the barretenberg backend, lookups on 256-bit curves may require only
-    /// around 12 constraints.
-    pub(crate) fn get<P: BigCurve<B>>(self, idx: u32) -> P {
+    /// `idx` is `(wnaf_slice + 15) / 2`, ranging from 0 (`-15P`) to 15 (`+15P`).
+    /// With the barretenberg backend, lookups on 256-bit curves cost ~12 constraints.
+    pub(crate) fn get<P: BigCurve<BN>>(self, idx: u32) -> P {
         P::from_coordinates(self.x[idx], self.y[idx], false)
     }
 }

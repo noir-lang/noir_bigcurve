@@ -15,6 +15,8 @@ use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
 use crate::ops::point_table::PointTable;
 use crate::scalar_field::ScalarField;
 
+// ------------------------------ HELPERS ------------------------------
+
 unconstrained fn evaluate_mul(P: BN254J, scalar: ScalarField<64>, Q: BN254J, K: BN254J) -> bool {
     let s: (CurveJ<BN254_Fq, BN254>, [AffineTranscript<BN254_Fq>; 326]) = (P.mul(scalar));
     assert(s.0.eq(K.neg()));
@@ -29,108 +31,7 @@ unconstrained fn get_transcript(
     transcript
 }
 
-#[test]
-fn test_mul() {
-    let P = BN254::one();
-
-    let scalar: ScalarField<64> = ScalarField::from(
-        0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
-    ); // p - 2
-    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
-
-    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
-
-    // -2
-    let mut expected = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x7816a916871ca8d3c208c16d87cfd3,
-            0x44e72e131a029b85045b68181585d9,
-            0x0306,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-            0x738c0e0a7c92e7845f96b2ae9c0a68,
-            0x15ed,
-        ]),
-        is_infinity: false,
-    };
-    expected.y = BigNum::zero() - expected.y;
-    assert(result.x == expected.x);
-    assert(result.y == expected.y);
-}
-
-#[test]
-fn test_offset_foo() {
-    let P = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x0b672a3489895d47157f096e077348,
-            0x29f5f5b786660171ae9ad36f6db594,
-            0x15f1,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0x6e4553aa3ae998fcd27ca8a17188ef,
-            0xb3193f7f0a731913174831ca905feb,
-            0x21ff,
-        ]),
-        is_infinity: false,
-    };
-    let Q = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x0b672a3489895d47157f096e077348,
-            0x29f5f5b786660171ae9ad36f6db594,
-            0x15f1,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0x6e4553aa3ae998fcd27ca8a17188ef,
-            0xb3193f7f0a731913174831ca905feb,
-            0x21ff,
-        ]),
-        is_infinity: false,
-    };
-
-    let R: BN254 = P.sub(Q);
-    assert(R.is_infinity == true);
-}
-
-#[test]
-fn test_mul_by_0() {
-    let P = BN254::one();
-
-    let scalar: ScalarField<64> = ScalarField::from(0); // p - 2
-    let foo: Field = ScalarField::into(scalar);
-    assert(foo == 0);
-    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
-
-    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
-    assert(result.is_infinity == true);
-}
-
-#[test]
-fn test_mul_a_point_at_infinity() {
-    let P = BN254::point_at_infinity();
-
-    let scalar: ScalarField<64> = ScalarField::from(
-        0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
-    ); // p - 2
-    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
-
-    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
-    assert(result.is_infinity == true);
-}
-
-#[test]
-fn test_mul_jac() {
-    let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
-
-    let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
-
-    let expected = unsafe { P.incomplete_add(P.dbl().0.neg()).0 };
-    let result = unsafe { evaluate_mul(P, scalar, expected, P) };
-    assert(result == true);
-}
-
-unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
+unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     let One = BN254J::one();
     let Two = BN254J {
         x: BN254_Fq::from_limbs([
@@ -151,28 +52,21 @@ unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     assert(result.0 == expected);
 }
 
-#[test]
-fn test_msm_jac() {
-    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
-    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
-    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
-    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
-
-    unsafe {
-        test_msm_jac_impl([scalar6, scalar2]);
-    }
-}
+// ------------------------------ JACOBIAN ARITHMETIC TESTS ------------------------------
 
 #[test]
-fn test_add_dbl() {
+fn add_dbl() {
     let P = BN254J::one();
+    // Safety: test code
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
+    // Safety: test code
     let rhs = unsafe { P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
     assert(lhs == rhs);
 }
 
 #[test]
-fn test_transcript() {
+fn transcript() {
+    // Safety: test code
     unsafe {
         let P = BN254J::one();
 
@@ -212,7 +106,8 @@ fn test_transcript() {
 }
 
 #[test]
-fn test_double_with_hint() {
+fn double_with_hint() {
+    // Safety: test code
     unsafe {
         let P = BN254J::one();
 
@@ -242,7 +137,8 @@ fn test_double_with_hint() {
 }
 
 #[test]
-fn test_double_with_hint_secp256r1() {
+fn double_with_hint_secp256r1() {
+    // Safety: test code
     unsafe {
         let P = Secp256r1J::one();
 
@@ -272,7 +168,8 @@ fn test_double_with_hint_secp256r1() {
 }
 
 #[test]
-fn test_incomplete_add_with_hint() {
+fn incomplete_add_with_hint() {
+    // Safety: test code
     unsafe {
         let P = BN254J::one();
 
@@ -325,8 +222,146 @@ fn test_incomplete_add_with_hint() {
     }
 }
 
+// ------------------------------ POINT TABLE TESTS ------------------------------
+
 #[test]
-fn test_constrained_add() {
+fn make_table() {
+    // Safety: test code
+    unsafe {
+        let P: BN254J = BN254J::one();
+
+        let mut transcript: [JTranscript<BN254_Fq>] = @[];
+        let T: curve_jac::point_table::PointTable<BN254_Fq> =
+            curve_jac::point_table::PointTable::new(P);
+        for i in 0..8 {
+            transcript = transcript.push_back(T.transcript[i]);
+        }
+
+        let mut inverses: [BN254_Fq; 8] = [BN254_Fq::zero(); 8];
+
+        for i in 0..8 {
+            inverses[i] = transcript[i].z3;
+        }
+
+        inverses = bignum::bignum::batch_invert(inverses);
+
+        let mut affine_transcript: [AffineTranscript<BN254_Fq>; 8] = [AffineTranscript::new(); 8];
+        for i in 0..8 {
+            let z_inv = inverses[i];
+
+            let lambda = transcript[i].lambda_numerator.__mul(z_inv);
+            let zz = z_inv.__mul(z_inv);
+            let zzz = zz.__mul(z_inv);
+            let x3 = transcript[i].x3.__mul(zz);
+            let y3 = transcript[i].y3.__mul(zzz);
+            affine_transcript[i] = AffineTranscript { lambda, x3, y3 };
+        }
+
+        let P_affine = BN254::one();
+
+        let affine_point_table: PointTable<BN254_Fq> =
+            PointTable::<BN254_Fq>::new_with_hint::<BN254>(P_affine, affine_transcript);
+
+        for i in 0..8 {
+            let point: BN254 = affine_point_table.get::<BN254>(i);
+            point.validate_on_curve();
+        }
+    }
+}
+
+// ------------------------------ SCALAR MULTIPLICATION TESTS ------------------------------
+
+#[test]
+fn mul() {
+    let P = BN254::one();
+
+    let scalar: ScalarField<64> = ScalarField::from(
+        0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
+    ); // p - 2
+    // Safety: test code
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
+
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+
+    // -2
+    let mut expected = BN254 {
+        x: BN254_Fq::from_limbs([
+            0x7816a916871ca8d3c208c16d87cfd3,
+            0x44e72e131a029b85045b68181585d9,
+            0x0306,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
+            0x738c0e0a7c92e7845f96b2ae9c0a68,
+            0x15ed,
+        ]),
+        is_infinity: false,
+    };
+    expected.y = BigNum::zero() - expected.y;
+    assert(result.x == expected.x);
+    assert(result.y == expected.y);
+}
+
+#[test]
+fn mul_by_0() {
+    let P = BN254::one();
+
+    let scalar: ScalarField<64> = ScalarField::from(0);
+    let foo: Field = ScalarField::into(scalar);
+    assert(foo == 0);
+    // Safety: test code
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
+
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+    assert(result.is_infinity == true);
+}
+
+#[test]
+fn mul_a_point_at_infinity() {
+    let P = BN254::point_at_infinity();
+
+    let scalar: ScalarField<64> = ScalarField::from(
+        0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
+    ); // p - 2
+    // Safety: test code
+    let transcript = unsafe { get_transcript(BN254J::from(P), scalar) };
+
+    let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
+    assert(result.is_infinity == true);
+}
+
+#[test]
+fn mul_jac() {
+    let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
+    let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
+
+    let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
+
+    // Safety: test code
+    let expected = unsafe { P.incomplete_add(P.dbl().0.neg()).0 };
+    // Safety: test code
+    let result = unsafe { evaluate_mul(P, scalar, expected, P) };
+    assert(result == true);
+}
+
+#[test]
+fn msm_jac() {
+    let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
+    let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
+    let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
+    let scalar6: ScalarField<64> = ScalarField::from(p_minus_6);
+
+    // Safety: test code
+    unsafe {
+        msm_jac_impl([scalar6, scalar2]);
+    }
+}
+
+// ------------------------------ ADDITION TESTS ------------------------------
+
+#[test]
+fn constrained_add() {
+    // Safety: test code
     unsafe {
         let P = BN254::one();
 
@@ -385,7 +420,7 @@ fn test_constrained_add() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add() {
+unconstrained fn unconstrained_add() {
     let P = BN254::one();
 
     // Q = 2P
@@ -411,8 +446,20 @@ unconstrained fn test_unconstrained_add() {
 
     assert(result.eq(expected));
 }
+
 #[test]
-unconstrained fn test_unconstrained_add_one_side_infinity() {
+unconstrained fn unconstrained_add_doubling() {
+    // P + P
+    let P = BN254::one();
+    let Q = BN254::one();
+    let P_j = BN254J::from(P);
+    let result = BN254J::from(P.add(Q));
+    let expected = P_j.dbl().0;
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn unconstrained_add_one_side_infinity() {
     //Q + infinity and infinity + Q
     let Q = BN254::one();
     let P = BN254::point_at_infinity();
@@ -424,18 +471,7 @@ unconstrained fn test_unconstrained_add_one_side_infinity() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add_doubling() {
-    // P + P
-    let P = BN254::one();
-    let Q = BN254::one();
-    let P_j = BN254J::from(P);
-    let result = BN254J::from(P.add(Q));
-    let expected = P_j.dbl().0;
-    assert(result.eq(expected));
-}
-
-#[test]
-unconstrained fn test_unconstrained_add_infinity() {
+unconstrained fn unconstrained_add_infinity() {
     // P = -Q
     let P = BN254::one();
     let Q = P.neg();
@@ -451,8 +487,11 @@ unconstrained fn test_unconstrained_add_infinity() {
     assert(result.eq(expected));
 }
 
+// ------------------------------ SUBTRACTION TESTS ------------------------------
+
 #[test]
-fn test_sub() {
+fn sub() {
+    // Safety: test code
     unsafe {
         let P = BN254::one();
 
@@ -511,7 +550,7 @@ fn test_sub() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub() {
+unconstrained fn unconstrained_sub() {
     let P = BN254::one();
 
     // Q = 2P
@@ -539,7 +578,7 @@ unconstrained fn test_unconstrained_sub() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub_doubling() {
+unconstrained fn unconstrained_sub_doubling() {
     // doubling
     let P = BN254::one();
     let Q = BN254::one();
@@ -551,23 +590,7 @@ unconstrained fn test_unconstrained_sub_doubling() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub_infinity() {
-    // both at infinity
-    let P = BN254::one();
-    let Q = BN254::one();
-    let result = BN254J::from(P.sub(Q));
-    let expected = BN254J::point_at_infinity();
-    assert(result.eq(expected));
-    // both infinity
-    let P = BN254::point_at_infinity();
-    let Q = BN254::point_at_infinity();
-    let result = BN254J::from(Q.sub(P));
-    let expected = BN254J::point_at_infinity();
-    assert(result.eq(expected));
-}
-
-#[test]
-unconstrained fn test_unconstrained_sub_one_side_infinity() {
+unconstrained fn unconstrained_sub_one_side_infinity() {
     let P = BN254::point_at_infinity();
     let Q = BN254::one();
 
@@ -583,51 +606,58 @@ unconstrained fn test_unconstrained_sub_one_side_infinity() {
 }
 
 #[test]
-fn test_make_table() {
-    unsafe {
-        let P: BN254J = BN254J::one();
+unconstrained fn unconstrained_sub_infinity() {
+    // P - P = infinity
+    let P = BN254::one();
+    let Q = BN254::one();
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
+    // both infinity
+    let P = BN254::point_at_infinity();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(Q.sub(P));
+    let expected = BN254J::point_at_infinity();
+    assert(result.eq(expected));
+}
 
-        let mut transcript: [JTranscript<BN254_Fq>] = @[];
-        let T: curve_jac::point_table::PointTable<BN254_Fq> =
-            curve_jac::point_table::PointTable::new(P);
-        for i in 0..8 {
-            transcript = transcript.push_back(T.transcript[i]);
-        }
+// ------------------------------ REGRESSION TESTS ------------------------------
 
-        let mut inverses: [BN254_Fq; 8] = [BN254_Fq::zero(); 8];
+#[test]
+fn offset_foo() {
+    let P = BN254 {
+        x: BN254_Fq::from_limbs([
+            0x0b672a3489895d47157f096e077348,
+            0x29f5f5b786660171ae9ad36f6db594,
+            0x15f1,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0x6e4553aa3ae998fcd27ca8a17188ef,
+            0xb3193f7f0a731913174831ca905feb,
+            0x21ff,
+        ]),
+        is_infinity: false,
+    };
+    let Q = BN254 {
+        x: BN254_Fq::from_limbs([
+            0x0b672a3489895d47157f096e077348,
+            0x29f5f5b786660171ae9ad36f6db594,
+            0x15f1,
+        ]),
+        y: BN254_Fq::from_limbs([
+            0x6e4553aa3ae998fcd27ca8a17188ef,
+            0xb3193f7f0a731913174831ca905feb,
+            0x21ff,
+        ]),
+        is_infinity: false,
+    };
 
-        for i in 0..8 {
-            inverses[i] = transcript[i].z3;
-        }
-
-        inverses = bignum::bignum::batch_invert(inverses);
-
-        let mut affine_transcript: [AffineTranscript<BN254_Fq>; 8] = [AffineTranscript::new(); 8];
-        for i in 0..8 {
-            let z_inv = inverses[i];
-
-            let lambda = transcript[i].lambda_numerator.__mul(z_inv);
-            let zz = z_inv.__mul(z_inv);
-            let zzz = zz.__mul(z_inv);
-            let x3 = transcript[i].x3.__mul(zz);
-            let y3 = transcript[i].y3.__mul(zzz);
-            affine_transcript[i] = AffineTranscript { lambda, x3, y3 };
-        }
-
-        let P_affine = BN254::one();
-
-        let affine_point_table: PointTable<BN254_Fq> =
-            PointTable::<BN254_Fq>::new_with_hint::<BN254>(P_affine, affine_transcript);
-
-        for i in 0..8 {
-            let point: BN254 = affine_point_table.get::<BN254>(i);
-            point.validate_on_curve();
-        }
-    }
+    let R: BN254 = P.sub(Q);
+    assert(R.is_infinity == true);
 }
 
 #[test]
-fn test_bigcurve_sub_with_hint() {
+fn bigcurve_sub_with_hint() {
     let accumulator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,

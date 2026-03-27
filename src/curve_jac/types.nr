@@ -1,4 +1,4 @@
-use bignum::BigNum;
+use dep::bignum::BigNum;
 
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
 ///
@@ -22,10 +22,10 @@ use bignum::BigNum;
 ///
 /// # Note
 /// This approach is complex but necessary due to the high cost of generating modular inverses for witness generation.
-pub struct CurveJ<B, BigCurve> {
-    pub(crate) x: B,
-    pub(crate) y: B,
-    pub(crate) z: B,
+pub struct CurveJ<BN, BigCurve> {
+    pub(crate) x: BN,
+    pub(crate) y: BN,
+    pub(crate) z: BN,
     pub is_infinity: bool,
 }
 
@@ -35,19 +35,19 @@ pub struct CurveJ<B, BigCurve> {
 /// - `x3`, `y3`, `z3`: The output coordinates of the group operation in Jacobian form.
 /// - `lambda_numerator`: The numerator of the `lambda` term used in the group operation.
 ///   (The denominator is assumed to be `z3`.)
-pub struct JTranscript<B> {
-    pub(crate) lambda_numerator: B,
-    pub(crate) x3: B,
-    pub(crate) y3: B,
-    pub(crate) z3: B,
+pub struct JTranscript<BN> {
+    pub(crate) lambda_numerator: BN,
+    pub(crate) x3: BN,
+    pub(crate) y3: BN,
+    pub(crate) z3: BN,
 }
 
-impl<B> JTranscript<B>
+impl<BN> JTranscript<BN>
 where
-    B: BigNum,
+    BN: BigNum,
 {
     pub unconstrained fn new() -> Self {
-        JTranscript { lambda_numerator: B::zero(), x3: B::zero(), y3: B::zero(), z3: B::zero() }
+        JTranscript { lambda_numerator: BN::zero(), x3: BN::zero(), y3: BN::zero(), z3: BN::zero() }
     }
 }
 
@@ -63,25 +63,38 @@ where
 ///
 /// # Optimization
 /// If you have an array of `JTranscript` objects, you can convert them into `AffineTranscript` objects using only one modular inverse.
-pub struct AffineTranscript<B> {
-    pub lambda: B,
-    pub x3: B,
-    pub y3: B,
+pub struct AffineTranscript<BN> {
+    pub lambda: BN,
+    pub x3: BN,
+    pub y3: BN,
 }
 
-impl<B> AffineTranscript<B>
+impl<BN> AffineTranscript<BN>
 where
-    B: BigNum,
+    BN: BigNum,
 {
     pub(crate) fn new() -> Self {
-        AffineTranscript { lambda: B::zero(), x3: B::zero(), y3: B::zero() }
+        AffineTranscript { lambda: BN::zero(), x3: BN::zero(), y3: BN::zero() }
     }
 
-    pub unconstrained fn from_j(j_tx: JTranscript<B>) -> Self {
+    /// Convert a single `JTranscript` to `AffineTranscript` (unconstrained)
+    ///
+    /// Convenience wrapper around `from_jacobian_transcript` for a single entry.
+    pub unconstrained fn from_j(j_tx: JTranscript<BN>) -> Self {
         AffineTranscript::from_jacobian_transcript([j_tx])[0]
     }
 
-    pub unconstrained fn from_j_with_hint(j_tx: JTranscript<B>, inverse: B) -> AffineTranscript<B> {
+    /// Convert a `JTranscript` to `AffineTranscript` given a precomputed `Z3^-1` (unconstrained)
+    ///
+    /// Applies the Jacobian-to-affine conversion:
+    ///
+    ///     lambda = lambda_numerator * z_inv
+    ///     x3     = X3 * z_inv^2
+    ///     y3     = Y3 * z_inv^3
+    pub unconstrained fn from_j_with_hint(
+        j_tx: JTranscript<BN>,
+        inverse: BN,
+    ) -> AffineTranscript<BN> {
         let z_inv = inverse;
         let zz = z_inv.__mul(z_inv);
         let zzz = zz.__mul(z_inv);
@@ -91,18 +104,25 @@ where
         AffineTranscript { x3, y3, lambda }
     }
 
+    /// Batch-convert an array of `JTranscript` to `AffineTranscript` (unconstrained)
+    ///
+    /// ## Algorithm
+    ///
+    /// Uses Montgomery's batch inversion trick to compute all `Z3^-1` values
+    /// with a single modular inverse, then converts each entry to affine:
+    /// `lambda = lambda_numerator / Z3`, `x3 = X3 / Z3^2`, `y3 = Y3 / Z3^3`.
     pub(crate) unconstrained fn from_jacobian_transcript<let NumEntries: u32>(
-        j_tx: [JTranscript<B>; NumEntries],
-    ) -> [AffineTranscript<B>; NumEntries] {
-        let mut result: [AffineTranscript<B>; NumEntries] = [AffineTranscript::new(); NumEntries];
+        j_tx: [JTranscript<BN>; NumEntries],
+    ) -> [AffineTranscript<BN>; NumEntries] {
+        let mut result: [AffineTranscript<BN>; NumEntries] = [AffineTranscript::new(); NumEntries];
 
-        let mut inverses: [B; NumEntries] = [B::zero(); NumEntries];
+        let mut inverses: [BN; NumEntries] = [BN::zero(); NumEntries];
         for i in 0..j_tx.len() {
             inverses[i] = j_tx[i].z3;
         }
 
-        // tadaa
-        let inverses: [B; NumEntries] = bignum::bignum::batch_invert(inverses);
+        // Montgomery batch inversion: one modular inverse for all Z3 values
+        let inverses: [BN; NumEntries] = bignum::bignum::batch_invert(inverses);
 
         for i in 0..j_tx.len() {
             let z_inv = inverses[i];

@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-pub use dep::bignum::{Vesta_Fq, Vesta_Fr};
+use bignum::BigNum;
+pub use bignum::{Vesta_Fq, Vesta_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -89,10 +89,10 @@ mod test {
         let p_minus_4 = VestaScalar::from_bignum(p_minus_4_fr);
         let p_minus_5_fr = p_minus_4_fr - Vesta_Fr::one();
         let p_minus_5 = VestaScalar::from_bignum(p_minus_5_fr);
-        let mut scalars = [p_minus_4, p_minus_5];
+        let scalars = [p_minus_4, p_minus_5];
         let a = Vesta::one();
         let b = a.neg();
-        let mut points = [a, b];
+        let points = [a, b];
 
         let result = Vesta::evaluate_linear_expression(points, scalars, [Vesta::one().neg()]);
 

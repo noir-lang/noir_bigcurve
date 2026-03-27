@@ -35,7 +35,7 @@ unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ScalarField<N> {
     base4_slices[N - 1] = (nibbles[0] + 15) / 2;
 
     for i in 1..N {
-        let mut nibble: u8 = nibbles[i];
+        let nibble: u8 = nibbles[i];
         base4_slices[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
             base4_slices[N - 1 - i] += 1;
@@ -65,7 +65,7 @@ where
     for i in 1..N {
         let major_index = i / 30;
         let minor_index = i % 30;
-        let mut nibble: u8 = nibbles[major_index][minor_index];
+        let nibble: u8 = nibbles[major_index][minor_index];
         base4_slices[N - 1 - i] = (nibble + 15) / 2;
         if (nibble & 1 == 0) {
             base4_slices[N - 1 - i] += 1;
@@ -198,8 +198,8 @@ impl<let N: u32> ScalarField<N> {
     {
         x.validate_in_field();
         // Safety: separate verification
-        let mut slices_result = unsafe { get_wnaf_slices2(x) };
-        let mut slices = slices_result.base4_slices;
+        let slices_result = unsafe { get_wnaf_slices2(x) };
+        let slices = slices_result.base4_slices;
         let skew = slices_result.skew;
         for i in 0..N {
             (slices[i] as Field).assert_max_bit_size::<4>();
@@ -212,7 +212,7 @@ impl<let N: u32> ScalarField<N> {
             if (last_bits == 0) {
                 last_bits = 120;
             }
-            let mut last_nibbles = (last_bits / 4) + 1 as u64;
+            let last_nibbles = (last_bits / 4) + 1 as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
                 acc = acc + (slices[count] as u128) * 2 - 15;
@@ -249,7 +249,7 @@ impl<let N: u32> ScalarField<N> {
             if (last_bits == 0) {
                 last_bits = 120;
             }
-            let mut last_nibbles = (last_bits / 4) + 1 as u64;
+            let last_nibbles = (last_bits / 4) + 1 as u64;
             for _ in 0..last_nibbles {
                 acc = acc * 16;
                 acc = acc + (self.base4_slices[count] as u128) * 2 - 15;

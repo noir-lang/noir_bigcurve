@@ -17,7 +17,7 @@ pub(crate) mod curve_jac;
 // Exported through the `internal` submodule to make it clear they are not
 // intended for direct use by end users
 pub mod internal {
-    pub use dep::bignum::bignum::evaluate_quadratic_expression;
+    pub use bignum::bignum::evaluate_quadratic_expression;
 
     pub use crate::ops::msm::evaluate_linear_expression;
     pub use crate::ops::msm::get_mul_transcript;

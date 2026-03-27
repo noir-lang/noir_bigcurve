@@ -1,4 +1,4 @@
-use dep::bignum::BigNum;
+use bignum::BigNum;
 
 /// CurveJ represents a Short Weierstrass elliptic curve using Jacobian coordinates.
 ///

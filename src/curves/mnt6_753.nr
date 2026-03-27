@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-pub use dep::bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use bignum::BigNum;
+pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -124,16 +124,16 @@ mod test {
 
     #[test]
     fn test_msm() {
-        let mut four = MNT6_753_Fr::from(4);
+        let four = MNT6_753_Fr::from(4);
 
         let p_minus_4_fr = MNT6_753_Fr::modulus() - four;
         let p_minus_4 = MNT6_753Scalar::from_bignum(p_minus_4_fr);
         let p_minus_5_fr = p_minus_4_fr - MNT6_753_Fr::one();
         let p_minus_5 = MNT6_753Scalar::from_bignum(p_minus_5_fr);
-        let mut scalars = [p_minus_4, p_minus_5];
+        let scalars = [p_minus_4, p_minus_5];
         let a = MNT6_753::one();
         let b = a.neg();
-        let mut points = [a, b];
+        let points = [a, b];
 
         let result = MNT6_753::evaluate_linear_expression(points, scalars, [MNT6_753::one().neg()]);
 

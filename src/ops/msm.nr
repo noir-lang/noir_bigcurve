@@ -6,7 +6,7 @@ use crate::ops::affine::{
 };
 use crate::ops::point_table::PointTable;
 use crate::scalar_field::ScalarField;
-use dep::bignum::BigNum;
+use bignum::BigNum;
 
 /// Multiplies a point by a scalar field value, returning the resulting point.
 pub fn msm<P: BigCurve<B>, B: BigNum, let NScalarSlices: u32, let NMuls: u32>(

@@ -2,7 +2,7 @@ use crate::bigcurve::BigCurve;
 use crate::curve_jac::point_table::PointTable;
 use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
 use crate::scalar_field::ScalarField;
-use dep::bignum::BigNum;
+use bignum::BigNum;
 
 /**
  * @brief construct from BigCurve
@@ -247,7 +247,7 @@ where
         p2: Self,
         predicate: bool,
     ) -> (Self, JTranscript<B>) {
-        let mut operand_output = self.incomplete_add(p2);
+        let operand_output = self.incomplete_add(p2);
         let result = if predicate { operand_output.0 } else { self };
         (result, operand_output.1)
     }
@@ -290,7 +290,7 @@ where
             [],
             [],
         );
-        let mut (_, X3): (B, B) = bignum::bignum::compute_quadratic_expression(
+        let (_, X3): (B, B) = bignum::bignum::compute_quadratic_expression(
             [[XX_mul_3]],
             [[false]],
             [[XX_mul_3]],

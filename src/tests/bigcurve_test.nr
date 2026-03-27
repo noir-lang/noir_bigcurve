@@ -1,7 +1,7 @@
-use dep::bignum::BigNum;
-use dep::bignum::BN254_Fq;
-use dep::bignum::MNT6_753_Fq;
-use dep::bignum::Secp256r1_Fq;
+use bignum::BigNum;
+use bignum::BN254_Fq;
+use bignum::MNT6_753_Fq;
+use bignum::Secp256r1_Fq;
 use std::ops::{Add, Neg, Sub};
 
 use crate::bigcurve::BigCurve;

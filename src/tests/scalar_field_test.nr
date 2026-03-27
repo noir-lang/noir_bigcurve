@@ -56,7 +56,7 @@ fn test_get_modulus_slices_fail_64() {
         10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10,
         12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
     ];
-    let mut result: ScalarField<64> = ScalarField { base4_slices: modulus_slices, skew: true };
+    let result: ScalarField<64> = ScalarField { base4_slices: modulus_slices, skew: true };
     let _ = result.into();
 }
 #[test(should_fail_with = "Reconstructed number is greater than modulus")]
@@ -67,7 +67,7 @@ fn test_get_modulus_slices_fail_65() {
         0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0, 15, 10,
         12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
     ];
-    let mut result: ScalarField<65> = ScalarField { base4_slices: modulus_slices2, skew: true };
+    let result: ScalarField<65> = ScalarField { base4_slices: modulus_slices2, skew: true };
     let _ = result.into();
 }
 
@@ -79,6 +79,6 @@ fn test_get_modulus_slices_fail_68() {
         0, 12, 0, 10, 12, 2, 14, 9, 4, 1, 9, 15, 4, 2, 4, 3, 12, 13, 12, 11, 8, 4, 8, 10, 1, 15, 0,
         15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
     ];
-    let mut result: ScalarField<68> = ScalarField { base4_slices: modulus_slices3, skew: true };
+    let result: ScalarField<68> = ScalarField { base4_slices: modulus_slices3, skew: true };
     let _ = result.into();
 }

@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-pub use dep::bignum::{BLS12_377_Fq, BLS12_377_Fr};
+use bignum::BigNum;
+pub use bignum::{BLS12_377_Fq, BLS12_377_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -106,10 +106,10 @@ mod test {
         let p_minus_4 = BLS12_377Scalar::from_bignum(p_minus_4_fr);
         let p_minus_5_fr = p_minus_4_fr - BLS12_377_Fr::one();
         let p_minus_5 = BLS12_377Scalar::from_bignum(p_minus_5_fr);
-        let mut scalars = [p_minus_4, p_minus_5];
+        let scalars = [p_minus_4, p_minus_5];
         let a = BLS12_377::one();
         let b = a.neg();
-        let mut points = [a, b];
+        let points = [a, b];
 
         let result =
             BLS12_377::evaluate_linear_expression(points, scalars, [BLS12_377::one().neg()]);

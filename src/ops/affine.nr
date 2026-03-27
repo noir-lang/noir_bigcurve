@@ -1,7 +1,7 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
-use dep::bignum::BigNum;
-use dep::bignum::bignum::evaluate_quadratic_expression;
+use bignum::BigNum;
+use bignum::bignum::evaluate_quadratic_expression;
 
 /// Doubles a point using an `AffineTranscript` that contains inverses and output witnesses.
 ///
@@ -250,7 +250,7 @@ pub fn add_with_hint<B: BigNum, P: BigCurve<B>>(
     // validate the provided value of `lambda` is correct
     // if double: lambda * (y1 + y1) + x1 * (-x1 -x1 -x1) - a = 0 => lambda * 2y - 3x*x = 0
     // if add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0 => lambda * (x2 - x1) - (y2 - y1) = 0
-    let mut a_term = if x_equal_predicate
+    let a_term = if x_equal_predicate
         & y_equal_predicate
         & !point.is_infinity()
         & !other.is_infinity() {

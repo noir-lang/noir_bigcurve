@@ -1,4 +1,4 @@
-use dep::bignum::BigNum;
+use bignum::BigNum;
 pub use bignum::{Pallas_Fq, Pallas_Fr};
 
 use crate::bigcurve::BigCurve;
@@ -85,15 +85,15 @@ mod test {
 
     #[test]
     fn test_msm() {
-        let mut four = Pallas_Fr::from(4);
+        let four = Pallas_Fr::from(4);
         let p_minus_4_fr = Pallas_Fr::modulus() - four;
         let p_minus_4 = PallasScalar::from_bignum(p_minus_4_fr);
         let p_minus_5_fr = p_minus_4_fr - Pallas_Fr::one();
         let p_minus_5 = PallasScalar::from_bignum(p_minus_5_fr);
-        let mut scalars = [p_minus_4, p_minus_5];
+        let scalars = [p_minus_4, p_minus_5];
         let a = Pallas::one();
         let b = a.neg();
-        let mut points = [a, b];
+        let points = [a, b];
 
         let result = Pallas::evaluate_linear_expression(points, scalars, [Pallas::one().neg()]);
 

@@ -1,5 +1,5 @@
-use dep::bignum::BigNum;
-pub use dep::bignum::{Secp256r1_Fq, Secp256r1_Fr};
+use bignum::BigNum;
+pub use bignum::{Secp256r1_Fq, Secp256r1_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -111,10 +111,10 @@ mod test {
         let p_minus_4 = Secp256r1Scalar::from_bignum(p_minus_4_fr);
         let p_minus_5_fr = p_minus_4_fr - Secp256r1_Fr::one();
         let p_minus_5 = Secp256r1Scalar::from_bignum(p_minus_5_fr);
-        let mut scalars = [p_minus_4, p_minus_5];
+        let scalars = [p_minus_4, p_minus_5];
         let a = Secp256r1::one();
         let b = a.neg();
-        let mut points = [a, b];
+        let points = [a, b];
 
         let result =
             Secp256r1::evaluate_linear_expression(points, scalars, [Secp256r1::one().neg()]);

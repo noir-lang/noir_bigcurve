@@ -1,3 +1,5 @@
+pub(crate) mod constants;
+
 mod bigcurve;
 mod scalar_field;
 

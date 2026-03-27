@@ -11,42 +11,52 @@ use bignum::BigNum;
 /// For each remaining slice (starting from the most significant), the accumulator is doubled 4 times,
 /// then `T[slice[i]]` is added to the accumulator.
 ///
-/// For small multiscalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
-pub struct PointTable<B> {
-    x: [B; 16],
-    y: [B; 16],
-    z: [B; 16],
-    pub(crate) transcript: [JTranscript<B>; 8],
+/// For small multi-scalar multiplications (fewer than 512 points), this approach minimizes the number of addition operations.
+pub struct PointTable<BN> {
+    x: [BN; 16],
+    y: [BN; 16],
+    z: [BN; 16],
+    pub(crate) transcript: [JTranscript<BN>; 8],
 }
 
-impl<B> PointTable<B>
+impl<BN> PointTable<BN>
 where
-    B: BigNum,
+    BN: BigNum,
 {
     pub(crate) fn empty() -> Self {
+        // Safety: empty table generation
         PointTable {
-            x: [B::zero(); 16],
-            y: [B::zero(); 16],
-            z: [B::zero(); 16],
+            x: [BN::zero(); 16],
+            y: [BN::zero(); 16],
+            z: [BN::zero(); 16],
             transcript: [unsafe { JTranscript::new() }; 8],
         }
     }
-    /**
-     * @brief make a new PointTable from an input point
-     * @description we use "windowed non-adjacent form" representation 
-     * to reduce the number of group operations required for the table
-     * [-15P, -13P, ..., 15P] requires 8 group operations
-     * [0, P, ..., 15P] requires 14 group operations.
-     * group operations are expensive!
-     **/
-    pub(crate) unconstrained fn new<Curve>(P: CurveJ<B, Curve>) -> Self
+
+    /// Build a `PointTable` from a single input point `P` (unconstrained)
+    ///
+    /// ## Algorithm
+    ///
+    /// Exploits the symmetry of odd multiples: `-kP` shares the same `(X, Z)` as `kP`
+    /// with negated `Y`. This halves the required group operations:
+    ///
+    ///   1. Compute `D = 2P` (one doubling)
+    ///   2. Set `table[8] = P` (i.e. `1*P`), `table[7] = -P`
+    ///   3. For `i = 1..8`: `A = D + A`, set `table[8+i] = A`, `table[7-i] = -A`
+    ///
+    /// This fills 16 entries `[-15P, -13P, ..., -P, P, ..., 15P]` with only
+    /// 8 group operations (1 doubling + 7 additions), versus 14 for a naive table.
+    ///
+    /// The wNAF slice value `s` maps to table index `(s + 15) / 2`:
+    ///   `s = -15 -> idx 0`, `s = -13 -> idx 1`, ..., `s = 15 -> idx 15`.
+    pub(crate) unconstrained fn new<Curve>(P: CurveJ<BN, Curve>) -> Self
     where
-        Curve: BigCurve<B>,
+        Curve: BigCurve<BN>,
     {
         let mut result = PointTable {
-            x: [B::zero(); 16],
-            y: [B::zero(); 16],
-            z: [B::zero(); 16],
+            x: [BN::zero(); 16],
+            y: [BN::zero(); 16],
+            z: [BN::zero(); 16],
             transcript: [JTranscript::new(); 8],
         };
         let op = P.dbl();
@@ -75,10 +85,10 @@ where
         result
     }
 
-    /**
-     * @brief get a value out of the lookup table
-     **/
-    pub(crate) unconstrained fn get<Curve>(self, idx: u32) -> CurveJ<B, Curve> {
+    /// Look up a point by wNAF table index (unconstrained)
+    ///
+    /// `idx` is `(wnaf_slice + 15) / 2`, ranging from 0 (`-15P`) to 15 (`+15P`).
+    pub(crate) unconstrained fn get<Curve>(self, idx: u32) -> CurveJ<BN, Curve> {
         CurveJ { x: self.x[idx], y: self.y[idx], z: self.z[idx], is_infinity: false }
     }
 }

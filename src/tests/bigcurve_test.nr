@@ -31,7 +31,7 @@ unconstrained fn get_transcript(
     transcript
 }
 
-unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
+unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
     let One = BN254J::one();
     let Two = BN254J {
         x: BN254_Fq::from_limbs([
@@ -55,7 +55,7 @@ unconstrained fn test_msm_jac_impl(scalars: [ScalarField<64>; 2]) {
 // ------------------------------ JACOBIAN ARITHMETIC TESTS ------------------------------
 
 #[test]
-fn test_add_dbl() {
+fn add_dbl() {
     let P = BN254J::one();
     // Safety: test code
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
@@ -65,7 +65,7 @@ fn test_add_dbl() {
 }
 
 #[test]
-fn test_transcript() {
+fn transcript() {
     // Safety: test code
     unsafe {
         let P = BN254J::one();
@@ -106,7 +106,7 @@ fn test_transcript() {
 }
 
 #[test]
-fn test_double_with_hint() {
+fn double_with_hint() {
     // Safety: test code
     unsafe {
         let P = BN254J::one();
@@ -137,7 +137,7 @@ fn test_double_with_hint() {
 }
 
 #[test]
-fn test_double_with_hint_secp256r1() {
+fn double_with_hint_secp256r1() {
     // Safety: test code
     unsafe {
         let P = Secp256r1J::one();
@@ -168,7 +168,7 @@ fn test_double_with_hint_secp256r1() {
 }
 
 #[test]
-fn test_incomplete_add_with_hint() {
+fn incomplete_add_with_hint() {
     // Safety: test code
     unsafe {
         let P = BN254J::one();
@@ -225,7 +225,7 @@ fn test_incomplete_add_with_hint() {
 // ------------------------------ POINT TABLE TESTS ------------------------------
 
 #[test]
-fn test_make_table() {
+fn make_table() {
     // Safety: test code
     unsafe {
         let P: BN254J = BN254J::one();
@@ -272,7 +272,7 @@ fn test_make_table() {
 // ------------------------------ SCALAR MULTIPLICATION TESTS ------------------------------
 
 #[test]
-fn test_mul() {
+fn mul() {
     let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(
@@ -303,7 +303,7 @@ fn test_mul() {
 }
 
 #[test]
-fn test_mul_by_0() {
+fn mul_by_0() {
     let P = BN254::one();
 
     let scalar: ScalarField<64> = ScalarField::from(0);
@@ -317,7 +317,7 @@ fn test_mul_by_0() {
 }
 
 #[test]
-fn test_mul_a_point_at_infinity() {
+fn mul_a_point_at_infinity() {
     let P = BN254::point_at_infinity();
 
     let scalar: ScalarField<64> = ScalarField::from(
@@ -331,7 +331,7 @@ fn test_mul_a_point_at_infinity() {
 }
 
 #[test]
-fn test_mul_jac() {
+fn mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
     let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
 
@@ -345,7 +345,7 @@ fn test_mul_jac() {
 }
 
 #[test]
-fn test_msm_jac() {
+fn msm_jac() {
     let p_minus_2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff; // p - 2
     let p_minus_6 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffffb; // p - 6
     let scalar2: ScalarField<64> = ScalarField::from(p_minus_2);
@@ -353,14 +353,14 @@ fn test_msm_jac() {
 
     // Safety: test code
     unsafe {
-        test_msm_jac_impl([scalar6, scalar2]);
+        msm_jac_impl([scalar6, scalar2]);
     }
 }
 
 // ------------------------------ ADDITION TESTS ------------------------------
 
 #[test]
-fn test_constrained_add() {
+fn constrained_add() {
     // Safety: test code
     unsafe {
         let P = BN254::one();
@@ -420,7 +420,7 @@ fn test_constrained_add() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add() {
+unconstrained fn unconstrained_add() {
     let P = BN254::one();
 
     // Q = 2P
@@ -448,7 +448,7 @@ unconstrained fn test_unconstrained_add() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add_doubling() {
+unconstrained fn unconstrained_add_doubling() {
     // P + P
     let P = BN254::one();
     let Q = BN254::one();
@@ -459,7 +459,7 @@ unconstrained fn test_unconstrained_add_doubling() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add_one_side_infinity() {
+unconstrained fn unconstrained_add_one_side_infinity() {
     //Q + infinity and infinity + Q
     let Q = BN254::one();
     let P = BN254::point_at_infinity();
@@ -471,7 +471,7 @@ unconstrained fn test_unconstrained_add_one_side_infinity() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_add_infinity() {
+unconstrained fn unconstrained_add_infinity() {
     // P = -Q
     let P = BN254::one();
     let Q = P.neg();
@@ -490,7 +490,7 @@ unconstrained fn test_unconstrained_add_infinity() {
 // ------------------------------ SUBTRACTION TESTS ------------------------------
 
 #[test]
-fn test_sub() {
+fn sub() {
     // Safety: test code
     unsafe {
         let P = BN254::one();
@@ -550,7 +550,7 @@ fn test_sub() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub() {
+unconstrained fn unconstrained_sub() {
     let P = BN254::one();
 
     // Q = 2P
@@ -578,7 +578,7 @@ unconstrained fn test_unconstrained_sub() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub_doubling() {
+unconstrained fn unconstrained_sub_doubling() {
     // doubling
     let P = BN254::one();
     let Q = BN254::one();
@@ -590,7 +590,7 @@ unconstrained fn test_unconstrained_sub_doubling() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub_one_side_infinity() {
+unconstrained fn unconstrained_sub_one_side_infinity() {
     let P = BN254::point_at_infinity();
     let Q = BN254::one();
 
@@ -606,7 +606,7 @@ unconstrained fn test_unconstrained_sub_one_side_infinity() {
 }
 
 #[test]
-unconstrained fn test_unconstrained_sub_infinity() {
+unconstrained fn unconstrained_sub_infinity() {
     // P - P = infinity
     let P = BN254::one();
     let Q = BN254::one();
@@ -624,7 +624,7 @@ unconstrained fn test_unconstrained_sub_infinity() {
 // ------------------------------ REGRESSION TESTS ------------------------------
 
 #[test]
-fn test_offset_foo() {
+fn offset_foo() {
     let P = BN254 {
         x: BN254_Fq::from_limbs([
             0x0b672a3489895d47157f096e077348,
@@ -657,7 +657,7 @@ fn test_offset_foo() {
 }
 
 #[test]
-fn test_bigcurve_sub_with_hint() {
+fn bigcurve_sub_with_hint() {
     let accumulator = MNT6_753 {
         x: MNT6_753_Fq::from_limbs([
             0x5b6ad7b65e3a86239c2efbdb300b8d,

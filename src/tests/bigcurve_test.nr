@@ -121,11 +121,14 @@ fn test_mul_a_point_at_infinity() {
 #[test]
 fn test_mul_jac() {
     let scalar_multiplier = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000; // p - 1
-    let P: CurveJ<BN254_Fq, BN254> = BN254J::one();
+    // Safety: test code
+    let P: CurveJ<BN254_Fq, BN254> = unsafe { BN254J::one() };
 
     let scalar: ScalarField<64> = ScalarField::from(scalar_multiplier);
 
+    // Safety: test code
     let expected = unsafe { P.incomplete_add(P.dbl().0.neg()).0 };
+    // Safety: test code
     let result = unsafe { evaluate_mul(P, scalar, expected, P) };
     assert(result == true);
 }
@@ -165,8 +168,11 @@ fn test_msm_jac() {
 
 #[test]
 fn test_add_dbl() {
-    let P = BN254J::one();
+    // Safety: test code
+    let P = unsafe { BN254J::one() };
+    // Safety: test code
     let lhs = unsafe { ((P.dbl().0).dbl()).0 };
+    // Safety: test code
     let rhs = unsafe { P.dbl().0.incomplete_add(P).0.incomplete_add(P).0 };
     assert(lhs == rhs);
 }

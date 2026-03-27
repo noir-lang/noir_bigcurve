@@ -269,7 +269,7 @@ where
         let X = self.x;
         let Y = self.y;
         let Z = self.z;
-        
+
         // YY_mul_2 = Y * (Y + Y)
         let (_, YY_mul_2): (BN, BN) = bignum::bignum::compute_quadratic_expression(
             [[Y]],
@@ -295,7 +295,7 @@ where
             let AZZZZ = ZZ.__mul(ZZ).__mul(Curve::a());
             XX_mul_3 = XX_mul_3.__add(AZZZZ);
         }
-        
+
         // D = (X + X) * YY_mul_2
         let (_, D): (BN, BN) = bignum::bignum::compute_quadratic_expression(
             [[X, X]],
@@ -442,8 +442,7 @@ where
     pub(crate) unconstrained fn msm_partial<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
         points: [Self; Size],
         scalars: [ScalarField<NScalarSlices>; Size],
-    ) -> (Self, [JTranscript<BN>; TranscriptEntries])
-{
+    ) -> (Self, [JTranscript<BN>; TranscriptEntries]) {
         let mut transcript: [JTranscript<BN>; TranscriptEntries] =
             [JTranscript::new(); TranscriptEntries];
         let mut tables: [PointTable<BN>; Size] = [PointTable::empty(); Size];

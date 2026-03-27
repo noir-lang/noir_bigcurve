@@ -91,7 +91,10 @@ where
     ///     lambda = lambda_numerator * z_inv
     ///     x3     = X3 * z_inv^2
     ///     y3     = Y3 * z_inv^3
-    pub unconstrained fn from_j_with_hint(j_tx: JTranscript<BN>, inverse: BN) -> AffineTranscript<BN> {
+    pub unconstrained fn from_j_with_hint(
+        j_tx: JTranscript<BN>,
+        inverse: BN,
+    ) -> AffineTranscript<BN> {
         let z_inv = inverse;
         let zz = z_inv.__mul(z_inv);
         let zzz = zz.__mul(z_inv);

@@ -125,45 +125,14 @@ pub(crate) fn incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
 /// Conditionally add two points using incomplete formulae (constrained)
 ///
 /// If `predicate` is true, returns `point + other`. Otherwise returns `point` unchanged.
-///
-/// When `predicate` is false, substitutes dummy values `(0,0) + (1,0)` with
-/// `lambda=0, x3=-1, y3=0` that satisfy all constraints of `incomplete_add_with_hint`.
+/// Callers guarantee `point.x != other.x` via the offset generator.
 pub(crate) fn conditional_incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
     predicate: bool,
     transcript: AffineTranscript<BN>,
 ) -> P {
-    // When predicate is false, `incomplete_add_with_hint` still enforces x1 != x2.
-    // Dummy values that satisfy all four constraints:
-    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
-    //
-    // 1. x1 != x2:                              0 != 1
-    // 2. lambda * (x2 - x1) - (y2 - y1) = 0:    0 * (1 - 0) - (0 - 0) = 0
-    // 3. lambda^2 - x3 - x2 - x1 = 0:           0 - (-1) - 1 - 0 = 0
-    // 4. lambda * (x3 - x1) + y3 + y1 = 0:      0 * (-1 - 0) + 0 + 0 = 0
-    let x1: BN = if predicate { point.x() } else { BN::zero() };
-    let y1: BN = if predicate { point.y() } else { BN::zero() };
-    let x2: BN = if predicate { other.x() } else { BN::one() };
-    let y2: BN = if predicate { other.y() } else { BN::zero() };
-    let lambda: BN = if predicate {
-        transcript.lambda
-    } else {
-        BN::zero()
-    };
-    let x3: BN = if predicate {
-        transcript.x3
-    } else {
-        BN::one().neg()
-    };
-    let y3: BN = if predicate { transcript.y3 } else { BN::zero() };
-
-    let eff_point: P = P::from_coordinates(x1, y1, false);
-    let eff_other: P = P::from_coordinates(x2, y2, false);
-    let eff_transcript: AffineTranscript<BN> = AffineTranscript { lambda, x3, y3 };
-
-    let operand_output: P = incomplete_add_with_hint::<BN, P>(eff_point, eff_other, eff_transcript);
-
+    let operand_output: P = incomplete_add_with_hint::<BN, P>(point, other, transcript);
     if predicate {
         operand_output
     } else {
@@ -174,46 +143,14 @@ pub(crate) fn conditional_incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
 /// Conditionally subtract a point using incomplete formulae (constrained)
 ///
 /// If `predicate` is true, returns `point - other`. Otherwise returns `point` unchanged.
-///
-/// When `predicate` is false, substitutes dummy values `(0,0) - (1,0)` with
-/// `lambda=0, x3=-1, y3=0` that satisfy all constraints of `incomplete_subtract_with_hint`.
+/// Callers guarantee `point.x != other.x` via the offset generator.
 pub(crate) fn conditional_incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
     predicate: bool,
     transcript: AffineTranscript<BN>,
 ) -> P {
-    // When predicate is false, `incomplete_subtract_with_hint` still enforces x1 != x2.
-    // Dummy values that satisfy all four constraints:
-    //   eff_point = (0, 0), eff_other = (1, 0), eff_transcript = {lambda: 0, x3: -1, y3: 0}
-    //
-    // 1. x1 != x2:                            0 != 1
-    // 2. lambda * (x2 - x1) + y2 + y1 = 0:    0 * (1 - 0) + 0 + 0 = 0
-    // 3. lambda^2 - x3 - x2 - x1 = 0:         0 - (-1) - 1 - 0 = 0
-    // 4. lambda * (x3 - x1) + y3 + y1 = 0:    0 * (-1 - 0) + 0 + 0 = 0
-    let x1: BN = if predicate { point.x() } else { BN::zero() };
-    let y1: BN = if predicate { point.y() } else { BN::zero() };
-    let x2: BN = if predicate { other.x() } else { BN::one() };
-    let y2: BN = if predicate { other.y() } else { BN::zero() };
-    let lambda: BN = if predicate {
-        transcript.lambda
-    } else {
-        BN::zero()
-    };
-    let x3: BN = if predicate {
-        transcript.x3
-    } else {
-        BN::one().neg()
-    };
-    let y3: BN = if predicate { transcript.y3 } else { BN::zero() };
-
-    let eff_point: P = P::from_coordinates(x1, y1, false);
-    let eff_other: P = P::from_coordinates(x2, y2, false);
-    let eff_transcript: AffineTranscript<BN> = AffineTranscript { lambda, x3, y3 };
-
-    let operand_output: P =
-        incomplete_subtract_with_hint::<BN, P>(eff_point, eff_other, eff_transcript);
-
+    let operand_output: P = incomplete_subtract_with_hint::<BN, P>(point, other, transcript);
     if predicate {
         operand_output
     } else {

@@ -31,9 +31,9 @@ unconstrained fn get_transcript(
     transcript
 }
 
-unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
-    let One = BN254J::one();
-    let Two = BN254J {
+/// BN254 generator doubled: Q = 2 * G
+fn bn254_double_generator() -> BN254 {
+    BN254 {
         x: BN254_Fq::from_limbs([
             0x7816a916871ca8d3c208c16d87cfd3,
             0x44e72e131a029b85045b68181585d9,
@@ -44,9 +44,27 @@ unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
             0x738c0e0a7c92e7845f96b2ae9c0a68,
             0x15ed,
         ]),
-        z: BigNum::one(),
         is_infinity: false,
-    };
+    }
+}
+
+/// Compute the affine add transcript for P + Q in Jacobian coordinates
+unconstrained fn add_transcript(P_affine: BN254, Q_affine: BN254) -> AffineTranscript<BN254_Fq> {
+    let P = BN254J::from(P_affine);
+    let Q = BN254J::from(Q_affine);
+    AffineTranscript::from_j(P.incomplete_add(Q).1)
+}
+
+/// Compute the affine subtract transcript for P - Q in Jacobian coordinates
+unconstrained fn sub_transcript(P_affine: BN254, Q_affine: BN254) -> AffineTranscript<BN254_Fq> {
+    let P = BN254J::from(P_affine);
+    let Q = BN254J::from(Q_affine);
+    AffineTranscript::from_j(P.sub(Q).1)
+}
+
+unconstrained fn msm_jac_impl(scalars: [ScalarField<64>; 2]) {
+    let One = BN254J::one();
+    let Two = BN254J::from(bn254_double_generator());
     let result = BN254J::msm([One, Two.neg()], scalars);
     let expected = Two.neg();
     assert(result.0 == expected);
@@ -65,7 +83,7 @@ fn add_dbl() {
 }
 
 #[test]
-fn transcript() {
+fn dbl_transcript_has_correct_lambda() {
     // Safety: test code
     unsafe {
         let P = BN254J::one();
@@ -80,26 +98,31 @@ fn transcript() {
         let rhs = (P.x.__add(P.x).__add(P.x)).__mul(P.x);
 
         assert(lhs == rhs);
+    }
+}
 
-        let X2 = P2.1.x3;
-        let Y2 = P2.1.y3;
+#[test]
+fn add_transcript_has_correct_lambda() {
+    // Safety: test code
+    unsafe {
+        let P = BN254J::one();
+
+        let P2 = P.dbl();
+
+        let Z_inverse = P2.1.z3.__invmod();
         let ZZ = Z_inverse.__mul(Z_inverse);
         let ZZZ = ZZ.__mul(Z_inverse);
 
-        let x2 = X2.__mul(ZZ);
-        let y2 = Y2.__mul(ZZZ);
+        let x2 = P2.1.x3.__mul(ZZ);
+        let y2 = P2.1.y3.__mul(ZZZ);
 
-        // ### test add transcript
         let P3 = P.incomplete_add(P2.0);
         let Z_inverse = P3.1.z3.__invmod();
 
         let lambda = P3.1.lambda_numerator.__mul(Z_inverse);
 
-        let x1 = P.x;
-        let y1 = P.y;
-
-        let lhs = lambda.__mul(x2.__sub(x1));
-        let rhs = y2.__sub(y1);
+        let lhs = lambda.__mul(x2.__sub(P.x));
+        let rhs = y2.__sub(P.y);
 
         assert(lhs == rhs);
     }
@@ -174,19 +197,8 @@ fn incomplete_add_with_hint() {
         let P = BN254J::one();
 
         // Q = 2P
-        let Q_affine = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
+        let Q_affine = bn254_double_generator();
+
         let Q = BN254J::from(Q_affine);
         let R = P.incomplete_add(Q);
 
@@ -213,7 +225,14 @@ fn incomplete_add_with_hint() {
 
         assert(P2_affine.x == x3);
         assert(P2_affine.y == y3);
+    }
+}
 
+#[test]
+fn incomplete_add_matches_repeated_doubling() {
+    // 4P via doubling == P + P + P + P via incomplete_add
+    // Safety: test code
+    unsafe {
         let P = BN254J::one();
 
         let lhs = P.dbl().0.dbl().0;
@@ -223,155 +242,71 @@ fn incomplete_add_with_hint() {
 }
 
 #[test]
-fn conditional_incomplete_add_with_hint_predicate_true() {
+fn conditional_incomplete_add_returns_sum_when_predicate_true() {
+    let P_affine = BN254::one();
+    let Q_affine = bn254_double_generator();
     // Safety: test code
-    unsafe {
-        let P_affine = BN254::one();
+    let transcript = unsafe { add_transcript(P_affine, Q_affine) };
 
-        // Q = 2P
-        let Q_affine = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
-
-        let P = BN254J::from(P_affine);
-        let Q = BN254J::from(Q_affine);
-        let R = P.incomplete_add(Q);
-        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
-
-        // predicate = true: should return P + Q
-        let result_true = crate::ops::affine::conditional_incomplete_add_with_hint::<BN254_Fq, BN254>(
-            P_affine,
-            Q_affine,
-            true,
-            transcript,
-        );
-        assert(result_true.x == transcript.x3);
-        assert(result_true.y == transcript.y3);
-    }
+    let result = crate::ops::affine::conditional_incomplete_add_with_hint::<BN254_Fq, BN254>(
+        P_affine,
+        Q_affine,
+        true,
+        transcript,
+    );
+    assert(result.x == transcript.x3);
+    assert(result.y == transcript.y3);
 }
 
 #[test]
-fn conditional_incomplete_add_with_hint_predicate_false() {
+fn conditional_incomplete_add_returns_lhs_when_predicate_false() {
+    let P_affine = BN254::one();
+    let Q_affine = bn254_double_generator();
     // Safety: test code
-    unsafe {
-        let P_affine = BN254::one();
+    let transcript = unsafe { add_transcript(P_affine, Q_affine) };
 
-        // Q = 2P
-        let Q_affine = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
-
-        let P = BN254J::from(P_affine);
-        let Q = BN254J::from(Q_affine);
-        let R = P.incomplete_add(Q);
-        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
-
-        // predicate = false: should return P unchanged
-        let result_false = crate::ops::affine::conditional_incomplete_add_with_hint::<BN254_Fq, BN254>(
-            P_affine,
-            Q_affine,
-            false,
-            transcript,
-        );
-        assert(result_false.x == P_affine.x);
-        assert(result_false.y == P_affine.y);
-    }
+    let result = crate::ops::affine::conditional_incomplete_add_with_hint::<BN254_Fq, BN254>(
+        P_affine,
+        Q_affine,
+        false,
+        transcript,
+    );
+    assert(result.x == P_affine.x);
+    assert(result.y == P_affine.y);
 }
 
 #[test]
-fn conditional_incomplete_subtract_with_hint_predicate_true() {
+fn conditional_incomplete_subtract_returns_difference_when_predicate_true() {
+    let P_affine = BN254::one();
+    let Q_affine = bn254_double_generator();
     // Safety: test code
-    unsafe {
-        let P_affine = BN254::one();
+    let transcript = unsafe { sub_transcript(P_affine, Q_affine) };
 
-        // Q = 2P
-        let Q_affine = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
-
-        let P = BN254J::from(P_affine);
-        let Q = BN254J::from(Q_affine);
-        let R = P.sub(Q);
-        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
-
-        // predicate = true: should return P - Q
-        let result_true = crate::ops::affine::conditional_incomplete_subtract_with_hint::<BN254_Fq, BN254>(
-            P_affine,
-            Q_affine,
-            true,
-            transcript,
-        );
-        assert(result_true.x == transcript.x3);
-        assert(result_true.y == transcript.y3);
-    }
+    let result = crate::ops::affine::conditional_incomplete_subtract_with_hint::<BN254_Fq, BN254>(
+        P_affine,
+        Q_affine,
+        true,
+        transcript,
+    );
+    assert(result.x == transcript.x3);
+    assert(result.y == transcript.y3);
 }
 
 #[test]
-fn conditional_incomplete_subtract_with_hint_predicate_false() {
+fn conditional_incomplete_subtract_returns_lhs_when_predicate_false() {
+    let P_affine = BN254::one();
+    let Q_affine = bn254_double_generator();
     // Safety: test code
-    unsafe {
-        let P_affine = BN254::one();
+    let transcript = unsafe { sub_transcript(P_affine, Q_affine) };
 
-        // Q = 2P
-        let Q_affine = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
-
-        let P = BN254J::from(P_affine);
-        let Q = BN254J::from(Q_affine);
-        let R = P.sub(Q);
-        let transcript: AffineTranscript<BN254_Fq> = AffineTranscript::from_j(R.1);
-
-        // predicate = false: should return P unchanged
-        let result_false = crate::ops::affine::conditional_incomplete_subtract_with_hint::<BN254_Fq, BN254>(
-            P_affine,
-            Q_affine,
-            false,
-            transcript,
-        );
-        assert(result_false.x == P_affine.x);
-        assert(result_false.y == P_affine.y);
-    }
+    let result = crate::ops::affine::conditional_incomplete_subtract_with_hint::<BN254_Fq, BN254>(
+        P_affine,
+        Q_affine,
+        false,
+        transcript,
+    );
+    assert(result.x == P_affine.x);
+    assert(result.y == P_affine.y);
 }
 
 // ------------------------------ POINT TABLE TESTS ------------------------------
@@ -435,20 +370,8 @@ fn mul() {
 
     let result = crate::ops::msm::mul_with_hint::<64, 326, BN254_Fq, BN254>(P, scalar, transcript);
 
-    // -2
-    let mut expected = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x7816a916871ca8d3c208c16d87cfd3,
-            0x44e72e131a029b85045b68181585d9,
-            0x0306,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-            0x738c0e0a7c92e7845f96b2ae9c0a68,
-            0x15ed,
-        ]),
-        is_infinity: false,
-    };
+    // -2G
+    let mut expected = bn254_double_generator();
     expected.y = BigNum::zero() - expected.y;
     assert(result.x == expected.x);
     assert(result.y == expected.y);
@@ -512,25 +435,11 @@ fn msm_jac() {
 // ------------------------------ ADDITION TESTS ------------------------------
 
 #[test]
-fn constrained_add() {
+fn constrained_add_distinct_points() {
     // Safety: test code
     unsafe {
         let P = BN254::one();
-
-        // Q = 2P
-        let Q = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
+        let Q = bn254_double_generator();
 
         let result = BN254J::from(P.add(Q));
 
@@ -539,33 +448,65 @@ fn constrained_add() {
         let expected = P_j.add(Q_j).0;
 
         assert(result.eq(expected));
+    }
+}
 
-        // doubling
+#[test]
+fn constrained_add_doubling() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
         let Q = BN254::one();
 
         let result = BN254J::from(P.add(Q));
-        let expected = P_j.dbl().0;
+        let expected = BN254J::from(P).dbl().0;
         assert(result.eq(expected));
+    }
+}
 
-        // infinity
+#[test]
+fn constrained_add_inverse_points() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
         let Q = P.neg();
         let result = BN254J::from(P.add(Q));
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
+    }
+}
 
-        // lhs infinity
+#[test]
+fn constrained_add_lhs_infinity() {
+    // Safety: test code
+    unsafe {
         let P = BN254::point_at_infinity();
+        let Q = BN254::one();
         let result = BN254J::from(P.add(Q));
         let expected = BN254J::from(Q);
         assert(result.eq(expected));
+    }
+}
 
-        // rhs infinity
-        let result = BN254J::from(Q.add(P));
-        assert(result.eq(expected));
-
-        // both infinity
+#[test]
+fn constrained_add_rhs_infinity() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
         let Q = BN254::point_at_infinity();
-        let result = BN254J::from(Q.add(P));
+        let result = BN254J::from(P.add(Q));
+        let expected = BN254J::from(P);
+        assert(result.eq(expected));
+    }
+}
+
+#[test]
+fn constrained_add_both_infinity() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::point_at_infinity();
+        let Q = BN254::point_at_infinity();
+        let result = BN254J::from(P.add(Q));
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
@@ -574,21 +515,7 @@ fn constrained_add() {
 #[test]
 unconstrained fn unconstrained_add() {
     let P = BN254::one();
-
-    // Q = 2P
-    let Q = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x7816a916871ca8d3c208c16d87cfd3,
-            0x44e72e131a029b85045b68181585d9,
-            0x0306,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-            0x738c0e0a7c92e7845f96b2ae9c0a68,
-            0x15ed,
-        ]),
-        is_infinity: false,
-    };
+    let Q = bn254_double_generator();
 
     let result = BN254J::from(P.add(Q));
 
@@ -611,30 +538,37 @@ unconstrained fn unconstrained_add_doubling() {
 }
 
 #[test]
-unconstrained fn unconstrained_add_one_side_infinity() {
-    //Q + infinity and infinity + Q
-    let Q = BN254::one();
+unconstrained fn unconstrained_add_lhs_infinity() {
     let P = BN254::point_at_infinity();
-    let expected = BN254J::from(Q);
-    let result = BN254J::from(Q.add(P));
-    assert(result.eq(expected));
+    let Q = BN254::one();
     let result = BN254J::from(P.add(Q));
+    let expected = BN254J::from(Q);
     assert(result.eq(expected));
 }
 
 #[test]
-unconstrained fn unconstrained_add_infinity() {
-    // P = -Q
+unconstrained fn unconstrained_add_rhs_infinity() {
+    let P = BN254::one();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(P.add(Q));
+    let expected = BN254J::from(P);
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn unconstrained_add_inverse_points() {
     let P = BN254::one();
     let Q = P.neg();
     let result = BN254J::from(P.add(Q));
     let expected = BN254J::point_at_infinity();
     assert(result.eq(expected));
+}
 
-    // both at infinity
+#[test]
+unconstrained fn unconstrained_add_both_infinity() {
     let P = BN254::point_at_infinity();
     let Q = BN254::point_at_infinity();
-    let result = BN254J::from(Q.add(P));
+    let result = BN254J::from(P.add(Q));
     let expected = BN254J::point_at_infinity();
     assert(result.eq(expected));
 }
@@ -642,25 +576,11 @@ unconstrained fn unconstrained_add_infinity() {
 // ------------------------------ SUBTRACTION TESTS ------------------------------
 
 #[test]
-fn sub() {
+fn constrained_sub_distinct_points() {
     // Safety: test code
     unsafe {
         let P = BN254::one();
-
-        // Q = 2P
-        let Q = BN254 {
-            x: BN254_Fq::from_limbs([
-                0x7816a916871ca8d3c208c16d87cfd3,
-                0x44e72e131a029b85045b68181585d9,
-                0x0306,
-            ]),
-            y: BN254_Fq::from_limbs([
-                0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-                0x738c0e0a7c92e7845f96b2ae9c0a68,
-                0x15ed,
-            ]),
-            is_infinity: false,
-        };
+        let Q = bn254_double_generator();
 
         let result = BN254J::from(P.sub(Q));
 
@@ -669,33 +589,67 @@ fn sub() {
         let expected = P_j.sub(Q_j).0;
 
         assert(result.eq(expected));
+    }
+}
 
-        // doubling
+#[test]
+fn constrained_sub_doubling() {
+    // P - (-P) = 2P
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
         let Q = BN254::one();
 
         let result = BN254J::from(P.sub(Q.neg()));
-        let expected = P_j.dbl().0;
+        let expected = BN254J::from(P).dbl().0;
         assert(result.eq(expected));
+    }
+}
 
-        // infinity
+#[test]
+fn constrained_sub_equal_points() {
+    // P - P = infinity
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
+        let Q = BN254::one();
         let result = BN254J::from(P.sub(Q));
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
+    }
+}
 
-        // lhs infinity
+#[test]
+fn constrained_sub_lhs_infinity() {
+    // Safety: test code
+    unsafe {
         let P = BN254::point_at_infinity();
+        let Q = BN254::one();
         let result = BN254J::from(P.sub(Q));
         let expected = BN254J::from(Q.neg());
         assert(result.eq(expected));
+    }
+}
 
-        // rhs infinity
-        let result = BN254J::from(Q.sub(P));
-        let expected = expected.neg();
-        assert(result.eq(expected));
-
-        // both infinity
+#[test]
+fn constrained_sub_rhs_infinity() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::one();
         let Q = BN254::point_at_infinity();
-        let result = BN254J::from(Q.sub(P));
+        let result = BN254J::from(P.sub(Q));
+        let expected = BN254J::from(P);
+        assert(result.eq(expected));
+    }
+}
+
+#[test]
+fn constrained_sub_both_infinity() {
+    // Safety: test code
+    unsafe {
+        let P = BN254::point_at_infinity();
+        let Q = BN254::point_at_infinity();
+        let result = BN254J::from(P.sub(Q));
         let expected = BN254J::point_at_infinity();
         assert(result.eq(expected));
     }
@@ -704,21 +658,7 @@ fn sub() {
 #[test]
 unconstrained fn unconstrained_sub() {
     let P = BN254::one();
-
-    // Q = 2P
-    let Q = BN254 {
-        x: BN254_Fq::from_limbs([
-            0x7816a916871ca8d3c208c16d87cfd3,
-            0x44e72e131a029b85045b68181585d9,
-            0x0306,
-        ]),
-        y: BN254_Fq::from_limbs([
-            0xa6a449e3538fc7ff3ebf7a5a18a2c4,
-            0x738c0e0a7c92e7845f96b2ae9c0a68,
-            0x15ed,
-        ]),
-        is_infinity: false,
-    };
+    let Q = bn254_double_generator();
 
     let result = BN254J::from(P.sub(Q));
 
@@ -742,33 +682,38 @@ unconstrained fn unconstrained_sub_doubling() {
 }
 
 #[test]
-unconstrained fn unconstrained_sub_one_side_infinity() {
+unconstrained fn unconstrained_sub_lhs_infinity() {
     let P = BN254::point_at_infinity();
     let Q = BN254::one();
-
-    // lhs infinity
     let result = BN254J::from(P.sub(Q));
     let expected = BN254J::from(Q.neg());
-    assert(result.eq(expected));
-
-    // rhs infinity
-    let result = BN254J::from(Q.sub(P));
-    let expected = expected.neg();
     assert(result.eq(expected));
 }
 
 #[test]
-unconstrained fn unconstrained_sub_infinity() {
+unconstrained fn unconstrained_sub_rhs_infinity() {
+    let P = BN254::one();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::from(P);
+    assert(result.eq(expected));
+}
+
+#[test]
+unconstrained fn unconstrained_sub_equal_points() {
     // P - P = infinity
     let P = BN254::one();
     let Q = BN254::one();
     let result = BN254J::from(P.sub(Q));
     let expected = BN254J::point_at_infinity();
     assert(result.eq(expected));
-    // both infinity
+}
+
+#[test]
+unconstrained fn unconstrained_sub_both_infinity() {
     let P = BN254::point_at_infinity();
     let Q = BN254::point_at_infinity();
-    let result = BN254J::from(Q.sub(P));
+    let result = BN254J::from(P.sub(Q));
     let expected = BN254J::point_at_infinity();
     assert(result.eq(expected));
 }

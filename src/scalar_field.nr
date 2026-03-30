@@ -168,6 +168,10 @@ pub fn compare_scalar_field_to_grumpkin<let N: u32>(result: ScalarField<N>) {
             // If equal, continue to the next element (should_continue remains true)
         }
     }
+    assert(
+        !should_continue | result.skew,
+        "Scalar field representation must be strictly less than modulus",
+    );
 }
 
 /// Convert a `Field` element into `ScalarField`
@@ -481,5 +485,12 @@ mod tests {
         ];
         let result: ScalarField<68> = ScalarField { base4_slices: modulus_slices3, skew: true };
         let _ = result.into();
+    }
+
+    #[test(should_fail_with = "Scalar field representation must be strictly less than modulus")]
+    fn test_convert_to_field_fail_when_equal_to_modulus() {
+        let grumpkin_modulus_scalar: ScalarField<64> =
+            ScalarField { base4_slices: get_grumpkin_modulus_slices::<64>(), skew: false };
+        let _: Field = grumpkin_modulus_scalar.into();
     }
 }

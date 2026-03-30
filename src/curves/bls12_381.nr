@@ -1,5 +1,5 @@
-use bignum::BigNum;
-use bignum::BLS12_381_Fq;
+use ::bignum::BigNum;
+use ::bignum::BLS12_381_Fq;
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -12,30 +12,30 @@ pub global BLS12_381_PARAMS: BigCurveParams<BLS12_381_Fq> = BigCurveParams {
     b: BLS12_381_Fq::from_limbs([0x04, 0x00, 0x00, 0x00]),
     offset_generator: [
         BLS12_381_Fq::from_limbs([
-            0x73d79a56ec54c2c97be93daf4570d3,
-            0x787fa0b9c24f2e7ee8bf1085e98d57,
-            0xf71fbb692c2d489f571dac08eda758,
-            0x065f41,
+            0x7743bae4232f8d176017130f9cce29,
+            0x35a094f6204b23e49cf2b670c15eb3,
+            0xf91801a7a092a34a949d54db5d3e40,
+            0x0c5123,
         ]),
         BLS12_381_Fq::from_limbs([
-            0x83a1722d0b0319a2ae7c2534fab240,
-            0x29e05afa8ecbde2dc813cf05fb5532,
-            0x031646bc2f536aaf824bc2f353197a,
-            0x095546,
+            0x8816ba23e82c1086bbe9771653b5b1,
+            0x492a060a04e8807ee564f92f304fc6,
+            0x7478d23a7e258b6ec0bb0645e9351a,
+            0x088858,
         ]),
     ],
     offset_generator_final: [
         BLS12_381_Fq::from_limbs([
-            0x5223217f57fd02d3e650ae6746f736,
-            0x9a4296ad3e5d9e133e5aee561dee9f,
-            0xf4a653b4ed34f1c4af827eaf375547,
-            0x137891,
+            0x26930e9d897072207180868cdedb94,
+            0xf7f71a1e9074ed02703c14675512bd,
+            0xe4040f7b82c3ab503b56877f847e5e,
+            0x08ba68,
         ]),
         BLS12_381_Fq::from_limbs([
-            0x2ea5cc6e7f00a1e1d37d0c0ae772d4,
-            0x71c0f406b37a8670c4a770fcb0099f,
-            0x346da4596b82001469e41bb661b039,
-            0x18fc11,
+            0xb60b7756d403638af9be4e1a068a89,
+            0x80bf0bb6cbfe6b019694b7d5545eb8,
+            0xee516c6272079719986092adc1b762,
+            0x073fb9,
         ]),
     ],
     one: [

@@ -1,5 +1,5 @@
-use bignum::BigNum;
-pub use bignum::{Secp384r1_Fq, Secp384r1_Fr};
+use ::bignum::BigNum;
+pub use ::bignum::{Secp384r1_Fq, Secp384r1_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -35,30 +35,30 @@ pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Secp384r1_Fq::from_limbs([
-            0x8b0fe06cd1b66ed66faabd1c2722c0,
-            0x57bc94347289a033892787616b7ecd,
-            0xd6fad6d83b5bbf771e552d82f71614,
-            0x3bbcff,
+            0x0e3a2f55bc6e34ee2b38e011df7989,
+            0x02babdcc3624949b5aab2e13bb1d83,
+            0x409e8db11179dd812c8fa0a666f8f0,
+            0xbfe33d,
         ]),
         Secp384r1_Fq::from_limbs([
-            0xe3590b2bd088bcedfc55ee8db1d122,
-            0x7034a9edf311eee1c30cbaae97cc11,
-            0xfc18ea11889504169b1bdfa19c2fc3,
-            0xeb8122,
+            0x240f363cd302223dce18584ff20ea6,
+            0x866d482550fc5e25b9e1432c9717c1,
+            0x3e6bed09ee78f89b5d13a48e0255dc,
+            0xfcac19,
         ]),
     ],
     offset_generator_final: [
         Secp384r1_Fq::from_limbs([
-            0x9b022829a5fabd27f3b11c9adac2ed,
-            0xadfd085b8f14894b0d28763f8df84f,
-            0xd26cefd3e3260d3ba258e19a00ce6f,
-            0xd9b7de,
+            0xe8c81406695040f5af4a0eb88c4782,
+            0xc8ac74713c0dd7e5efcd959a48fbad,
+            0x7e431abec33abf017b297b3652a1f1,
+            0xc548ca,
         ]),
         Secp384r1_Fq::from_limbs([
-            0x26a4542593b60be233dad9a796ed91,
-            0xaaced835908c43e6239dedf4e1b620,
-            0x569368cea31f2d40949b583b7b32c4,
-            0x31dbc7,
+            0x1cd6167d2e472f4d81253331e50a4e,
+            0x5bc5e05d58ee9ffdbea9d02b598765,
+            0x62fca12665c8e48288a3b9567ac31e,
+            0xf4aab4,
         ]),
     ],
 };

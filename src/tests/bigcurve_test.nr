@@ -799,3 +799,10 @@ fn bigcurve_sub_with_hint() {
     );
     assert(result.is_infinity);
 }
+
+#[test]
+fn test_hash_to_curve_regression() {
+    let P = BN254::hash_to_curve([0, 1, 2]);
+    let Q = BN254::hash_to_curve([0, 1, 2, 3]);
+    assert(P != Q);
+}

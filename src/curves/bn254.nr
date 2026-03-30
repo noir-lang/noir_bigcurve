@@ -1,5 +1,5 @@
-use bignum::BigNum;
-pub use bignum::BN254_Fq;
+use ::bignum::BigNum;
+pub use ::bignum::BN254_Fq;
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -13,26 +13,26 @@ pub global BN254_PARAMS: BigCurveParams<BN254_Fq> = BigCurveParams {
     b: BN254_Fq::from_limbs([0x03, 0x00, 0x00]),
     offset_generator: [
         BN254_Fq::from_limbs([
-            0xe5dd307c5e527c1d856b327007a0af,
-            0xed305bf7d83c2828b8643d67b7c29e,
-            0x04de,
+            0x9b67dbd4efadcee21ee2df1c67b63b,
+            0xd37b262d07cd677bb926b8ae322b79,
+            0x2bb2,
         ]),
         BN254_Fq::from_limbs([
-            0x6f4802addfe9eae0780d87e89773f0,
-            0x156b29477502c38d92bbb5ca0a0076,
-            0x27d8,
+            0x8d44fbd755d63525350de170337192,
+            0x1a491d6c326229bdebd174d9682d00,
+            0x247c,
         ]),
     ],
     offset_generator_final: [
         BN254_Fq::from_limbs([
-            0x698fbbcfd21f13b25394ae33d06811,
-            0xfe3dfea2ae51ae2a94f733678fb338,
-            0x27f6,
+            0x643480dc83ebfefc585b6f5d9e3c8d,
+            0x21104b1aa6a0f69d612d0a69e0ac12,
+            0x0abe,
         ]),
         BN254_Fq::from_limbs([
-            0x44397845b5fca3153ba3fae8e3aad4,
-            0x63f75920e9e76b33bc7afd975739f9,
-            0x08d0,
+            0xa0f482975fef3a567aad7aa54c998a,
+            0x671dc70a1024caae97b7b45e3ab170,
+            0x147f,
         ]),
     ],
     one: [BN254_Fq::from_limbs([0x01, 0x00, 0x00]), BN254_Fq::from_limbs([0x02, 0x00, 0x00])],

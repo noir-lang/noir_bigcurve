@@ -1,4 +1,4 @@
-use bignum::BigNum;
+use ::bignum::BigNum;
 pub use bignum::{Pallas_Fq, Pallas_Fr};
 
 use crate::bigcurve::BigCurve;
@@ -17,26 +17,26 @@ pub global PALLAS_PARAM: BigCurveParams<Pallas_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Pallas_Fq::from_limbs([
-            0xb77348be910fcbbcbac23eee0ae133,
-            0x594232ef6b9545e500d7b2dfbcf8a8,
-            0x08f7,
+            0x024f724a1c1f6e85a1cdce00d4e587,
+            0xa432b86777cba9593fee6f56e63f38,
+            0x1852,
         ]),
         Pallas_Fq::from_limbs([
-            0x26bde7336bcca163b1d032a155c6ae,
-            0x0b58a19a828ad14a51312dc6dd1701,
-            0x2009,
+            0x9b4840fb917ed502255e066c6ff21c,
+            0x41f5e457f8de05f5b675ef6305f221,
+            0x1f69,
         ]),
     ],
     offset_generator_final: [
         Pallas_Fq::from_limbs([
-            0x6d31ec7483a09d4e9831b658bc18f9,
-            0xfcbe77071d79420eb5405768742f58,
-            0x0b24,
+            0xb2460a40daf458f99f95d3c645e16d,
+            0x0f16d081478664c933facf08322860,
+            0x07fb,
         ]),
         Pallas_Fq::from_limbs([
-            0xdea102ffbf107923ba1c99ddf1342e,
-            0xd26cf1b331087dea4654743e5780ca,
-            0x064a,
+            0x85eb30ee247f4bc9d832e690c5f041,
+            0x718130e8caf4612b1b73e1226f9493,
+            0x1558,
         ]),
     ],
 };

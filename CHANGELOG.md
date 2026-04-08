@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.2...v0.14.0) (2026-04-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to new stdlib interface ([#121](https://github.com/noir-lang/noir_bigcurve/issues/121))
+
+### Bug Fixes
+
+* Remove deprecated dep:: path prefix and unnecessary mut ([#112](https://github.com/noir-lang/noir_bigcurve/issues/112)) ([db37a3a](https://github.com/noir-lang/noir_bigcurve/commit/db37a3ad5a61fc3d378658ea535156aa7d69771e))
+* Update to new stdlib interface ([#121](https://github.com/noir-lang/noir_bigcurve/issues/121)) ([6021a13](https://github.com/noir-lang/noir_bigcurve/commit/6021a13653b10b776123520dca4294dbce25e34a))
+
 ## [0.13.2](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.1...v0.13.2) (2026-02-20)
 
 

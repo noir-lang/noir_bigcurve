@@ -480,26 +480,20 @@ fn constrained_add_inverse_points() {
 
 #[test]
 fn constrained_add_lhs_infinity() {
-    // Safety: test code
-    unsafe {
-        let P = BN254::point_at_infinity();
-        let Q = BN254::one();
-        let result = BN254J::from(P.add(Q));
-        let expected = BN254J::from(Q);
-        assert(result.eq(expected));
-    }
+    let P = BN254::point_at_infinity();
+    let Q = BN254::one();
+    let result = BN254J::from(P.add(Q));
+    let expected = BN254J::from(Q);
+    assert(result.eq(expected));
 }
 
 #[test]
 fn constrained_add_rhs_infinity() {
-    // Safety: test code
-    unsafe {
-        let P = BN254::one();
-        let Q = BN254::point_at_infinity();
-        let result = BN254J::from(P.add(Q));
-        let expected = BN254J::from(P);
-        assert(result.eq(expected));
-    }
+    let P = BN254::one();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(P.add(Q));
+    let expected = BN254J::from(P);
+    assert(result.eq(expected));
 }
 
 #[test]
@@ -623,26 +617,20 @@ fn constrained_sub_equal_points() {
 
 #[test]
 fn constrained_sub_lhs_infinity() {
-    // Safety: test code
-    unsafe {
-        let P = BN254::point_at_infinity();
-        let Q = BN254::one();
-        let result = BN254J::from(P.sub(Q));
-        let expected = BN254J::from(Q.neg());
-        assert(result.eq(expected));
-    }
+    let P = BN254::point_at_infinity();
+    let Q = BN254::one();
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::from(Q.neg());
+    assert(result.eq(expected));
 }
 
 #[test]
 fn constrained_sub_rhs_infinity() {
-    // Safety: test code
-    unsafe {
-        let P = BN254::one();
-        let Q = BN254::point_at_infinity();
-        let result = BN254J::from(P.sub(Q));
-        let expected = BN254J::from(P);
-        assert(result.eq(expected));
-    }
+    let P = BN254::one();
+    let Q = BN254::point_at_infinity();
+    let result = BN254J::from(P.sub(Q));
+    let expected = BN254J::from(P);
+    assert(result.eq(expected));
 }
 
 #[test]

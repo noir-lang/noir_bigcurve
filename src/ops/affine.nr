@@ -64,10 +64,12 @@ pub(crate) fn double_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Add two points using incomplete formulae (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// With offset generators, an honest prover never encounters edge cases.
 /// Instead of handling them, we assert `x1 != x2` for soundness.
@@ -128,10 +130,12 @@ pub(crate) fn incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Conditionally add two points using incomplete formulae (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// If `predicate` is true, returns `point + other`. Otherwise returns `point` unchanged.
 /// Callers guarantee `point.x != other.x` via the offset generator.
@@ -228,10 +232,12 @@ fn incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Complete point addition with edge-case handling (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// Handles all cases: distinct points, doubling (`x1 == x2, y1 == y2`),
 /// inverse points (`x1 == x2, y1 != y2` -> infinity), and infinity inputs.
@@ -378,10 +384,12 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
         infinity_out
     };
 
-    P::from_coordinates(x_out, y_out, infinity_out)
+    P::from_coordinates_unsafe(x_out, y_out, infinity_out)
 }
 
 /// Complete point subtraction with edge-case handling (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// Computes `point - other`. Handles all cases: distinct points, doubling
 /// (`x1 == x2, y1 == -y2`), inverse points (`x1 == x2, y1 == y2` -> infinity),
@@ -521,5 +529,5 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
         infinity_out
     };
 
-    P::from_coordinates(x_out, y_out, infinity_out)
+    P::from_coordinates_unsafe(x_out, y_out, infinity_out)
 }

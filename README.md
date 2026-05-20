@@ -122,6 +122,7 @@ Represents scalars used in point multiplication.
 - `one`
 - `point_at_infinity`
 - `from_coordinates`
+- `from_coordinates_unsafe`
 - `hash_to_curve`
 
 #### Helpers

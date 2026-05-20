@@ -55,9 +55,11 @@ impl<BN: BigNum> PointTable<BN> {
 
     /// Look up a point by wNAF table index (constrained)
     ///
+    /// Assumes all points in the table lie on the curve.
+    ///
     /// `idx` is `(wnaf_slice + 15) / 2`, ranging from 0 (`-15P`) to 15 (`+15P`).
     /// With the barretenberg backend, lookups on 256-bit curves cost ~12 constraints.
     pub(crate) fn get<P: BigCurve<BN>>(self, idx: u32) -> P {
-        P::from_coordinates(self.x[idx], self.y[idx], false)
+        P::from_coordinates_unsafe(self.x[idx], self.y[idx], false)
     }
 }

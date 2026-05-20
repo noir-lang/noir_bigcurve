@@ -76,7 +76,16 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     fn b() -> BN;
 
     /// Construct a point from affine coordinates and an infinity flag.
+    ///
+    /// Validates that the point lies on the curve via `validate_on_curve`.
     fn from_coordinates(x: BN, y: BN, is_infinity: bool) -> Self;
+
+    /// Construct a point from affine coordinates and an infinity flag
+    /// **without** on-curve validation.
+    ///
+    /// Use only when the caller already guarantees the point is valid
+    /// (e.g. the result of a constrained operation).
+    fn from_coordinates_unsafe(x: BN, y: BN, is_infinity: bool) -> Self;
 
     /// Returns the point at infinity (the identity element of the curve group).
     fn point_at_infinity() -> Self;
@@ -198,6 +207,12 @@ pub comptime fn derive_curve_impl(
             }
 
             fn from_coordinates(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
+                let res = Self { x, y, is_infinity };
+                res.validate_on_curve();
+                res
+            }
+
+            fn from_coordinates_unsafe(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
                 Self { x, y, is_infinity }
             }
 
@@ -286,7 +301,7 @@ pub comptime fn derive_curve_impl(
                     // Safety: affine conversion verified inside add_with_hint
                     let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates_unsafe(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
                         $crate::internal::add_with_hint::<$field_type, $typ>(self, other, transcript)           
                     }
@@ -311,7 +326,7 @@ pub comptime fn derive_curve_impl(
                     // Safety: affine conversion verified inside sub_with_hint
                     let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates_unsafe(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
                         $crate::internal::sub_with_hint::<$field_type, $typ>(self, other, transcript)
                     }

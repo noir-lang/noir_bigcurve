@@ -91,7 +91,11 @@ fn poseidon_hash_bytes<let SeedBytes: u32>(seed: [u8; SeedBytes]) -> Field {
     hashed_seed
 }
 
-/// Hash an arbitrary byte seed to a curve point (constrained)
+/// Hash an arbitrary byte seed to a curve point.
+///
+/// **Soundness warning:** the `salt` (nonce) is not constrained to be the
+/// lowest valid value - a malicious prover can choose alternative nonces to
+/// influence the output. See `BigCurve::hash_to_curve` docs for details.
 ///
 /// ## Algorithm
 ///

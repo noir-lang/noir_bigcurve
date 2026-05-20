@@ -82,9 +82,23 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Uses wNAF with a 4-bit window. The scalar must be encoded as a `ScalarField`.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
 
-    /// Hash an arbitrary byte seed to a point on the curve (constrained).
+    /// Hash an arbitrary byte seed to a point on the curve.
     ///
-    /// Uses try-and-increment with Poseidon2 hashing.
+    /// Uses try-and-increment with Poseidon2 hashing. The nonce for the
+    /// try-and-increment loop is determined via unconstrained witness generation,
+    /// and the result is constrained to lie on the curve.
+    ///
+    /// # Soundness warning
+    ///
+    /// The current implementation does **not** constrain that the lowest valid
+    /// nonce is used. A malicious prover can search for alternative valid nonces
+    /// that produce different curve points while passing all constraints. This
+    /// makes the function non-deterministic from the verifier's perspective, and
+    /// allows the prover to influence bits of the output by spending computational
+    /// power.
+    ///
+    /// Do not rely on this function for applications that require the output to
+    /// be uniquely determined by the seed.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 
     /// Compute `sum_i(mul_scalars[i] * mul_points[i]) + sum_j(add_points[j])` (constrained).

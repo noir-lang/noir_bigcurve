@@ -9,7 +9,8 @@ use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
 use crate::curve_jac::types::JTranscript;
-use crate::curves::bn254::{BN254, BN254J};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377Scalar};
+use crate::curves::bn254::{BN254, BN254J, BN254Scalar};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
 use crate::ops::point_table::PointTable;
@@ -805,4 +806,65 @@ fn test_hash_to_curve_regression() {
     let P = BN254::hash_to_curve([0, 1, 2]);
     let Q = BN254::hash_to_curve([0, 1, 2, 3]);
     assert(P != Q);
+}
+
+// ------------------------------ POSSIBLE COMPLETENESS ISSUES TESTS ------------------------------
+
+/// Incomplete addition: -offset_generator collides with the accumulator
+/// at the first step of the wNAF loop, triggering the x1 != x2 assertion.
+#[test(should_fail_with = "assert_is_not_equal fail")]
+fn test_mul_edgecase() {
+    let scalar: BN254Scalar = BN254Scalar::from(1);
+    let P: BN254 = -BN254::offset_generator();
+    let result: BN254 = P.mul(scalar);
+    assert(result == P);
+}
+
+/// Incomplete addition: +offset_generator collides with the accumulator
+/// at the first step of the wNAF loop, triggering the x1 != x2 assertion.
+#[test(should_fail_with = "assert_is_not_equal fail")]
+fn test_mul_edgecase_1() {
+    let scalar: BN254Scalar = BN254Scalar::from(1);
+    let P: BN254 = BN254::offset_generator();
+    let result: BN254 = P.mul(scalar);
+    assert(result == P);
+}
+
+/// Incomplete addition: a crafted scalar and point produce an accumulator
+/// collision deeper in the wNAF loop, triggering the x1 != x2 assertion.
+#[test(should_fail_with = "assert_is_not_equal fail")]
+fn test_mul_edgecase_2() {
+    let scalar: BN254Scalar = BN254Scalar::from(
+        0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff,
+    ); // p - 2
+    let k: BN254Scalar = BN254Scalar::from(3);
+    let P: BN254 = -(BN254::offset_generator().mul(k));
+    let _: BN254 = P.mul(scalar);
+}
+
+/// Incomplete doubling: a 2-torsion point (y == 0) on a curve with even
+/// cofactor causes the tangent-slope formula to degenerate in mul.
+#[test(should_fail)]
+fn test_double_with_hint_edgecase() {
+    // Safety: test code
+    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
+    let y: BLS12_377_Fq = BLS12_377_Fq::zero();
+
+    let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
+    let P: BLS12_377 = S.sub(BLS12_377::offset_generator());
+
+    let scalar: BLS12_377Scalar = BLS12_377Scalar::from(1);
+    let _: BLS12_377 = P.mul(scalar);
+}
+
+/// Incomplete doubling: adding a 2-torsion point (y == 0) to itself
+/// uses the same degenerate tangent-slope formula via add_with_hint.
+#[test(should_fail)]
+fn test_add_edgecase() {
+    // Safety: test code
+    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
+    let y: BLS12_377_Fq = BLS12_377_Fq::zero();
+    let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
+
+    let _: BLS12_377 = S.add(S);
 }

@@ -27,8 +27,35 @@ pub struct BigCurveParams<BN> {
 ///   1. **Unconstrained**: compute the result in Jacobian coordinates (fast, no constraints)
 ///   2. **Constrained**: verify the result in affine coordinates using `evaluate_quadratic_expression`
 ///
-/// Offset generators are added before computation and subtracted after, ensuring the
-/// incomplete addition formulas never encounter edge cases (equal or inverse points).
+/// Offset generators are added before computation and subtracted after, so that the
+/// incomplete addition formulas used in `mul` and `evaluate_linear_expression` avoid
+/// edge cases (equal or inverse points) for honest inputs with overwhelming probability.
+///
+/// # Incompleteness of `mul` and `evaluate_linear_expression`
+///
+/// These methods use incomplete addition internally. A pseudorandom offset generator
+/// makes collisions (doubling or inverse-point additions) negligibly unlikely for
+/// honest inputs. However, because the offset generator is fixed and public, an
+/// adversary **can** craft inputs that force a collision in the double-and-add loop,
+/// making the circuit unsatisfiable.
+///
+/// Additionally, the doubling formula is incomplete when `y == 0` (2-torsion points).
+/// On curves with even cofactor, an adversary can supply such a point to trigger
+/// the same unsatisfiable-circuit effect. On prime-order curves this cannot occur.
+///
+/// This does not break soundness - a malicious prover cannot produce a valid proof
+/// for a false statement.
+///
+/// If your protocol allows untrusted parties to supply curve points that will be
+/// used in `mul`, `evaluate_linear_expression`, or `Add`, consider these vectors
+/// and add appropriate mitigations. On curves with even cofactor, callers should
+/// assert `y.assert_is_not_zero()` on untrusted inputs to rule out 2-torsion points.
+///
+/// `Sub` is **not** affected - it uses complete addition formulas.
+///
+/// `Add` handles all edge cases except doubling a point with `y == 0`, which
+/// uses the same incomplete tangent-slope formula. This only affects curves
+/// with even cofactor.
 ///
 /// # Implementing a new curve
 ///
@@ -80,6 +107,17 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Scalar multiplication: compute `scalar * self` (constrained).
     ///
     /// Uses wNAF with a 4-bit window. The scalar must be encoded as a `ScalarField`.
+    ///
+    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
+    /// Using the wrong value will produce an unprovable circuit. Prefer the
+    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    ///
+    /// # Incompleteness
+    ///
+    /// Uses incomplete addition internally. For honest inputs the probability of
+    /// hitting an edge case is negligible, but an adversary who knows the offset
+    /// generator can craft inputs that make the circuit unsatisfiable.
+    /// See the trait-level documentation for details and mitigation advice.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
 
     /// Hash an arbitrary byte seed to a point on the curve.
@@ -104,6 +142,17 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Compute `sum_i(mul_scalars[i] * mul_points[i]) + sum_j(add_points[j])` (constrained).
     ///
     /// The most general operation: combines MSM with plain point additions.
+    ///
+    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
+    /// Using the wrong value will produce an unprovable circuit. Prefer the
+    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    ///
+    /// # Incompleteness
+    ///
+    /// Uses incomplete addition internally. For honest inputs the probability of
+    /// hitting an edge case is negligible, but an adversary who knows the offset
+    /// generator can craft inputs that make the circuit unsatisfiable.
+    /// See the trait-level documentation for details and mitigation advice.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
@@ -225,6 +274,9 @@ pub comptime fn derive_curve_impl(
             }}
 
             // Complete addition with full edge-case handling (generates witness via Jacobian intermediates)
+            //
+            // Incomplete when doubling a point with `y == 0` (2-torsion).
+            // This only affects curves with even cofactor.
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
                     let lhsJ = $CurveJ::<$field_type, $typ>::from(self);

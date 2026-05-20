@@ -5,6 +5,15 @@ use bignum::bignum::evaluate_quadratic_expression;
 
 /// Double a point using an `AffineTranscript` witness (constrained)
 ///
+/// Assumes the input point lies on the curve.
+///
+/// # Incompleteness
+///
+/// The tangent-slope constraint `lambda * 2*y1 - 3*x1^2 - a = 0` is incomplete
+/// when `y1 == 0`: it reduces to `3*x1^2 + a == 0`, which is false in general.
+/// Points with `y == 0` are 2-torsion points and only exist on curves with
+/// even cofactor. On prime-order curves this cannot occur.
+///
 /// Verifies three constraints against the transcript values `(lambda, x3, y3)`:
 ///
 ///   1. `lambda * 2*y1 - 3*x1^2 - a = 0`   (tangent slope)
@@ -230,6 +239,13 @@ fn incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
 /// Dynamically selects between addition and doubling constraints via conditional
 /// operand substitution, so only one `evaluate_quadratic_expression` call validates
 /// the lambda constraint regardless of the case.
+///
+/// # Incompleteness
+///
+/// The doubling path uses the same tangent-slope formula as `double_with_hint`,
+/// which is incomplete when `y == 0`. This only affects curves with even cofactor.
+/// `sub_with_hint` is not affected because it treats the `P == P` case as
+/// `P + (-P)` and correctly returns the point at infinity.
 pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,

@@ -9,7 +9,7 @@ use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
 use crate::curve_jac::types::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377Scalar};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377_Fr, BLS12_377Scalar};
 use crate::curves::bn254::{BN254, BN254J, BN254Scalar};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
@@ -867,4 +867,38 @@ fn test_add_edgecase() {
     let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
 
     let _: BLS12_377 = S.add(S);
+}
+
+// ------------------------------ SUBGROUP MEMBERSHIP TESTS ------------------------------
+
+/// The BLS12-377 generator is in G1, so r * G == O.
+#[test]
+fn test_validate_in_subgroup_valid_point() {
+    let r_minus_one: BLS12_377Scalar = BLS12_377Scalar::from_bignum(-BLS12_377_Fr::one());
+    let generator: BLS12_377 = BLS12_377::one();
+    generator.validate_in_subgroup(r_minus_one);
+}
+
+/// A point on BLS12-377 but not in G1 must fail the subgroup check.
+/// x = 0x1826f69df0c099ec7c933639b7890b13b24189349fe88dd9aa3fef17dfffd7253f375e0c92fc9b0e9578bd044702c41
+/// y = 0x9710823084bbe87e44527dc337c21ea1bc73fc65928adca328a6cb3f1894b007d108f0e42d78bf4d7adad5122779f3
+#[test(should_fail_with = "Point is not in the prime-order subgroup")]
+fn test_validate_in_subgroup_invalid_point() {
+    // neg_one
+    let r_minus_one: BLS12_377Scalar = BLS12_377Scalar::from_bignum(-BLS12_377_Fr::one());
+
+    let x: BLS12_377_Fq = BLS12_377_Fq::from_le_bytes([
+        0x41, 0x2c, 0x70, 0x44, 0xd0, 0x8b, 0x57, 0xe9, 0xb0, 0xc9, 0x2f, 0xc9, 0xe0, 0x75, 0xf3,
+        0x53, 0x72, 0xfd, 0xff, 0x7d, 0xf1, 0xfe, 0xa3, 0x9a, 0xdd, 0x88, 0xfe, 0x49, 0x93, 0x18,
+        0x24, 0x3b, 0xb1, 0x90, 0x78, 0x9b, 0x63, 0x33, 0xc9, 0xc7, 0x9e, 0x9, 0xc, 0xdf, 0x69,
+        0x6f, 0x82, 0x1,
+    ]);
+    let y: BLS12_377_Fq = BLS12_377_Fq::from_le_bytes([
+        0xf3, 0x79, 0x27, 0x12, 0xd5, 0xda, 0x7a, 0x4d, 0xbf, 0x78, 0x2d, 0xe4, 0xf0, 0x8, 0xd1,
+        0x7, 0xb0, 0x94, 0x18, 0x3f, 0xcb, 0xa6, 0x28, 0xa3, 0xdc, 0x8a, 0x92, 0x65, 0xfc, 0x73,
+        0xbc, 0xa1, 0x1e, 0xc2, 0x37, 0xc3, 0x7d, 0x52, 0x44, 0x7e, 0xe8, 0xbb, 0x84, 0x30, 0x82,
+        0x10, 0x97, 0x0,
+    ]);
+    let P: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
+    P.validate_in_subgroup(r_minus_one);
 }

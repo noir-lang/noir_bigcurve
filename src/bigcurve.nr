@@ -57,6 +57,35 @@ pub struct BigCurveParams<BN> {
 /// uses the same incomplete tangent-slope formula. This only affects curves
 /// with even cofactor.
 ///
+/// # Non-prime-order curves and subgroup membership
+///
+/// For curves with non-prime order (e.g. BLS12-377, BLS12-381), the associated
+/// `ScalarField` type represents scalars modulo `r` (the prime subgroup order),
+/// **not** modulo the full curve order `h * r`.
+///
+/// This means `mul` and `evaluate_linear_expression` are only sound when the
+/// input points belong to the prime-order subgroup G1. For a point P not in G1,
+/// `k * P != (k + r) * P` in general, because `r` is not the order of P.
+///
+/// This is a **soundness** issue, not merely a completeness issue. A malicious
+/// prover who supplies a private point outside G1 can construct inputs that
+/// produce valid-looking results in G1 while having extra degrees of freedom
+/// that should not exist. For example, given a non-G1 point R of order `l`
+/// (where `l` divides the cofactor), the prover can construct `Q = (1/l)*P + R`
+/// such that `l * Q = P` - the result is in G1 and passes all checks, but the
+/// prover had freedom to choose Q outside the expected subgroup.
+///
+/// On prime-order curves (e.g. BN254, secp256k1) this is not a concern because
+/// every point on the curve is in the prime-order group.
+///
+/// This only matters when the prover supplies curve points as private inputs.
+/// Public/hardcoded points (generators, protocol parameters) and points derived
+/// inside the circuit (e.g. via `hash_to_curve`) are not affected.
+///
+/// If your circuit accepts private curve points on a non-prime-order curve,
+/// you **must** validate that they belong to G1 before using them in scalar
+/// multiplication. Use `validate_in_subgroup` for this.
+///
 /// # Implementing a new curve
 ///
 /// Use the `#[derive_curve_impl]` comptime attribute on a struct with fields
@@ -113,6 +142,30 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Points at infinity are accepted unconditionally.
     fn validate_on_curve(self);
 
+    /// Validate that the point belongs to the prime-order subgroup G1 (constrained).
+    ///
+    /// Checks `r * P == O` by verifying `(r - 1) * P == -P`, where `r` is the
+    /// scalar field modulus (the order of G1).
+    ///
+    /// The caller must pass `r - 1` encoded as a `ScalarField` because the scalar
+    /// field modulus `r` differs from the native field modulus, so it cannot be
+    /// derived generically inside this function. For example:
+    /// ```
+    /// let r_minus_one = -BLS12_377_Fr::one();
+    /// point.validate_in_subgroup(r_minus_one);
+    /// ```
+    ///
+    /// Only needed on curves with non-prime order (e.g. BLS12-377, BLS12-381)
+    /// when accepting private point inputs from an untrusted prover. Not needed
+    /// for public/hardcoded points or points derived inside the circuit (e.g.
+    /// via `hash_to_curve`). On prime-order curves this check is redundant.
+    ///
+    /// **Warning:** this is expensive - it performs a full scalar multiplication.
+    ///
+    /// Note: uses `mul` internally, which has the same incompleteness caveats.
+    /// For an honest prover with a valid G1 point, incompleteness does not trigger.
+    fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>);
+
     /// Scalar multiplication: compute `scalar * self` (constrained).
     ///
     /// Uses wNAF with a 4-bit window. The scalar must be encoded as a `ScalarField`.
@@ -127,6 +180,12 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// hitting an edge case is negligible, but an adversary who knows the offset
     /// generator can craft inputs that make the circuit unsatisfiable.
     /// See the trait-level documentation for details and mitigation advice.
+    ///
+    /// # Non-prime-order curves
+    ///
+    /// On curves with non-prime order (e.g. BLS12-377, BLS12-381), the input
+    /// point must belong to the prime-order subgroup G1. Using points outside
+    /// G1 is unsound. See the trait-level documentation for details.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
 
     /// Hash an arbitrary byte seed to a point on the curve.
@@ -162,6 +221,12 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// hitting an edge case is negligible, but an adversary who knows the offset
     /// generator can craft inputs that make the circuit unsatisfiable.
     /// See the trait-level documentation for details and mitigation advice.
+    ///
+    /// # Non-prime-order curves
+    ///
+    /// On curves with non-prime order (e.g. BLS12-377, BLS12-381), the input
+    /// points must belong to the prime-order subgroup G1. Using points outside
+    /// G1 is unsound. See the trait-level documentation for details.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
@@ -266,6 +331,12 @@ pub comptime fn derive_curve_impl(
                     [$params.b],
                     [false],
                 );
+            }
+
+            fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>) {
+                // r * P == O  <=>  (r - 1) * P == -P
+                let result = self.mul(r_minus_one);
+                assert(result == -self, "Point is not in the prime-order subgroup");
             }
 
             fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {

@@ -176,8 +176,17 @@ pub fn compare_scalar_field_to_grumpkin<let N: u32>(result: ScalarField<N>) {
 
 /// Convert a `Field` element into `ScalarField`
 ///
-/// Decomposes the `Field` value into 4-bit slices.
-/// then we verify that the resulting value is less than GRUMPKIN_MODULUS
+/// Decomposes the `Field` value into 4-bit slices, constrains each slice
+/// to 4 bits, and verifies reconstruction equality and that the result is
+/// less than the Grumpkin modulus.
+///
+/// The most significant slice is constrained to be >= 8, which rejects
+/// negative encodings. Without this check, both `x` and `-GRUMPKIN_MOD + x`
+/// reconstruct to the same `Field` value (since arithmetic is mod Grumpkin),
+/// but they represent different scalars in the emulated curve's scalar field
+/// when `r != GRUMPKIN_MOD`. A malicious prover could exploit this to produce
+/// a valid-looking `ScalarField` that yields incorrect scalar multiplications
+/// on curves other than BN254.
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
     /// Constructs an instance from a field element.
     fn from(input: Field) -> Self {
@@ -191,6 +200,11 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             for i in 0..N {
                 (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
             }
+
+            // Reject negative encodings by enforcing the most significant
+            // slice >= 8 (slices < 8 encode negative values).
+            // x \in [8, 15] -> x - 8 \in [0, 7] -> 3 bits required
+            (result.base4_slices[0] as Field - 8 as Field).assert_max_bit_size::<3>();
 
             // Enforce consistency with `input`.
             let reconstructed_input: Field = result.into();
@@ -492,5 +506,40 @@ mod tests {
         let grumpkin_modulus_scalar: ScalarField<64> =
             ScalarField { base4_slices: get_grumpkin_modulus_slices::<64>(), skew: false };
         let _: Field = grumpkin_modulus_scalar.into();
+    }
+
+    /// Showcase of the aliasing that was possible before the first-slice >= 8 fix:
+    /// -GRUMPKIN_MOD + 0x42 and 0x42 are different slices but reconstruct to the
+    /// same Field via `into()`
+    #[test]
+    fn test_negative_encoding_aliases_in_into() {
+        let honest: ScalarField<64> = ScalarField::from(0x42);
+
+        let malicious_slices: [u8; 64] = [
+            6, 7, 12, 13, 13, 8, 12, 6, 8, 15, 6, 7, 2, 15, 14, 11, 2, 3, 13, 7, 13, 13, 2, 4, 11,
+            15, 3, 15, 5, 3, 13, 1, 6, 11, 14, 6, 0, 11, 13, 11, 12, 3, 2, 3, 4, 7, 11, 7, 5, 14, 0,
+            15, 0, 5, 3, 6, 0, 8, 0, 0, 0, 0, 2, 0,
+        ];
+        let malicious: ScalarField<64> =
+            ScalarField { base4_slices: malicious_slices, skew: false };
+
+        // Different slices, same Field reconstruction
+        assert(malicious_slices != honest.base4_slices);
+        assert(malicious.into() == honest.into());
+    }
+
+    /// The first-slice >= 8 check in `from()` rejects negative encodings.
+    /// Without this, a malicious prover could use -GRUMPKIN_MOD + x as a
+    /// valid ScalarField for x, producing incorrect scalar multiplications
+    /// on non-BN254 curves.
+    #[test(should_fail)]
+    fn test_from_field_rejects_negative_encoding() {
+        let malicious_slices: [u8; 64] = [
+            6, 7, 12, 13, 13, 8, 12, 6, 8, 15, 6, 7, 2, 15, 14, 11, 2, 3, 13, 7, 13, 13, 2, 4, 11,
+            15, 3, 15, 5, 3, 13, 1, 6, 11, 14, 6, 0, 11, 13, 11, 12, 3, 2, 3, 4, 7, 11, 7, 5, 14, 0,
+            15, 0, 5, 3, 6, 0, 8, 0, 0, 0, 0, 2, 0,
+        ];
+        // slices[0] = 6 < 8, rejected by the first-slice range check
+        (malicious_slices[0] as Field - 8 as Field).assert_max_bit_size::<3>();
     }
 }

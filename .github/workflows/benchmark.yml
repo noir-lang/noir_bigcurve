@@ -25,8 +25,7 @@ jobs:
       - name: Install bb
         run: |
           curl -L https://bbup.aztec.network | bash
-          ~/.bb/bbup -v 4.1.2
-          sudo apt install libc++-dev
+          ~/.bb/bbup -v 5.0.1
 
       - name: Build Noir benchmark programs
         run: nargo export

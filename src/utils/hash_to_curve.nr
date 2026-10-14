@@ -65,6 +65,8 @@ pub fn hash_to_curve<Fq, let SeedBytes: u32>(seed: [u8; SeedBytes], a: Fq, b: Fq
 where
     Fq: BigNum,
 {
+    // Safety: `y` is constrained below to satisfy the curve equation for an `x` derived in-circuit
+    // from `seed` and `salt`, and both coordinates are range-checked before being returned.
     let (_, y, salt) = unsafe { __hash_to_curve_witgen(seed, a, b) };
     let outer_hash: Field = poseidon_hash_bytes(seed);
 

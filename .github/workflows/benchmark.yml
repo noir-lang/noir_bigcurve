@@ -18,15 +18,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nargo
-        uses: noir-lang/noirup@v0.1.4
+        uses: noir-lang/noirup@v0.1.5
         with:
-          toolchain: nightly-2026-04-08
+          toolchain: 1.0.0-rc.0
 
       - name: Install bb
         run: |
           curl -L https://bbup.aztec.network | bash
-          ~/.bb/bbup -v 4.1.2
-          sudo apt install libc++-dev
+          ~/.bb/bbup -v 5.0.1
 
       - name: Build Noir benchmark programs
         run: nargo export

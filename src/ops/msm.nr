@@ -20,89 +20,6 @@ pub fn msm<P: BigCurve<BN>, BN: BigNum, let NScalarSlices: u32, let NMuls: u32>(
     P::evaluate_linear_expression(mul_points, mul_scalars, add_points)
 }
 
-/// Perform the inner MSM loop, verifying an `AffineTranscript` (constrained)
-///
-/// Builds point tables, then replays the interleaved wNAF double-and-add loop,
-/// verifying each step against the provided transcript. Does NOT subtract
-/// `offset_generator_final` -- the caller is responsible for that.
-fn msm_with_hint_internal<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, BN: BigNum, P: BigCurve<BN>>(
-    mut points: [P; Size],
-    mut scalars: [ScalarField<NScalarSlices>; Size],
-    transcript: [AffineTranscript<BN>; NTranscriptSlices],
-) -> P {
-    // Replace infinity inputs with the generator (scalar zeroed to produce identity)
-    let mut _inputs: [P; Size] = [P::one(); Size];
-    let mut _scalars: [ScalarField<NScalarSlices>; Size] = [ScalarField::zero(); Size];
-    for i in 0..Size {
-        let (input, scalar) = if points[i].is_infinity() {
-            (P::one(), ScalarField::zero())
-        } else {
-            (points[i], scalars[i])
-        };
-        _inputs[i] = input;
-        _scalars[i] = scalar;
-    }
-    points = _inputs;
-    scalars = _scalars;
-
-    let mut tables: [PointTable<BN>; Size] = [PointTable::empty(); Size];
-    for i in 0..Size {
-        let mut table_transcript: [AffineTranscript<BN>; 8] = [AffineTranscript::new(); 8];
-        for j in 0..8 {
-            table_transcript[j] = transcript[i * 8 + j];
-        }
-        tables[i] = PointTable::new_with_hint::<P>(points[i], table_transcript);
-    }
-
-    // Initialize accumulator: offset_generator + T_0[slice_0[0]] + T_1[slice_1[0]] + ...
-    let mut accumulator: P = P::offset_generator();
-    let mut accumulator: P = incomplete_add_with_hint::<BN, P>(
-        accumulator,
-        tables[0].get::<P>(scalars[0].base4_slices[0] as u32),
-        transcript[8 * Size],
-    );
-
-    for i in 1..Size {
-        accumulator = incomplete_add_with_hint::<BN, P>(
-            accumulator,
-            tables[i].get::<P>(scalars[i].base4_slices[0] as u32),
-            transcript[8 * Size + i],
-        );
-    }
-
-    // For each subsequent slice: 4 doublings then add each point's table lookup
-    for i in 1..NScalarSlices {
-        accumulator =
-            double_with_hint::<BN, P>(accumulator, transcript[9 * Size + (4 + Size) * (i - 1)]);
-        accumulator =
-            double_with_hint::<BN, P>(accumulator, transcript[9 * Size + (4 + Size) * (i - 1) + 1]);
-        accumulator =
-            double_with_hint::<BN, P>(accumulator, transcript[9 * Size + (4 + Size) * (i - 1) + 2]);
-        accumulator =
-            double_with_hint::<BN, P>(accumulator, transcript[9 * Size + (4 + Size) * (i - 1) + 3]);
-
-        for j in 0..Size {
-            accumulator = incomplete_add_with_hint::<BN, P>(
-                accumulator,
-                tables[j].get::<P>(scalars[j].base4_slices[i] as u32),
-                transcript[9 * Size + (4 + Size) * (i - 1) + 4 + j],
-            );
-        }
-    }
-
-    // wNAF skew correction: subtract P_i when scalar_i is even
-    for i in 0..Size {
-        accumulator = conditional_incomplete_subtract_with_hint::<BN, P>(
-            accumulator,
-            points[i],
-            scalars[i].skew,
-            transcript[9 * Size + (4 + Size) * (NScalarSlices - 1) + i],
-        );
-    }
-
-    accumulator
-}
-
 /// Perform a single scalar multiplication, verifying an `AffineTranscript` (constrained)
 ///
 /// Computes `scalar * point` by replaying the wNAF double-and-add loop against
@@ -165,28 +82,6 @@ pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, BN: Big
         accumulator,
         P::offset_generator_final(),
         transcript[5 + 5 * NScalarSlices],
-    );
-    accumulator
-}
-
-/// Perform an MSM and subtract offset generator (constrained)
-///
-/// ## Note
-/// Not used anywhere
-fn msm_with_hint<let Size: u32, let NScalarSlices: u32, let NTranscriptSlices: u32, BN: BigNum, P: BigCurve<BN>>(
-    mut points: [P; Size],
-    mut scalars: [ScalarField<NScalarSlices>; Size],
-    transcript: [AffineTranscript<BN>; NTranscriptSlices],
-) -> P {
-    let mut accumulator: P = msm_with_hint_internal::<Size, NScalarSlices, NTranscriptSlices, BN, P>(
-        points,
-        scalars,
-        transcript,
-    );
-    accumulator = sub_with_hint::<BN, P>(
-        accumulator,
-        P::offset_generator_final(),
-        transcript[10 * Size + (4 + Size) * (NScalarSlices - 1)],
     );
     accumulator
 }

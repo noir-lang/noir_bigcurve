@@ -1,5 +1,10 @@
 # noir_bigcurve
 
+> [!WARNING]
+> **This library is experimental software. It has not been fully audited and is not guaranteed to be secure. Expect bugs!**
+>
+> Bugs in this library can lead to under-constrained circuits, allowing invalid proofs to be accepted. Do not rely on it to protect real assets or sensitive data without your own independent review.
+
 An optimized elliptic curve library for Noir.
 
 `noir_bigcurve` provides elliptic curve arithmetic over arbitrary prime fields using the Weierstrass form:

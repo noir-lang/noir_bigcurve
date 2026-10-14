@@ -20,7 +20,7 @@ jobs:
       - name: Install Nargo
         uses: noir-lang/noirup@v0.1.5
         with:
-          toolchain: nightly-2026-04-08
+          toolchain: 1.0.0-rc.0
 
       - name: Install bb
         run: |

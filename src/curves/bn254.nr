@@ -42,7 +42,7 @@ pub global BN254_SCALAR_SLICES: u32 = 64;
 pub(crate) type BN254J = CurveJ<BN254_Fq, BN254>;
 pub type BN254Scalar = ScalarField<BN254_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { BN254_Fq }, quote {BN254_PARAMS})]
+#[derive_curve_impl(quote { BN254_Fq }, quote { BN254_PARAMS })]
 pub struct BN254 {
     pub x: BN254_Fq,
     pub y: BN254_Fq,

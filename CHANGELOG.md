@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.15.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.14.0...v0.15.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* update noir-bignum to v0.11.0 ([#127](https://github.com/noir-lang/noir_bigcurve/issues/127))
+
+### Bug Fixes
+
+* Post-audit fixes ([#130](https://github.com/noir-lang/noir_bigcurve/issues/130)) ([8c4d2f6](https://github.com/noir-lang/noir_bigcurve/commit/8c4d2f61ba5705612893c218f872ec0834d06675))
+
+
+### Miscellaneous Chores
+
+* Update noir-bignum to v0.11.0 ([#127](https://github.com/noir-lang/noir_bigcurve/issues/127)) ([5adcef4](https://github.com/noir-lang/noir_bigcurve/commit/5adcef4d3bce2bb846f5bf3dfda5dc006f834fb2))
+
 ## [0.14.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.13.2...v0.14.0) (2026-04-08)
 
 

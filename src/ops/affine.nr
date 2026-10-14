@@ -5,6 +5,15 @@ use bignum::bignum::evaluate_quadratic_expression;
 
 /// Double a point using an `AffineTranscript` witness (constrained)
 ///
+/// Assumes the input point lies on the curve.
+///
+/// # Incompleteness
+///
+/// The tangent-slope constraint `lambda * 2*y1 - 3*x1^2 - a = 0` is incomplete
+/// when `y1 == 0`: it reduces to `3*x1^2 + a == 0`, which is false in general.
+/// Points with `y == 0` are 2-torsion points and only exist on curves with
+/// even cofactor. On prime-order curves this cannot occur.
+///
 /// Verifies three constraints against the transcript values `(lambda, x3, y3)`:
 ///
 ///   1. `lambda * 2*y1 - 3*x1^2 - a = 0`   (tangent slope)
@@ -55,10 +64,12 @@ pub(crate) fn double_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Add two points using incomplete formulae (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// With offset generators, an honest prover never encounters edge cases.
 /// Instead of handling them, we assert `x1 != x2` for soundness.
@@ -119,10 +130,12 @@ pub(crate) fn incomplete_add_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Conditionally add two points using incomplete formulae (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// If `predicate` is true, returns `point + other`. Otherwise returns `point` unchanged.
 /// Callers guarantee `point.x != other.x` via the offset generator.
@@ -219,10 +232,12 @@ fn incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
         [false, false],
     );
 
-    P::from_coordinates(x3, y3, false)
+    P::from_coordinates_unsafe(x3, y3, false)
 }
 
 /// Complete point addition with edge-case handling (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// Handles all cases: distinct points, doubling (`x1 == x2, y1 == y2`),
 /// inverse points (`x1 == x2, y1 != y2` -> infinity), and infinity inputs.
@@ -230,6 +245,13 @@ fn incomplete_subtract_with_hint<BN: BigNum, P: BigCurve<BN>>(
 /// Dynamically selects between addition and doubling constraints via conditional
 /// operand substitution, so only one `evaluate_quadratic_expression` call validates
 /// the lambda constraint regardless of the case.
+///
+/// # Incompleteness
+///
+/// The doubling path uses the same tangent-slope formula as `double_with_hint`,
+/// which is incomplete when `y == 0`. This only affects curves with even cofactor.
+/// `sub_with_hint` is not affected because it treats the `P == P` case as
+/// `P + (-P)` and correctly returns the point at infinity.
 pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     point: P,
     other: P,
@@ -362,10 +384,12 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
         infinity_out
     };
 
-    P::from_coordinates(x_out, y_out, infinity_out)
+    P::from_coordinates_unsafe(x_out, y_out, infinity_out)
 }
 
 /// Complete point subtraction with edge-case handling (constrained)
+///
+/// Assumes both input points lie on the curve.
 ///
 /// Computes `point - other`. Handles all cases: distinct points, doubling
 /// (`x1 == x2, y1 == -y2`), inverse points (`x1 == x2, y1 == y2` -> infinity),
@@ -505,5 +529,5 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
         infinity_out
     };
 
-    P::from_coordinates(x_out, y_out, infinity_out)
+    P::from_coordinates_unsafe(x_out, y_out, infinity_out)
 }

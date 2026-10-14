@@ -1,5 +1,5 @@
-use bignum::BigNum;
-pub use bignum::{Vesta_Fq, Vesta_Fr};
+use ::bignum::BigNum;
+pub use ::bignum::{Vesta_Fq, Vesta_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -15,26 +15,26 @@ pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
     ],
     offset_generator: [
         Vesta_Fq::from_limbs([
-            0xd73a2edb473ce4915aac654a325797,
-            0xc09e967b89d788f7e27815fb4bb4c0,
-            0x39e6,
+            0x46504246237b1e8a2fde3f1eed5e05,
+            0x70942053ba0017bcf5ecf45e513310,
+            0x1e8f,
         ]),
         Vesta_Fq::from_limbs([
-            0x8d81cd3f1d5d99e5b0f6d84b7edf19,
-            0x533ec6fdf60756628f190d4f4e6cfe,
-            0x387c,
+            0xfc2de08ea4751c0e60b9ff23ef908c,
+            0xc47fc750236eb2948f19bd28d9fe74,
+            0x1916,
         ]),
     ],
     offset_generator_final: [
         Vesta_Fq::from_limbs([
-            0xb3f8f3c6fd894f2ee926a88da0986d,
-            0xe180b03e6edfdaa37dc87980f2afcb,
-            0x03f8,
+            0x08d93d9650911f156934f8abb5076c,
+            0xa50e3e97963e724406d4ee6998dcf6,
+            0x1bd8,
         ]),
         Vesta_Fq::from_limbs([
-            0x65cbc7b9bc020fe02089791f4e43c7,
-            0x3850897de5c5fd570d80ce882bad66,
-            0x0baf,
+            0x7790d3d6eb81b4c0eaf8d2b34e82bf,
+            0x8b8fb7404edd3bd7f16b95775f6fcd,
+            0x1278,
         ]),
     ],
 };

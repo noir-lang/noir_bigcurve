@@ -122,11 +122,13 @@ Represents scalars used in point multiplication.
 - `one`
 - `point_at_infinity`
 - `from_coordinates`
+- `from_coordinates_unsafe`
 - `hash_to_curve`
 
 #### Helpers
 
 - `validate_on_curve`
+- `validate_in_subgroup` - only needed on non-prime-order curves (e.g. BLS12-377, BLS12-381) when accepting private point inputs. Not needed for public/hardcoded points or points derived inside the circuit.
 
 ## evaluate_linear_expression
 
@@ -209,6 +211,5 @@ A: To minimize witness generation time (currently the bottleneck due to Brillig 
 
 # Future work
 
-- Add method to check point is in prime-order subgroup for curves with a cofactor
 - Parametrize and test with a degree-2 extension field instead of `BigNum`
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)

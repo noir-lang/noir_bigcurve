@@ -27,8 +27,64 @@ pub struct BigCurveParams<BN> {
 ///   1. **Unconstrained**: compute the result in Jacobian coordinates (fast, no constraints)
 ///   2. **Constrained**: verify the result in affine coordinates using `evaluate_quadratic_expression`
 ///
-/// Offset generators are added before computation and subtracted after, ensuring the
-/// incomplete addition formulas never encounter edge cases (equal or inverse points).
+/// Offset generators are added before computation and subtracted after, so that the
+/// incomplete addition formulas used in `mul` and `evaluate_linear_expression` avoid
+/// edge cases (equal or inverse points) for honest inputs with overwhelming probability.
+///
+/// # Incompleteness of `mul` and `evaluate_linear_expression`
+///
+/// These methods use incomplete addition internally. A pseudorandom offset generator
+/// makes collisions (doubling or inverse-point additions) negligibly unlikely for
+/// honest inputs. However, because the offset generator is fixed and public, an
+/// adversary **can** craft inputs that force a collision in the double-and-add loop,
+/// making the circuit unsatisfiable.
+///
+/// Additionally, the doubling formula is incomplete when `y == 0` (2-torsion points).
+/// On curves with even cofactor, an adversary can supply such a point to trigger
+/// the same unsatisfiable-circuit effect. On prime-order curves this cannot occur.
+///
+/// This does not break soundness - a malicious prover cannot produce a valid proof
+/// for a false statement.
+///
+/// If your protocol allows untrusted parties to supply curve points that will be
+/// used in `mul`, `evaluate_linear_expression`, or `Add`, consider these vectors
+/// and add appropriate mitigations. On curves with even cofactor, callers should
+/// assert `y.assert_is_not_zero()` on untrusted inputs to rule out 2-torsion points.
+///
+/// `Sub` is **not** affected - it uses complete addition formulas.
+///
+/// `Add` handles all edge cases except doubling a point with `y == 0`, which
+/// uses the same incomplete tangent-slope formula. This only affects curves
+/// with even cofactor.
+///
+/// # Non-prime-order curves and subgroup membership
+///
+/// For curves with non-prime order (e.g. BLS12-377, BLS12-381), the associated
+/// `ScalarField` type represents scalars modulo `r` (the prime subgroup order),
+/// **not** modulo the full curve order `h * r`.
+///
+/// This means `mul` and `evaluate_linear_expression` are only sound when the
+/// input points belong to the prime-order subgroup G1. For a point P not in G1,
+/// `k * P != (k + r) * P` in general, because `r` is not the order of P.
+///
+/// This is a **soundness** issue, not merely a completeness issue. A malicious
+/// prover who supplies a private point outside G1 can construct inputs that
+/// produce valid-looking results in G1 while having extra degrees of freedom
+/// that should not exist. For example, given a non-G1 point R of order `l`
+/// (where `l` divides the cofactor), the prover can construct `Q = (1/l)*P + R`
+/// such that `l * Q = P` - the result is in G1 and passes all checks, but the
+/// prover had freedom to choose Q outside the expected subgroup.
+///
+/// On prime-order curves (e.g. BN254, secp256k1) this is not a concern because
+/// every point on the curve is in the prime-order group.
+///
+/// This only matters when the prover supplies curve points as private inputs.
+/// Public/hardcoded points (generators, protocol parameters) and points derived
+/// inside the circuit (e.g. via `hash_to_curve`) are not affected.
+///
+/// If your circuit accepts private curve points on a non-prime-order curve,
+/// you **must** validate that they belong to G1 before using them in scalar
+/// multiplication. Use `validate_in_subgroup` for this.
 ///
 /// # Implementing a new curve
 ///
@@ -49,7 +105,16 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     fn b() -> BN;
 
     /// Construct a point from affine coordinates and an infinity flag.
+    ///
+    /// Validates that the point lies on the curve via `validate_on_curve`.
     fn from_coordinates(x: BN, y: BN, is_infinity: bool) -> Self;
+
+    /// Construct a point from affine coordinates and an infinity flag
+    /// **without** on-curve validation.
+    ///
+    /// Use only when the caller already guarantees the point is valid
+    /// (e.g. the result of a constrained operation).
+    fn from_coordinates_unsafe(x: BN, y: BN, is_infinity: bool) -> Self;
 
     /// Returns the point at infinity (the identity element of the curve group).
     fn point_at_infinity() -> Self;
@@ -77,19 +142,91 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Points at infinity are accepted unconditionally.
     fn validate_on_curve(self);
 
+    /// Validate that the point belongs to the prime-order subgroup G1 (constrained).
+    ///
+    /// Checks `r * P == O` by verifying `(r - 1) * P == -P`, where `r` is the
+    /// scalar field modulus (the order of G1).
+    ///
+    /// The caller must pass `r - 1` encoded as a `ScalarField` because the scalar
+    /// field modulus `r` differs from the native field modulus, so it cannot be
+    /// derived generically inside this function. For example:
+    /// ```
+    /// let r_minus_one = -BLS12_377_Fr::one();
+    /// point.validate_in_subgroup(r_minus_one);
+    /// ```
+    ///
+    /// Only needed on curves with non-prime order (e.g. BLS12-377, BLS12-381)
+    /// when accepting private point inputs from an untrusted prover. Not needed
+    /// for public/hardcoded points or points derived inside the circuit (e.g.
+    /// via `hash_to_curve`). On prime-order curves this check is redundant.
+    ///
+    /// **Warning:** this is expensive - it performs a full scalar multiplication.
+    ///
+    /// Note: uses `mul` internally, which has the same incompleteness caveats.
+    /// For an honest prover with a valid G1 point, incompleteness does not trigger.
+    fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>);
+
     /// Scalar multiplication: compute `scalar * self` (constrained).
     ///
     /// Uses wNAF with a 4-bit window. The scalar must be encoded as a `ScalarField`.
+    ///
+    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
+    /// Using the wrong value will produce an unprovable circuit. Prefer the
+    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    ///
+    /// # Incompleteness
+    ///
+    /// Uses incomplete addition internally. For honest inputs the probability of
+    /// hitting an edge case is negligible, but an adversary who knows the offset
+    /// generator can craft inputs that make the circuit unsatisfiable.
+    /// See the trait-level documentation for details and mitigation advice.
+    ///
+    /// # Non-prime-order curves
+    ///
+    /// On curves with non-prime order (e.g. BLS12-377, BLS12-381), the input
+    /// point must belong to the prime-order subgroup G1. Using points outside
+    /// G1 is unsound. See the trait-level documentation for details.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
 
-    /// Hash an arbitrary byte seed to a point on the curve (constrained).
+    /// Hash an arbitrary byte seed to a point on the curve.
     ///
-    /// Uses try-and-increment with Poseidon2 hashing.
+    /// Uses try-and-increment with Poseidon2 hashing. The nonce for the
+    /// try-and-increment loop is determined via unconstrained witness generation,
+    /// and the result is constrained to lie on the curve.
+    ///
+    /// # Soundness warning
+    ///
+    /// The current implementation does **not** constrain that the lowest valid
+    /// nonce is used. A malicious prover can search for alternative valid nonces
+    /// that produce different curve points while passing all constraints. This
+    /// makes the function non-deterministic from the verifier's perspective, and
+    /// allows the prover to influence bits of the output by spending computational
+    /// power.
+    ///
+    /// Do not rely on this function for applications that require the output to
+    /// be uniquely determined by the seed.
     fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 
     /// Compute `sum_i(mul_scalars[i] * mul_points[i]) + sum_j(add_points[j])` (constrained).
     ///
     /// The most general operation: combines MSM with plain point additions.
+    ///
+    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
+    /// Using the wrong value will produce an unprovable circuit. Prefer the
+    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    ///
+    /// # Incompleteness
+    ///
+    /// Uses incomplete addition internally. For honest inputs the probability of
+    /// hitting an edge case is negligible, but an adversary who knows the offset
+    /// generator can craft inputs that make the circuit unsatisfiable.
+    /// See the trait-level documentation for details and mitigation advice.
+    ///
+    /// # Non-prime-order curves
+    ///
+    /// On curves with non-prime order (e.g. BLS12-377, BLS12-381), the input
+    /// points must belong to the prime-order subgroup G1. Using points outside
+    /// G1 is unsound. See the trait-level documentation for details.
     fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Self; NMuls],
         mul_scalars: [ScalarField<NScalarSlices>; NMuls],
@@ -135,6 +272,12 @@ pub comptime fn derive_curve_impl(
             }
 
             fn from_coordinates(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
+                let res = Self { x, y, is_infinity };
+                res.validate_on_curve();
+                res
+            }
+
+            fn from_coordinates_unsafe(x: $field_type, y: $field_type, is_infinity: bool) -> Self {
                 Self { x, y, is_infinity }
             }
 
@@ -190,6 +333,12 @@ pub comptime fn derive_curve_impl(
                 );
             }
 
+            fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>) {
+                // r * P == O  <=>  (r - 1) * P == -P
+                let result = self.mul(r_minus_one);
+                assert(result == -self, "Point is not in the prime-order subgroup");
+            }
+
             fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self {
                 // Safety: transcript is verified step-by-step in mul_with_hint
                 let transcript: [$AffineTranscript<$field_type>; (NScalarSlices * 5) + 6] =
@@ -211,6 +360,9 @@ pub comptime fn derive_curve_impl(
             }}
 
             // Complete addition with full edge-case handling (generates witness via Jacobian intermediates)
+            //
+            // Incomplete when doubling a point with `y == 0` (2-torsion).
+            // This only affects curves with even cofactor.
             impl std::ops::Add for $typ {
                 fn add(self, other: Self) -> Self {
                     let lhsJ = $CurveJ::<$field_type, $typ>::from(self);
@@ -220,7 +372,7 @@ pub comptime fn derive_curve_impl(
                     // Safety: affine conversion verified inside add_with_hint
                     let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates_unsafe(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
                         $crate::internal::add_with_hint::<$field_type, $typ>(self, other, transcript)           
                     }
@@ -245,7 +397,7 @@ pub comptime fn derive_curve_impl(
                     // Safety: affine conversion verified inside sub_with_hint
                     let transcript = unsafe { $crate::curve_jac::types::AffineTranscript::from_j(j_transcript) };
                     if std::runtime::is_unconstrained() {
-                        $typ::from_coordinates(transcript.x3, transcript.y3, result_jac.is_infinity)
+                        $typ::from_coordinates_unsafe(transcript.x3, transcript.y3, result_jac.is_infinity)
                     } else {
                         $crate::internal::sub_with_hint::<$field_type, $typ>(self, other, transcript)
                     }

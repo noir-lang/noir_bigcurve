@@ -1,5 +1,5 @@
-use bignum::BigNum;
-pub use bignum::{MNT6_753_Fq, MNT6_753_Fr};
+use ::bignum::BigNum;
+pub use ::bignum::{MNT6_753_Fq, MNT6_753_Fr};
 
 use crate::bigcurve::BigCurve;
 use crate::bigcurve::BigCurveParams;
@@ -20,42 +20,42 @@ pub global MNT6_753_PARAMS: BigCurveParams<MNT6_753_Fq> = BigCurveParams {
     ]),
     offset_generator: [
         MNT6_753_Fq::from_limbs([
-            0xca267e707ebeeefe8c30da5ac9c110,
-            0xc55d6f106dd01105fc2a32dc6bf50f,
-            0x1a09a82ba56c976c3b1ba112cdf0ec,
-            0xebd73b776a7ed1978128f2b0ef6d32,
-            0xebaa9e9c5ef1127287f9bb40ad9c3a,
-            0xb35169636e5d4d6ecdd3c1a56d572e,
-            0x8d27befb,
+            0x3ebe2271d844a642961e4ccd2871c4,
+            0x6e1319dff62bf245984bf1b6d2f875,
+            0xd547d995844277338761106f05433f,
+            0x6ae2b547ae5cd4d285eeac3fd59808,
+            0x99572582185c4b46154c801a6d725b,
+            0xb295d9c8348efc4f96095bb8b6f5a4,
+            0x01034712d8,
         ]),
         MNT6_753_Fq::from_limbs([
-            0xe8e53dc20f58431c578c904cc46bc2,
-            0x848c1fef74fd21532ac69c54d8445a,
-            0x7be3764e21a9ca4005f50b9232711d,
-            0x59825b455470b37c9a9fd1658c16f2,
-            0xb525ddddbca542da767ecec568caba,
-            0xfcfaaba3cf68e578744b223466d0fb,
-            0x09051ff06,
+            0x0cbc071ec6df0366b5f43ec9926fa9,
+            0x95f753639105fa6c53659b69ed41ba,
+            0xf65918e347b2a4f0131d32fa8e2248,
+            0x65aaa7beeb298095b82a21ab545708,
+            0xf384beb83b3a148305c204ea7d16c5,
+            0x46c3ccf11c6aa60f793c07fac40f6e,
+            0xf269ea5b,
         ]),
     ],
     offset_generator_final: [
         MNT6_753_Fq::from_limbs([
-            0x3bd4e86e4e5662910022e6a5f68044,
-            0xe1b2ab552d75969b39a05361e3f7c6,
-            0x2d082d8487a640a06a0b22454b2da4,
-            0x7f12adb72485e0eeed8431b78022db,
-            0x7d91cea9ba6da618994ee58974b210,
-            0x0064581a39ef6ce0934f79a4e51de4,
-            0x0d3f53d27,
+            0x2e40bf225557a4bc3992791dbffa0e,
+            0x855564ed85bea74cb8e61d28ce4727,
+            0x2888179a81756993f079e456a565cc,
+            0x0cc4e468ad9b0ee92db0c709c3abf9,
+            0x4623a0ff425e927d9ee099de55e643,
+            0x062fd49361662bd14daaa8a8763e3a,
+            0x017d854304,
         ]),
         MNT6_753_Fq::from_limbs([
-            0x7a21f40f7b8629698f5d8f1fdded21,
-            0x030d5524909344a466243bc6e89914,
-            0x402a94758b9c8994c54cfccb18780c,
-            0xd28b8b4b30cc93b965dd8cf05edab3,
-            0x1abec4a435d5f475e5cb325df79bff,
-            0x4253e5953459575809a0799b4ee9fd,
-            0x863bdf01,
+            0x37105b989a4efcf498923ab2a1f669,
+            0xdacb416a8bb78eac612b1f95abe6a1,
+            0x160f055aa5a7c1cab9c2dfaa22fe7b,
+            0x131ed4d61aeb5fecb0cec38f844790,
+            0x3c3f9367b58d7d6a526478092ef400,
+            0x4f1dbadc43472c8500acc4ed877264,
+            0x012b07b474,
         ]),
     ],
     one: [

@@ -369,10 +369,10 @@ fn handle_overflow<B: BigNum>(acc: Field, result: &mut B, limb_index: u32) -> u1
         // find the actual number needed to be subtracted.
         let reverse: u128 = (acc * -1) as u128;
         acc_u128 = (1 as u128 << 120) - reverse;
-        result.set_limb(
-            result.num_limbs() - limb_index,
-            result.get_limb(result.num_limbs() - limb_index) - 1,
-        );
+        let idx = result.num_limbs() - limb_index;
+        // Safety: the new value is an existing limb minus one, and the u128 subtraction
+        // fails on underflow, so it stays within the limb's existing range.
+        result.set_limb_unsafe(idx, (*result).get_limb(idx) - 1);
     }
     acc_u128
 }

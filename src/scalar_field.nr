@@ -474,7 +474,7 @@ mod tests {
             10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
         let result: ScalarField<64> = ScalarField { base4_slices: modulus_slices, skew: true };
-        let _ = result.into();
+        let _: Field = result.into();
     }
 
     #[test(should_fail_with = "Reconstructed number is greater than modulus")]
@@ -486,7 +486,7 @@ mod tests {
             15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
         let result: ScalarField<65> = ScalarField { base4_slices: modulus_slices2, skew: true };
-        let _ = result.into();
+        let _: Field = result.into();
     }
 
     #[test(should_fail_with = "Reconstructed number is greater than modulus")]
@@ -498,7 +498,7 @@ mod tests {
             15, 0, 15, 10, 12, 9, 15, 8, 0, 0, 0, 0, 0, 0,
         ];
         let result: ScalarField<68> = ScalarField { base4_slices: modulus_slices3, skew: true };
-        let _ = result.into();
+        let _: Field = result.into();
     }
 
     #[test(should_fail_with = "Scalar field representation must be strictly less than modulus")]
@@ -525,7 +525,9 @@ mod tests {
 
         // Different slices, same Field reconstruction
         assert(malicious_slices != honest.base4_slices);
-        assert(malicious.into() == honest.into());
+        let malicious: Field = malicious.into();
+        let honest: Field = honest.into();
+        assert(malicious == honest);
     }
 
     /// The first-slice >= 8 check in `from()` rejects negative encodings.

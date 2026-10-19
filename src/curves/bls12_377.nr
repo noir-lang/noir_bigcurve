@@ -93,7 +93,9 @@ mod test {
     }
     #[test]
     fn test_hash_to_curve() {
-        let r = BLS12_377::hash_to_curve("hello world".as_bytes());
+        let r: BLS12_377 = crate::utils::hash_to_curve::hash_to_curve_point::<bignum::BLS12_377_Fq, BLS12_377, 11>(
+            "hello world".as_bytes(),
+        );
 
         r.validate_on_curve();
     }

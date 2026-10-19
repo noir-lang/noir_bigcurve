@@ -77,7 +77,9 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = Vesta::hash_to_curve("hello world".as_bytes());
+        let r: Vesta = crate::utils::hash_to_curve::hash_to_curve_point::<bignum::Vesta_Fq, Vesta, 11>(
+            "hello world".as_bytes(),
+        );
 
         r.validate_on_curve();
     }

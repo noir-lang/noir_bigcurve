@@ -1,5 +1,6 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::CurveJ;
+use crate::utils::hash_to_curve::hash_to_curve_point;
 
 use bignum::BigNum;
 
@@ -25,7 +26,7 @@ where
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
     // hash_to_curve only needs curve parameters a, b (no offset generators)
-    let g: Curve = Curve::hash_to_curve(seed);
+    let g: Curve = hash_to_curve_point::<BN, Curve, 25>(seed);
 
     // Multiply by cofactor to land in the prime-order subgroup
     let g_init: CurveJ<BN, Curve> = CurveJ::<BN, Curve>::from(g);

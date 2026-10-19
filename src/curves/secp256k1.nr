@@ -87,7 +87,9 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = Secp256k1::hash_to_curve("hello world".as_bytes());
+        let r: Secp256k1 = crate::utils::hash_to_curve::hash_to_curve_point::<bignum::Secp256k1_Fq, Secp256k1, 11>(
+            "hello world".as_bytes(),
+        );
 
         r.validate_on_curve();
     }

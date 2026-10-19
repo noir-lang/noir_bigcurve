@@ -76,7 +76,9 @@ mod test {
 
     #[test]
     fn test_hash_to_curve() {
-        let r = BN254::hash_to_curve("hello world".as_bytes());
+        let r: BN254 = crate::utils::hash_to_curve::hash_to_curve_point::<bignum::BN254_Fq, BN254, 11>(
+            "hello world".as_bytes(),
+        );
 
         r.validate_on_curve();
     }

@@ -71,7 +71,7 @@ point.y.validate_in_field();
 point.validate_on_curve();
 ```
 
-Points produced by `hash_to_curve` or `one` already include these checks and do not need manual validation.
+Points produced by `one` already include these checks and do not need manual validation.
 
 ## Example
 
@@ -128,7 +128,6 @@ Represents scalars used in point multiplication.
 - `point_at_infinity`
 - `from_coordinates`
 - `from_coordinates_unsafe`
-- `hash_to_curve`
 
 #### Helpers
 
@@ -170,15 +169,10 @@ use ::bigcurve::{BLS12_377, BLS12_377Scalar};
 use ::bignum::BigNum;
 use ::bignum::BLS12_377_Fr;
 
-fn main(s1: [u8; 4], s2: [u8; 3], s3: [u8; 4], s4: [u8; 4]) -> pub BLS12_377 {
-    let G = BLS12_377::hash_to_curve(s1);
+fn main(G: BLS12_377, Q: BLS12_377, P: BLS12_377, R: BLS12_377, s1: [u8; 4], s2: [u8; 3]) -> pub BLS12_377 {
+    // G, Q, P and R are inputs here: validate them as described above before use.
     let a = BLS12_377Scalar::from_bignum(BLS12_377_Fr::derive_from_seed(s1));
-
-    let Q = BLS12_377::hash_to_curve(s2);
     let b = BLS12_377Scalar::from_bignum(BLS12_377_Fr::derive_from_seed(s2));
-
-    let P = BLS12_377::hash_to_curve(s3);
-    let R = BLS12_377::hash_to_curve(s4);
 
 
     BLS12_377::evaluate_linear_expression([G, Q], [a, b], [P, R])

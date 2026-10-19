@@ -803,8 +803,10 @@ fn bigcurve_sub_with_hint() {
 
 #[test]
 fn test_hash_to_curve_regression() {
-    let P = BN254::hash_to_curve([0, 1, 2]);
-    let Q = BN254::hash_to_curve([0, 1, 2, 3]);
+    let P: BN254 =
+        crate::utils::hash_to_curve::hash_to_curve_point::<BN254_Fq, BN254, 3>([0, 1, 2]);
+    let Q: BN254 =
+        crate::utils::hash_to_curve::hash_to_curve_point::<BN254_Fq, BN254, 4>([0, 1, 2, 3]);
     assert(P != Q);
 }
 

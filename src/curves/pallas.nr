@@ -78,7 +78,9 @@ mod test {
     }
     #[test]
     fn test_hash_to_curve() {
-        let r = Pallas::hash_to_curve("hello world".as_bytes());
+        let r: Pallas = crate::utils::hash_to_curve::hash_to_curve_point::<bignum::Pallas_Fq, Pallas, 11>(
+            "hello world".as_bytes(),
+        );
 
         r.validate_on_curve();
     }

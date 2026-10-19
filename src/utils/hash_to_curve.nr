@@ -1,3 +1,4 @@
+use crate::bigcurve::BigCurve;
 use ::bignum::BigNum;
 use ::bignum::bignum::evaluate_quadratic_expression;
 
@@ -138,4 +139,18 @@ where
     y.validate_in_field();
     y.validate_in_range();
     (x, y)
+}
+
+/// Hash a byte seed to a point on `Curve`, using the curve's `a` and `b` coefficients.
+///
+/// Crate-internal: the output is not uniquely determined by the seed (see
+/// `hash_to_curve`), so it is only used to derive fixed constants such as the
+/// offset generators, which are hardcoded and checked by tests.
+pub(crate) fn hash_to_curve_point<BN, Curve, let SeedBytes: u32>(seed: [u8; SeedBytes]) -> Curve
+where
+    BN: BigNum,
+    Curve: BigCurve<BN>,
+{
+    let (x, y): (BN, BN) = hash_to_curve::<BN, SeedBytes>(seed, Curve::a(), Curve::b());
+    Curve::from_coordinates_unsafe(x, y, false)
 }

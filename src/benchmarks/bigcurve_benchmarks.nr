@@ -19,7 +19,6 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let validate_on_curve_bench_name = f"validate_on_curve_{module_name}".quoted_contents();
     let evaluate_linear_expression_bench_name =
         f"evaluate_linear_expression_{module_name}".quoted_contents();
-    let hash_to_curve_bench_name = f"hash_to_curve_{module_name}".quoted_contents();
     let BigCurve = quote { crate::bigcurve::BigCurve };
     let ScalarField = quote { crate::scalar_field::ScalarField };
 
@@ -53,11 +52,6 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
         #[export]
         fn $mul_bench_name(a: $typ, b: $ScalarField<64>) -> $typ {
             $BigCurve::mul(a, b)
-        }
-
-        #[export]
-        fn $hash_to_curve_bench_name(a: [u8; 10]) -> $typ {
-            $BigCurve::hash_to_curve(a)
         }
 
         #[export]

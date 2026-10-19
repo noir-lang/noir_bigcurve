@@ -80,7 +80,7 @@ pub struct BigCurveParams<BN> {
 ///
 /// This only matters when the prover supplies curve points as private inputs.
 /// Public/hardcoded points (generators, protocol parameters) and points derived
-/// inside the circuit (e.g. via `hash_to_curve`) are not affected.
+/// inside the circuit from such points are not affected.
 ///
 /// If your circuit accepts private curve points on a non-prime-order curve,
 /// you **must** validate that they belong to G1 before using them in scalar
@@ -157,8 +157,8 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     ///
     /// Only needed on curves with non-prime order (e.g. BLS12-377, BLS12-381)
     /// when accepting private point inputs from an untrusted prover. Not needed
-    /// for public/hardcoded points or points derived inside the circuit (e.g.
-    /// via `hash_to_curve`). On prime-order curves this check is redundant.
+    /// for public/hardcoded points or points derived inside the circuit from them.
+    /// On prime-order curves this check is redundant.
     ///
     /// **Warning:** this is expensive - it performs a full scalar multiplication.
     ///
@@ -187,25 +187,6 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// point must belong to the prime-order subgroup G1. Using points outside
     /// G1 is unsound. See the trait-level documentation for details.
     fn mul<let NScalarSlices: u32>(self, scalar: ScalarField<NScalarSlices>) -> Self;
-
-    /// Hash an arbitrary byte seed to a point on the curve.
-    ///
-    /// Uses try-and-increment with Poseidon2 hashing. The nonce for the
-    /// try-and-increment loop is determined via unconstrained witness generation,
-    /// and the result is constrained to lie on the curve.
-    ///
-    /// # Soundness warning
-    ///
-    /// The current implementation does **not** constrain that the lowest valid
-    /// nonce is used. A malicious prover can search for alternative valid nonces
-    /// that produce different curve points while passing all constraints. This
-    /// makes the function non-deterministic from the verifier's perspective, and
-    /// allows the prover to influence bits of the output by spending computational
-    /// power.
-    ///
-    /// Do not rely on this function for applications that require the output to
-    /// be uniquely determined by the seed.
-    fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self;
 
     /// Compute `sum_i(mul_scalars[i] * mul_points[i]) + sum_j(add_points[j])` (constrained).
     ///
@@ -344,11 +325,6 @@ pub comptime fn derive_curve_impl(
                 let transcript: [$AffineTranscript<$field_type>; (NScalarSlices * 5) + 6] =
                     unsafe { $crate::internal::get_mul_transcript::<NScalarSlices, $field_type, $typ>(self, scalar) };
                 $crate::internal::mul_with_hint::<NScalarSlices, (NScalarSlices * 5) + 6, $field_type, $typ>(self, scalar, transcript)
-            }
-
-            fn hash_to_curve<let N: u32>(seed: [u8; N]) -> Self {
-                let r = $crate::utils::hash_to_curve::hash_to_curve::<$field_type, N>(seed, $params.a, $params.b);
-                Self { x: r.0, y: r.1, is_infinity: false }
             }
 
             fn evaluate_linear_expression<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(

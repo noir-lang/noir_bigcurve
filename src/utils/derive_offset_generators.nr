@@ -1,4 +1,4 @@
-use crate::bigcurve::BigCurve;
+use crate::bigcurve::{BigCurve, BigCurveInternal};
 use crate::curve_jac::types::CurveJ;
 use crate::utils::hash_to_curve::hash_to_curve_point;
 
@@ -21,7 +21,7 @@ pub(crate) unconstrained fn compute_offset_generators<BN, let NScalarSlices: u32
 ) -> ([BN; 2], [BN; 2])
 where
     BN: BigNum,
-    Curve: BigCurve<BN>,
+    Curve: BigCurve<BN> + BigCurveInternal<BN>,
 {
     let seed: [u8; 25] = "bigcurve offset generator".as_bytes();
 
@@ -87,7 +87,7 @@ pub(crate) unconstrained fn verify_offset_generators<BN, let NScalarSlices: u32,
 )
 where
     BN: BigNum,
-    Curve: BigCurve<BN>,
+    Curve: BigCurve<BN> + BigCurveInternal<BN>,
 {
     let (offset_generator_initial, offset_generator_final) =
         compute_offset_generators::<BN, NScalarSlices, Curve>(cofactor);

@@ -237,10 +237,6 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 }
 
 impl<let N: u32> ScalarField<N> {
-    pub fn len(_: Self) -> u32 {
-        N
-    }
-
     pub fn zero() -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: true };
         result.base4_slices[0] = 8; // 8 = numeric value of 1, 0 = numeric value of -15
@@ -329,14 +325,6 @@ impl<let N: u32> ScalarField<N> {
         }
         result.set_limb(0, result.get_limb(0) - (self.skew as u128));
         result
-    }
-
-    pub fn new() -> Self {
-        Self { base4_slices: [0; N], skew: false }
-    }
-
-    pub fn get(self, idx: u32) -> u8 {
-        self.base4_slices[idx]
     }
 }
 

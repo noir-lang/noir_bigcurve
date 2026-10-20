@@ -9,7 +9,7 @@ use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
 use crate::curve_jac::types::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377_Fr, BLS12_377Scalar};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377Scalar};
 use crate::curves::bn254::{BN254, BN254J, BN254Scalar};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
@@ -876,9 +876,55 @@ fn test_add_edgecase() {
 /// The BLS12-377 generator is in G1, so r * G == O.
 #[test]
 fn test_validate_in_subgroup_valid_point() {
-    let r_minus_one: BLS12_377Scalar = BLS12_377Scalar::from_bignum(-BLS12_377_Fr::one());
     let generator: BLS12_377 = BLS12_377::one();
-    generator.validate_in_subgroup(r_minus_one);
+    generator.validate_in_subgroup();
+}
+
+// Every curve's generator lies in G1, so these catch a wrong `r - 1` passed to
+// `derive_curve_impl`.
+#[test]
+fn test_validate_in_subgroup_generator_bls12_381() {
+    crate::curves::bls12_381::BLS12_381::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_bn254() {
+    crate::curves::bn254::BN254::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_mnt4_753() {
+    crate::curves::mnt4_753::MNT4_753::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_mnt6_753() {
+    crate::curves::mnt6_753::MNT6_753::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_pallas() {
+    crate::curves::pallas::Pallas::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_vesta() {
+    crate::curves::vesta::Vesta::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_secp256k1() {
+    crate::curves::secp256k1::Secp256k1::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_secp256r1() {
+    crate::curves::secp256r1::Secp256r1::one().validate_in_subgroup();
+}
+
+#[test]
+fn test_validate_in_subgroup_generator_secp384r1() {
+    crate::curves::secp384r1::Secp384r1::one().validate_in_subgroup();
 }
 
 /// A point on BLS12-377 but not in G1 must fail the subgroup check.
@@ -886,9 +932,6 @@ fn test_validate_in_subgroup_valid_point() {
 /// y = 0x9710823084bbe87e44527dc337c21ea1bc73fc65928adca328a6cb3f1894b007d108f0e42d78bf4d7adad5122779f3
 #[test(should_fail_with = "Point is not in the prime-order subgroup")]
 fn test_validate_in_subgroup_invalid_point() {
-    // neg_one
-    let r_minus_one: BLS12_377Scalar = BLS12_377Scalar::from_bignum(-BLS12_377_Fr::one());
-
     let x: BLS12_377_Fq = BLS12_377_Fq::from_le_bytes([
         0x41, 0x2c, 0x70, 0x44, 0xd0, 0x8b, 0x57, 0xe9, 0xb0, 0xc9, 0x2f, 0xc9, 0xe0, 0x75, 0xf3,
         0x53, 0x72, 0xfd, 0xff, 0x7d, 0xf1, 0xfe, 0xa3, 0x9a, 0xdd, 0x88, 0xfe, 0x49, 0x93, 0x18,
@@ -902,5 +945,5 @@ fn test_validate_in_subgroup_invalid_point() {
         0x10, 0x97, 0x0,
     ]);
     let P: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
-    P.validate_in_subgroup(r_minus_one);
+    P.validate_in_subgroup();
 }

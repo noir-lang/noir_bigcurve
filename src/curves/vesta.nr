@@ -42,7 +42,11 @@ pub global VESTA_PARAM: BigCurveParams<Vesta_Fq> = BigCurveParams {
 pub global VESTA_SCALAR_SLICES: u32 = 64;
 pub type VestaScalar = ScalarField<VESTA_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { Vesta_Fq }, quote { VESTA_PARAM })]
+#[derive_curve_impl(
+    quote { Vesta_Fq },
+    quote { VESTA_PARAM },
+    quote { VestaScalar::from_bignum(-bignum::Vesta_Fr::one()) },
+)]
 pub struct Vesta {
     pub x: Vesta_Fq,
     pub y: Vesta_Fq,

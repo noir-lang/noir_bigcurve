@@ -63,7 +63,11 @@ pub global SECP256r1_SCALAR_SLICES: u32 = 65;
 
 pub type Secp256r1Scalar = ScalarField<SECP256r1_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { bignum::Secp256r1_Fq }, quote { SECP256r1_PARAM })]
+#[derive_curve_impl(
+    quote { bignum::Secp256r1_Fq },
+    quote { SECP256r1_PARAM },
+    quote { Secp256r1Scalar::from_bignum(-bignum::Secp256r1_Fr::one()) },
+)]
 pub struct Secp256r1 {
     pub x: Secp256r1_Fq,
     pub y: Secp256r1_Fq,

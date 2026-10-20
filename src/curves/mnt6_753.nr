@@ -80,7 +80,11 @@ pub global MNT6_753_PARAMS: BigCurveParams<MNT6_753_Fq> = BigCurveParams {
     ],
 };
 
-#[derive_curve_impl(quote { MNT6_753_Fq }, quote { MNT6_753_PARAMS })]
+#[derive_curve_impl(
+    quote { MNT6_753_Fq },
+    quote { MNT6_753_PARAMS },
+    quote { MNT6_753Scalar::from_bignum(-bignum::MNT6_753_Fr::one()) },
+)]
 pub struct MNT6_753 {
     pub x: MNT6_753_Fq,
     pub y: MNT6_753_Fq,

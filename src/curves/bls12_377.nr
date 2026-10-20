@@ -56,7 +56,11 @@ pub global BLS12_377_PARAMS: BigCurveParams<BLS12_377_Fq> = BigCurveParams {
 
 pub type BLS12_377Scalar = ScalarField<BLS12_377_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { BLS12_377_Fq }, quote { BLS12_377_PARAMS })]
+#[derive_curve_impl(
+    quote { BLS12_377_Fq },
+    quote { BLS12_377_PARAMS },
+    quote { BLS12_377Scalar::from_bignum(-bignum::BLS12_377_Fr::one()) },
+)]
 pub struct BLS12_377 {
     pub x: BLS12_377_Fq,
     pub y: BLS12_377_Fq,

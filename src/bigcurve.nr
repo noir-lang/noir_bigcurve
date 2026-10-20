@@ -90,7 +90,8 @@ pub struct BigCurveParams<BN> {
 ///
 /// Use the `#[derive_curve_impl]` comptime attribute on a struct with fields
 /// `x: BN`, `y: BN`, `is_infinity: bool` to auto-generate all trait methods
-/// and operator impls (`Add`, `Sub`, `Neg`, `Eq`).
+/// and operator impls (`Add`, `Sub`, `Neg`, `Eq`). See `derive_curve_impl`
+/// for its arguments.
 pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Returns the x-coordinate of the point.
     fn x(self) -> BN;
@@ -145,15 +146,8 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Validate that the point belongs to the prime-order subgroup G1 (constrained).
     ///
     /// Checks `r * P == O` by verifying `(r - 1) * P == -P`, where `r` is the
-    /// scalar field modulus (the order of G1).
-    ///
-    /// The caller must pass `r - 1` encoded as a `ScalarField` because the scalar
-    /// field modulus `r` differs from the native field modulus, so it cannot be
-    /// derived generically inside this function. For example:
-    /// ```
-    /// let r_minus_one = -BLS12_377_Fr::one();
-    /// point.validate_in_subgroup(r_minus_one);
-    /// ```
+    /// scalar field modulus (the order of G1). `r - 1` is fixed per curve by the
+    /// `r_minus_one` argument of `derive_curve_impl`.
     ///
     /// Only needed on curves with non-prime order (e.g. BLS12-377, BLS12-381)
     /// when accepting private point inputs from an untrusted prover. Not needed
@@ -164,7 +158,7 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     ///
     /// Note: uses `mul` internally, which has the same incompleteness caveats.
     /// For an honest prover with a valid G1 point, incompleteness does not trigger.
-    fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>);
+    fn validate_in_subgroup(self);
 
     /// Scalar multiplication: compute `scalar * self` (constrained).
     ///
@@ -217,14 +211,21 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
 
 /// Comptime macro that generates `BigCurve` trait impl and operator overloads for a curve struct.
 ///
-/// Applied via `#[derive_curve_impl(FieldType, PARAMS)]` on a struct with fields
-/// `x: FieldType`, `y: FieldType`, `is_infinity: bool`.
+/// Applied via `#[derive_curve_impl(FieldType, PARAMS, R_MINUS_ONE)]` on a struct with fields
+/// `x: FieldType`, `y: FieldType`, `is_infinity: bool`, where:
+/// - `FieldType` is the base field `BigNum` type,
+/// - `PARAMS` is a `BigCurveParams<FieldType>` global,
+/// - `R_MINUS_ONE` is an expression evaluating to the `ScalarField` encoding of
+///   `r - 1`, `r` being the order of the prime-order subgroup G1, e.g.
+///   `quote { BLS12_377Scalar::from_bignum(-BLS12_377_Fr::one()) }`.
+///   `validate_in_subgroup` is only sound if this value is correct.
 ///
 /// Generates: `BigCurve` impl, `Add`, `Sub`, `Neg`, `Eq`.
 pub comptime fn derive_curve_impl(
     struct_def: TypeDefinition,
     field_type: Quoted,
     params: Quoted,
+    r_minus_one: Quoted,
 ) -> Quoted {
     let typ = struct_def.as_type();
     let CurveJ = quote { $crate::curve_jac::types::CurveJ };
@@ -314,9 +315,9 @@ pub comptime fn derive_curve_impl(
                 );
             }
 
-            fn validate_in_subgroup<let NScalarSlices: u32>(self, r_minus_one: ScalarField<NScalarSlices>) {
+            fn validate_in_subgroup(self) {
                 // r * P == O  <=>  (r - 1) * P == -P
-                let result = self.mul(r_minus_one);
+                let result = self.mul($r_minus_one);
                 assert(result == -self, "Point is not in the prime-order subgroup");
             }
 

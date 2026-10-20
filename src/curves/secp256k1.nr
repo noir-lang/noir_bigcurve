@@ -51,7 +51,11 @@ pub global SECP256k1_PARAM: BigCurveParams<Secp256k1_Fq> = BigCurveParams {
 
 pub type Secp256k1Scalar = ScalarField<SECP256k1_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { bignum::Secp256k1_Fq }, quote { SECP256k1_PARAM })]
+#[derive_curve_impl(
+    quote { bignum::Secp256k1_Fq },
+    quote { SECP256k1_PARAM },
+    quote { Secp256k1Scalar::from_bignum(-bignum::Secp256k1_Fr::one()) },
+)]
 pub struct Secp256k1 {
     pub x: Secp256k1_Fq,
     pub y: Secp256k1_Fq,

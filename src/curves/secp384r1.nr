@@ -66,7 +66,11 @@ pub global SECP384r1_PARAM: BigCurveParams<Secp384r1_Fq> = BigCurveParams {
 pub global SECP384r1_SCALAR_SLICES: u32 = 97;
 pub type Secp384r1Scalar = ScalarField<SECP384r1_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { Secp384r1_Fq }, quote { SECP384r1_PARAM })]
+#[derive_curve_impl(
+    quote { Secp384r1_Fq },
+    quote { SECP384r1_PARAM },
+    quote { Secp384r1Scalar::from_bignum(-bignum::Secp384r1_Fr::one()) },
+)]
 pub struct Secp384r1 {
     pub x: Secp384r1_Fq,
     pub y: Secp384r1_Fq,

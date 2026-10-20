@@ -83,7 +83,11 @@ pub global MNT4_753_PARAMS: BigCurveParams<MNT4_753_Fq> = BigCurveParams {
 
 pub type MNT4_753Scalar = ScalarField<MNT4_753_SCALAR_SLICES>;
 
-#[derive_curve_impl(quote { MNT4_753_Fq }, quote { MNT4_753_PARAMS })]
+#[derive_curve_impl(
+    quote { MNT4_753_Fq },
+    quote { MNT4_753_PARAMS },
+    quote { MNT4_753Scalar::from_bignum(-bignum::MNT4_753_Fr::one()) },
+)]
 pub struct MNT4_753 {
     pub x: MNT4_753_Fq,
     pub y: MNT4_753_Fq,

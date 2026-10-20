@@ -41,7 +41,11 @@ pub global PALLAS_PARAM: BigCurveParams<Pallas_Fq> = BigCurveParams {
     ],
 };
 
-#[derive_curve_impl(quote { Pallas_Fq }, quote { PALLAS_PARAM })]
+#[derive_curve_impl(
+    quote { Pallas_Fq },
+    quote { PALLAS_PARAM },
+    quote { PallasScalar::from_bignum(-bignum::Pallas_Fr::one()) },
+)]
 pub struct Pallas {
     pub x: Pallas_Fq,
     pub y: Pallas_Fq,

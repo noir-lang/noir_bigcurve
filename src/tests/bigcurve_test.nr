@@ -4,7 +4,7 @@ use bignum::MNT6_753_Fq;
 use bignum::Secp256r1_Fq;
 use std::ops::{Add, Neg, Sub};
 
-use crate::bigcurve::BigCurve;
+use crate::bigcurve::{BigCurve, BigCurveInternal};
 use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;

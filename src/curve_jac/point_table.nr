@@ -1,4 +1,4 @@
-use crate::bigcurve::BigCurve;
+use crate::bigcurve::{BigCurve, BigCurveInternal};
 use crate::curve_jac::types::{CurveJ, JTranscript};
 use bignum::BigNum;
 
@@ -51,7 +51,7 @@ where
     ///   `s = -15 -> idx 0`, `s = -13 -> idx 1`, ..., `s = 15 -> idx 15`.
     pub(crate) unconstrained fn new<Curve>(P: CurveJ<BN, Curve>) -> Self
     where
-        Curve: BigCurve<BN>,
+        Curve: BigCurve<BN> + BigCurveInternal<BN>,
     {
         let mut result = PointTable {
             x: [BN::zero(); 16],

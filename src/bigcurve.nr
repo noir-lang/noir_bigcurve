@@ -125,17 +125,6 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// Returns the canonical generator point of the curve.
     fn one() -> Self;
 
-    /// Returns the initial offset generator, added before scalar multiplication.
-    ///
-    /// Derived deterministically from `hash_to_curve("bigcurve offset generator")`.
-    fn offset_generator() -> Self;
-
-    /// Returns the final offset generator, subtracted after scalar multiplication.
-    ///
-    /// Equals `2^{4*(NScalarSlices-1)} * offset_generator`, matching the total
-    /// number of doublings in the wNAF loop.
-    fn offset_generator_final() -> Self;
-
     /// Validate that the point lies on the curve (constrained).
     ///
     /// Checks `y^2 == x^3 + a*x + b` via `evaluate_quadratic_expression`.
@@ -215,12 +204,29 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     ) -> Self;
 }
 
+/// Offset generators used internally by scalar multiplication.
+///
+/// Implemented by `derive_curve_impl` and exported only through `bigcurve::internal`:
+/// callers of `BigCurve` never need these points directly.
+pub trait BigCurveInternal<BN> {
+    /// Returns the initial offset generator, added before scalar multiplication.
+    ///
+    /// Derived deterministically by hashing the seed "bigcurve offset generator" to the curve.
+    fn offset_generator() -> Self;
+
+    /// Returns the final offset generator, subtracted after scalar multiplication.
+    ///
+    /// Equals `2^{4*(NScalarSlices-1)} * offset_generator`, matching the total
+    /// number of doublings in the wNAF loop.
+    fn offset_generator_final() -> Self;
+}
+
 /// Comptime macro that generates `BigCurve` trait impl and operator overloads for a curve struct.
 ///
 /// Applied via `#[derive_curve_impl(FieldType, PARAMS)]` on a struct with fields
 /// `x: FieldType`, `y: FieldType`, `is_infinity: bool`.
 ///
-/// Generates: `BigCurve` impl, `Add`, `Sub`, `Neg`, `Eq`.
+/// Generates: `BigCurve` and `BigCurveInternal` impls, `Add`, `Sub`, `Neg`, `Eq`.
 pub comptime fn derive_curve_impl(
     struct_def: TypeDefinition,
     field_type: Quoted,
@@ -270,24 +276,6 @@ pub comptime fn derive_curve_impl(
                 }
             }
 
-            fn offset_generator() -> Self {
-                let result: [$field_type; 2] = $params.offset_generator;
-                Self { 
-                    x: result[0], 
-                    y: result[1], 
-                    is_infinity: false 
-                }
-            }
-
-            fn offset_generator_final() -> Self {
-                let result: [$field_type; 2] = $params.offset_generator_final;
-                Self { 
-                    x: result[0], 
-                    y: result[1], 
-                    is_infinity: false 
-                }
-            }
-
             fn one() -> Self {
                 let result: [$field_type; 2] = $params.one;
                 Self { 
@@ -334,6 +322,18 @@ pub comptime fn derive_curve_impl(
             ) -> Self {
                 $crate::internal::evaluate_linear_expression::<$field_type,$typ, _, _, _>(mul_points, mul_scalars, add_points)
             }}
+
+            impl $crate::internal::BigCurveInternal<$field_type> for $typ {
+                fn offset_generator() -> Self {
+                    let result: [$field_type; 2] = $params.offset_generator;
+                    Self { x: result[0], y: result[1], is_infinity: false }
+                }
+
+                fn offset_generator_final() -> Self {
+                    let result: [$field_type; 2] = $params.offset_generator_final;
+                    Self { x: result[0], y: result[1], is_infinity: false }
+                }
+            }
 
             // Complete addition with full edge-case handling (generates witness via Jacobian intermediates)
             //

@@ -1,4 +1,4 @@
-use crate::bigcurve::BigCurve;
+use crate::bigcurve::{BigCurve, BigCurveInternal};
 use crate::curve_jac::point_table::PointTable;
 use crate::curve_jac::types::{AffineTranscript, CurveJ, JTranscript};
 use crate::scalar_field::ScalarField;
@@ -8,7 +8,7 @@ use bignum::BigNum;
 impl<BN, Curve> std::convert::From<Curve> for CurveJ<BN, Curve>
 where
     BN: BigNum,
-    Curve: BigCurve<BN>,
+    Curve: BigCurve<BN> + BigCurveInternal<BN>,
 {
     fn from(affine_point: Curve) -> Self {
         CurveJ {
@@ -30,7 +30,7 @@ where
 impl<BN, Curve> std::cmp::Eq for CurveJ<BN, Curve>
 where
     BN: BigNum,
-    Curve: BigCurve<BN>,
+    Curve: BigCurve<BN> + BigCurveInternal<BN>,
 {
     fn eq(self, other: Self) -> bool {
         let mut points_equal: bool = false;
@@ -67,7 +67,7 @@ where
 impl<BN, Curve> CurveJ<BN, Curve>
 where
     BN: BigNum,
-    Curve: BigCurve<BN>,
+    Curve: BigCurve<BN> + BigCurveInternal<BN>,
 {
     /// Negate a point
     pub(crate) unconstrained fn neg(self) -> Self {

@@ -1,4 +1,4 @@
-use crate::bigcurve::BigCurve;
+use crate::bigcurve::{BigCurve, BigCurveInternal};
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use crate::ops::affine::{
     conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
@@ -12,7 +12,7 @@ use bignum::BigNum;
 ///
 /// Computes `sum_i(mul_scalars[i] * mul_points[i])`.
 /// Delegates to `evaluate_linear_expression` with no additive points.
-pub fn msm<P: BigCurve<BN>, BN: BigNum, let NScalarSlices: u32, let NMuls: u32>(
+pub fn msm<P: BigCurve<BN> + BigCurveInternal<BN>, BN: BigNum, let NScalarSlices: u32, let NMuls: u32>(
     mul_points: [P; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
 ) -> P {
@@ -24,7 +24,7 @@ pub fn msm<P: BigCurve<BN>, BN: BigNum, let NScalarSlices: u32, let NMuls: u32>(
 ///
 /// Computes `scalar * point` by replaying the wNAF double-and-add loop against
 /// the provided transcript, then subtracts `offset_generator_final`.
-pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, BN: BigNum, P: BigCurve<BN>>(
+pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, BN: BigNum, P: BigCurve<BN> + BigCurveInternal<BN>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
     transcript: [AffineTranscript<BN>; NTranscriptSlices],
@@ -87,7 +87,7 @@ pub fn mul_with_hint<let NScalarSlices: u32, let NTranscriptSlices: u32, BN: Big
 }
 
 /// Generate the `AffineTranscript` for a single scalar multiplication (unconstrained)
-pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, BN: BigNum, P: BigCurve<BN>>(
+pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, BN: BigNum, P: BigCurve<BN> + BigCurveInternal<BN>>(
     point: P,
     scalar: ScalarField<NScalarSlices>,
 ) -> [AffineTranscript<BN>; 6 + NScalarSlices * 5] {
@@ -100,7 +100,7 @@ pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, BN: BigNum, P: B
 ///
 /// Generates the transcript via unconstrained witness generation, then replays
 /// the full MSM + additions loop, verifying each step against the transcript.
-pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN> + BigCurveInternal<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
@@ -140,7 +140,7 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     }
 
     // Initialize accumulator: offset_generator + T_0[slice_0[0]] + T_1[slice_1[0]] + ...
-    let mut accumulator: Curve = BigCurve::offset_generator();
+    let mut accumulator: Curve = Curve::offset_generator();
     let mut accumulator: Curve = incomplete_add_with_hint::<BN, Curve>(
         accumulator,
         tables[0].get::<Curve>(scalars[0].base4_slices[0] as u32),
@@ -204,7 +204,7 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     // Remove the offset generator
     accumulator = sub_with_hint::<BN, Curve>(
         accumulator,
-        BigCurve::offset_generator_final(),
+        Curve::offset_generator_final(),
         transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
     );
 

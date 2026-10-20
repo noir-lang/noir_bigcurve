@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.16.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.15.0...v0.16.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* drop unused ScalarField::new, len and get ([#137](https://github.com/noir-lang/noir_bigcurve/issues/137))
+* derive r - 1 per curve in validate_in_subgroup ([#136](https://github.com/noir-lang/noir_bigcurve/issues/136))
+* remove hash_to_curve from the public BigCurve interface ([#133](https://github.com/noir-lang/noir_bigcurve/issues/133))
+
+### Features
+
+* Derive r - 1 per curve in validate_in_subgroup ([#136](https://github.com/noir-lang/noir_bigcurve/issues/136)) ([6cf13b9](https://github.com/noir-lang/noir_bigcurve/commit/6cf13b989183de2eca702c0b87aeaa2305c67e4f))
+
+
+### Miscellaneous Chores
+
+* Drop unused ScalarField::new, len and get ([#137](https://github.com/noir-lang/noir_bigcurve/issues/137)) ([5afc467](https://github.com/noir-lang/noir_bigcurve/commit/5afc4672c7bc0fbec021e48f89e6c4327fc0ae64))
+* Remove hash_to_curve from the public BigCurve interface ([#133](https://github.com/noir-lang/noir_bigcurve/issues/133)) ([da39a08](https://github.com/noir-lang/noir_bigcurve/commit/da39a08d8999f56cf5631f61ae9ffc06dd0302b9))
+
 ## [0.15.0](https://github.com/noir-lang/noir_bigcurve/compare/v0.14.0...v0.15.0) (2026-10-14)
 
 

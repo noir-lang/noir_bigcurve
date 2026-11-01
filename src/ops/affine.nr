@@ -347,25 +347,30 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     } else {
         x1
     };
-    x_out = if output_is_lhs { point.x() } else { x_out };
-    x_out = if output_is_rhs { other.x() } else { x_out };
+    // Apply infinity_predicate before the operand selections. Its x_equal term
+    // compares raw coordinates, so it can hold when exactly one input is at
+    // infinity (finite Q with Q.x = 0 against O = (0, 0), or an infinity input
+    // with non-canonical coordinates). The selected finite operand must win then,
+    // matching infinity_out below; zeroing last returned the off-curve (0, 0).
     x_out = if infinity_predicate {
         BN::zero()
     } else {
         x_out
     };
+    x_out = if output_is_lhs { point.x() } else { x_out };
+    x_out = if output_is_rhs { other.x() } else { x_out };
     let mut y_out: BN = if evaluate_group_operation_predicate {
         y3
     } else {
         y1
     };
-    y_out = if output_is_lhs { point.y() } else { y_out };
-    y_out = if output_is_rhs { other.y() } else { y_out };
     y_out = if infinity_predicate {
         BN::zero()
     } else {
         y_out
     };
+    y_out = if output_is_lhs { point.y() } else { y_out };
+    y_out = if output_is_rhs { other.y() } else { y_out };
 
     let mut infinity_out: bool = !evaluate_group_operation_predicate;
     infinity_out = if infinity_predicate {
@@ -488,26 +493,28 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     } else {
         x1
     };
-    x_out = if output_is_lhs { point.x() } else { x_out };
-    x_out = if output_is_rhs { other.x() } else { x_out };
+    // As in add_with_hint: zero for infinity_predicate first, so the finite
+    // operand wins when exactly one input is at infinity.
     x_out = if infinity_predicate {
         BN::zero()
     } else {
         x_out
     };
+    x_out = if output_is_lhs { point.x() } else { x_out };
+    x_out = if output_is_rhs { other.x() } else { x_out };
     let mut y_out: BN = if evaluate_group_operation_predicate {
         y3
     } else {
         y1
     };
-    y_out = if output_is_lhs { point.y() } else { y_out };
-    y_out = if output_is_rhs {
-        other.y().neg()
+    y_out = if infinity_predicate {
+        BN::zero()
     } else {
         y_out
     };
-    y_out = if infinity_predicate {
-        BN::zero()
+    y_out = if output_is_lhs { point.y() } else { y_out };
+    y_out = if output_is_rhs {
+        other.y().neg()
     } else {
         y_out
     };

@@ -195,6 +195,9 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// hitting an edge case is negligible, but an adversary who knows the offset
     /// generator can craft inputs that make the circuit unsatisfiable.
     /// See the trait-level documentation for details and mitigation advice.
+    /// This includes an add point equal to the accumulator or its inverse at a
+    /// final addition; `evaluate_linear_expression_complete` accepts those at a
+    /// higher gate cost.
     ///
     /// # Non-prime-order curves
     ///

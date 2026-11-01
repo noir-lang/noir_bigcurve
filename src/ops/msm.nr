@@ -1,7 +1,7 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use crate::ops::affine::{
-    conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
+    add_with_hint, conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
     double_with_hint, incomplete_add_with_hint, sub_with_hint,
 };
 use crate::ops::point_table::PointTable;
@@ -100,10 +100,43 @@ pub unconstrained fn get_mul_transcript<let NScalarSlices: u32, BN: BigNum, P: B
 ///
 /// Generates the transcript via unconstrained witness generation, then replays
 /// the full MSM + additions loop, verifying each step against the transcript.
+///
+/// The final `add_points` additions use incomplete formulas (infinity add
+/// points are skipped). An add point whose x-coordinate equals the running
+/// accumulator's (the accumulator itself or its inverse) makes the circuit
+/// unsatisfiable. This is a completeness limit only: the distinct-x assertion
+/// rejects those inputs, so no wrong result is accepted. The accumulator
+/// includes the public `offset_generator_final`, so such add points can be
+/// constructed deliberately; `evaluate_linear_expression_complete` accepts them.
 pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
+) -> Curve {
+    evaluate_linear_expression_impl(mul_points, mul_scalars, add_points, false)
+}
+
+/// As `evaluate_linear_expression`, but the final `add_points` additions use the
+/// complete formulas of `add_with_hint` (as `Add` does): equality, cancellation
+/// and infinity are accepted there, except doubling a finite point with y = 0.
+/// The windowed MSM keeps its documented incompleteness. Costs more gates per
+/// add point; with no add points it is identical to `evaluate_linear_expression`.
+pub fn evaluate_linear_expression_complete<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+) -> Curve {
+    evaluate_linear_expression_impl(mul_points, mul_scalars, add_points, true)
+}
+
+// `complete_final_additions` is always a literal fixed by one of the public
+// wrappers above, never a caller-controlled value, so each wrapper compiles to
+// a single formula.
+fn evaluate_linear_expression_impl<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    complete_final_additions: bool,
 ) -> Curve {
     // Safety: transcript is verified step-by-step in the constrained replay loop below
     let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
@@ -111,6 +144,7 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
             mul_points,
             mul_scalars,
             add_points,
+            complete_final_additions,
         )
             .1
     };
@@ -191,14 +225,21 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
         );
     }
 
-    // Add the additive points (skipping infinity)
+    // Add the additive points: complete formulas (infinity, equality and
+    // cancellation accepted; doubling a finite y = 0 point still rejected), or
+    // incomplete formulas skipping infinity.
     for i in 0..NAdds {
-        accumulator = conditional_incomplete_add_with_hint::<BN, Curve>(
-            accumulator,
-            add_points[i],
-            !add_points[i].is_infinity(),
-            transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
-        );
+        let add_transcript = transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i];
+        accumulator = if complete_final_additions {
+            add_with_hint::<BN, Curve>(accumulator, add_points[i], add_transcript)
+        } else {
+            conditional_incomplete_add_with_hint::<BN, Curve>(
+                accumulator,
+                add_points[i],
+                !add_points[i].is_infinity(),
+                add_transcript,
+            )
+        };
     }
 
     // Remove the offset generator

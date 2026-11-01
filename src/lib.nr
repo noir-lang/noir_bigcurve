@@ -47,3 +47,6 @@ pub use curves::secp256k1::{Secp256k1, Secp256k1Scalar};
 pub use curves::secp256r1::{Secp256r1, Secp256r1Scalar};
 pub use curves::secp384r1::{Secp384r1, Secp384r1Scalar};
 pub use curves::vesta::{Vesta, VestaScalar};
+
+// MSM with complete final additions; see its doc comment for the cost.
+pub use ops::msm::evaluate_linear_expression_complete;

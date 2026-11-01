@@ -181,6 +181,17 @@ fn main(G: BLS12_377, Q: BLS12_377, P: BLS12_377, R: BLS12_377, s1: [u8; 4], s2:
 
 See `src/tests/bigcurve_test.nr` for more examples.
 
+### Complete final additions
+
+`evaluate_linear_expression` adds `add_points` with incomplete formulas, like
+the rest of the MSM. An add point equal to the running accumulator or its
+inverse makes the circuit unsatisfiable (it is never accepted with a wrong
+result). The accumulator includes the public offset generator, so such inputs
+can be constructed on purpose. `bigcurve::evaluate_linear_expression_complete`
+takes the same arguments and uses the complete `Add` formulas for the final
+additions, at a higher gate cost per add point. Doubling a finite point with
+y = 0 is still rejected there, and the windowed MSM is unchanged.
+
 ## Custom or predefined parameter set
 
 There are predefined parameter sets located in `src/curves` of this library.

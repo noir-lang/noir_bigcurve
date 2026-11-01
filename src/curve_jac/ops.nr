@@ -548,12 +548,14 @@ where
     /// Compute `sum_i(scalars[i] * mul_points[i]) + sum_j(add_points[j])` (unconstrained)
     ///
     /// Combines MSM with plain additions: runs `msm_partial` on the scalar-point pairs,
-    /// then conditionally adds each `add_points[j]` (skipping infinity points),
-    /// and finally subtracts `offset_generator_final`.
+    /// then adds each `add_points[j]` and finally subtracts `offset_generator_final`.
+    /// The additions are incomplete (skipping infinity points) unless
+    /// `complete_final_additions` selects the complete `add`.
     pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Curve; NMuls],
         scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Curve; NAdds],
+        complete_final_additions: bool,
     ) -> (Self, [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) {
         let mut mul_j: [CurveJ<BN, Curve>; NMuls] = [CurveJ::new(); NMuls];
         let mut add_j: [CurveJ<BN, Curve>; NAdds] = [CurveJ::new(); NAdds];
@@ -569,7 +571,11 @@ where
             CurveJ::msm_partial(mul_j, scalars);
         let mut transcript_ptr: u32 = NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 - 4;
         for i in 0..NAdds {
-            let op = accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity);
+            let op = if complete_final_additions {
+                accumulator.add(add_j[i])
+            } else {
+                accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity)
+            };
             transcript[transcript_ptr] = op.1;
             accumulator = op.0;
             transcript_ptr += 1;

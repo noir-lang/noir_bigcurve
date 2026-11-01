@@ -40,7 +40,7 @@ impl<BN: BigNum> PointTable<BN> {
         result.x[8] = point.x();
         result.y[8] = point.y();
         result.x[7] = point.x();
-        result.y[7] = point.y().neg();
+        result.y[7] = (-point).y();
 
         let mut A: P = point;
         for i in 1..8 {
@@ -48,7 +48,7 @@ impl<BN: BigNum> PointTable<BN> {
             result.x[8 + i] = A.x();
             result.y[8 + i] = A.y();
             result.x[7 - i] = A.x();
-            result.y[7 - i] = A.y().neg();
+            result.y[7 - i] = (-A).y();
         }
         result
     }

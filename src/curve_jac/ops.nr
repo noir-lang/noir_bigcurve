@@ -84,7 +84,9 @@ where
 {
     /// Negate a point
     pub(crate) unconstrained fn neg(self) -> Self {
-        CurveJ { x: self.x, y: self.y.__neg(), z: self.z, is_infinity: self.is_infinity }
+        // Reduce a bounded coordinate before canonical-only hint negation.
+        let y = self.y.__mul(&BN::one());
+        CurveJ { x: self.x, y: y.__neg(), z: self.z, is_infinity: self.is_infinity }
     }
 
     pub(crate) unconstrained fn new() -> Self {

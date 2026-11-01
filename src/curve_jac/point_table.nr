@@ -64,7 +64,7 @@ where
 
         result.transcript[0] = op.1;
         result.x[7] = P.x;
-        result.y[7] = P.y.__neg();
+        result.y[7] = P.neg().y;
         result.z[7] = P.z;
         result.x[8] = P.x;
         result.y[8] = P.y;

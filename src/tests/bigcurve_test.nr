@@ -1246,3 +1246,26 @@ fn test_sub_accepts_bounded_alias() {
     let g = generator_with_bounded_alias_y();
     assert(p - g == bounded_alias_negative_double_generator());
 }
+
+#[test]
+fn test_sub_distinct_x_accepts_bounded_alias() {
+    let two = -bounded_alias_negative_double_generator();
+    let x = BN254_Fq::from_limbs([
+        0xf9813a7ef8e7360fe294d84604cd1a,
+        0x935a0f44ba2c53d54a11e9996de370,
+        0x336a,
+    ]);
+    let q = BN254::from_coordinates(x, two.y(), false);
+    assert(BN254::one() - q == bounded_alias_negative_generator());
+}
+
+#[test(should_fail)]
+fn test_sub_rejects_zero_transcript() {
+    let p = bounded_alias_negative_generator();
+    let g = generator_with_bounded_alias_y();
+    let transcript =
+        AffineTranscript { lambda: BN254_Fq::zero(), x3: BN254_Fq::zero(), y3: BN254_Fq::zero() };
+    // The admitted opposite points require doubling. A zero slope leaves
+    // tangent residual 3, so this supplied transcript cannot satisfy it.
+    let _ = crate::ops::affine::sub_with_hint(p, g, transcript);
+}

@@ -20,12 +20,12 @@ jobs:
       - name: Install Nargo
         uses: noir-lang/noirup@v0.1.5
         with:
-          toolchain: 1.0.0-rc.0
+          toolchain: 1.0.0
 
       - name: Install bb
         run: |
           curl -L https://bbup.aztec.network | bash
-          ~/.bb/bbup -v 5.0.1
+          ~/.bb/bbup -v 6.0.0
 
       - name: Build Noir benchmark programs
         run: nargo export

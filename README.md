@@ -132,7 +132,7 @@ Represents scalars used in point multiplication.
 #### Helpers
 
 - `validate_on_curve`
-- `validate_in_subgroup` - only needed on non-prime-order curves (e.g. BLS12-377, BLS12-381) when accepting private point inputs. Not needed for public/hardcoded points or points derived inside the circuit.
+- `validate_in_subgroup` — For curves with cofactor greater than one (e.g. BLS12-377, BLS12-381), check subgroup membership whenever the protocol requires it and membership has not already been established. This applies to public and private inputs. A trusted subgroup constant or a subgroup-preserving derivation can establish membership without repeating the check.
 
 ## evaluate_linear_expression
 

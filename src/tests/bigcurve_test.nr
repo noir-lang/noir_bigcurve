@@ -9,7 +9,7 @@ use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
 use crate::curve_jac::types::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377Scalar};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq};
 use crate::curves::bn254::{BN254, BN254J, BN254Scalar};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
@@ -848,23 +848,23 @@ fn test_mul_edgecase_2() {
 /// cofactor causes the tangent-slope formula to degenerate in mul.
 #[test(should_fail)]
 fn test_double_with_hint_edgecase() {
-    // Safety: test code
-    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
+    let x: BLS12_377_Fq = -BLS12_377_Fq::one();
     let y: BLS12_377_Fq = BLS12_377_Fq::zero();
 
     let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
-    let P: BLS12_377 = S.sub(BLS12_377::offset_generator());
-
-    let scalar: BLS12_377Scalar = BLS12_377Scalar::from(1);
-    let _: BLS12_377 = P.mul(scalar);
+    // Check the constrained doubling relation directly, without a failing
+    // unconstrained inverse masking the unsupported tangent denominator.
+    let _result = crate::ops::affine::double_with_hint::<BLS12_377_Fq, BLS12_377>(
+        S,
+        crate::curve_jac::types::AffineTranscript::new(),
+    );
 }
 
 /// Incomplete doubling: adding a 2-torsion point (y == 0) to itself
 /// uses the same degenerate tangent-slope formula via add_with_hint.
 #[test(should_fail)]
 fn test_add_edgecase() {
-    // Safety: test code
-    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
+    let x: BLS12_377_Fq = -BLS12_377_Fq::one();
     let y: BLS12_377_Fq = BLS12_377_Fq::zero();
     let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
 
@@ -1080,4 +1080,11 @@ unconstrained fn test_unconstrained_add_sub_non_canonical_infinity() {
     assert(both.is_infinity);
     assert(both.x == BN254_Fq::zero());
     assert(both.y == BN254_Fq::zero());
+}
+
+#[test]
+fn test_two_torsion_input_is_on_curve() {
+    let point = BLS12_377::from_coordinates(-BLS12_377_Fq::one(), BLS12_377_Fq::zero(), false);
+    assert(!point.is_infinity());
+    assert(point.y() == BLS12_377_Fq::zero());
 }

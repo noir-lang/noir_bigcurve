@@ -947,3 +947,92 @@ fn test_validate_in_subgroup_invalid_point() {
     let P: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
     P.validate_in_subgroup();
 }
+
+#[test]
+fn test_curvej_eq() {
+    let g = std::hint::black_box(BN254::one());
+    let gj = BN254J::from(g);
+    let neg_gj = BN254J::from(-g);
+    // Safety: test code; the doubled point is only an input to the constrained Eq.
+    let two_gj = unsafe { gj.dbl().0 };
+    let two_g_affine = BN254J::from(g + g);
+    let o = BN254J::from(BN254::point_at_infinity());
+    assert(gj == gj);
+    assert(!(gj == neg_gj));
+    // Same point with Z != 1 against Z = 1.
+    assert(two_gj == two_g_affine);
+    assert(!(two_gj == gj));
+    assert(o == o);
+    assert(!(o == gj));
+    assert(!(gj == o));
+}
+
+#[test]
+fn test_curvej_eq_ignores_tagged_infinity_payload() {
+    let junk = std::hint::black_box(BN254_Fq::from_limbs_unsafe(
+        [0xffffffffffffffffffffffffffffffff; 3],
+    ));
+    // The checked affine constructor deliberately ignores infinity coordinates.
+    let tagged = BN254J::from(BN254::from_coordinates(junk, junk, true));
+    let zero = BN254J::from(BN254::point_at_infinity());
+    let g = BN254J::from(std::hint::black_box(BN254::one()));
+    assert(tagged == zero);
+    assert(zero == tagged);
+    assert(!(tagged == g));
+    assert(!(g == tagged));
+}
+
+/// Compares the BN254 generator (Z = 1) against a copy in which one coordinate
+/// (0 = x, 1 = y, 2 = z) has a limb above the 120-bit limb range, with the
+/// malformed point on the chosen side of `==`.
+///
+/// The Brillig multiplication hint accepts such a limb. The constrained BigNum
+/// `mul` range-checks its operands, so an `eq` built from it fails here; an
+/// `eq` computed by hints alone returns a bool instead.
+fn curvej_eq_with_out_of_range_limb(coordinate: u32, malformed_on_lhs: bool) -> bool {
+    let junk = std::hint::black_box(BN254_Fq::from_limbs_unsafe([1 << 125, 0, 0]));
+    let g = BN254J::from(std::hint::black_box(BN254::one()));
+    let mut p = g;
+    if coordinate == 0 {
+        p.x = junk;
+    } else if coordinate == 1 {
+        p.y = junk;
+    } else {
+        p.z = junk;
+    }
+    if malformed_on_lhs {
+        p == g
+    } else {
+        g == p
+    }
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_lhs_x() {
+    let _ = curvej_eq_with_out_of_range_limb(0, true);
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_lhs_y() {
+    let _ = curvej_eq_with_out_of_range_limb(1, true);
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_lhs_z() {
+    let _ = curvej_eq_with_out_of_range_limb(2, true);
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_rhs_x() {
+    let _ = curvej_eq_with_out_of_range_limb(0, false);
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_rhs_y() {
+    let _ = curvej_eq_with_out_of_range_limb(1, false);
+}
+
+#[test(should_fail_with = "call to assert_max_bit_size")]
+fn test_curvej_eq_range_checks_rhs_z() {
+    let _ = curvej_eq_with_out_of_range_limb(2, false);
+}

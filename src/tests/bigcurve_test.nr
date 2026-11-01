@@ -981,3 +981,103 @@ fn test_curvej_eq_ignores_tagged_infinity_payload() {
     assert(!(tagged == g));
     assert(!(g == tagged));
 }
+
+fn p256_point_with_zero_x() -> Secp256r1 {
+    Secp256r1::from_coordinates(
+        Secp256r1_Fq::zero(),
+        Secp256r1_Fq::from_limbs([
+            0x1c2af31dae871728bf856a174f93f4,
+            0x5c780e2f83d72433bd5d84a06bb654,
+            0x6648,
+        ]),
+        false,
+    )
+}
+
+#[test]
+fn test_add_infinity_and_point_with_zero_x() {
+    let q = std::hint::black_box(p256_point_with_zero_x());
+    let o = Secp256r1::point_at_infinity();
+    let lhs = o + q;
+    let rhs = q + o;
+    assert(!lhs.is_infinity);
+    assert(lhs == q);
+    assert(!rhs.is_infinity);
+    assert(rhs == q);
+}
+
+#[test]
+fn test_sub_infinity_and_point_with_zero_x() {
+    let q = std::hint::black_box(p256_point_with_zero_x());
+    let o = Secp256r1::point_at_infinity();
+    assert((o - q) == -q);
+    assert((q - o) == q);
+}
+
+#[test]
+fn test_add_sub_non_canonical_infinity() {
+    let g = std::hint::black_box(BN254::one());
+    // (g.x, -g.y): x equal and y different, the add inverse-point pattern.
+    let o_add = BN254::from_coordinates(g.x, -g.y, true);
+    let sum_lhs = o_add + g;
+    let sum_rhs = g + o_add;
+    assert(!sum_lhs.is_infinity & !sum_rhs.is_infinity);
+    assert(sum_lhs == g);
+    assert(sum_rhs == g);
+    // (g.x, g.y): x and y equal, the sub inverse-point pattern.
+    let o_sub = BN254::from_coordinates(g.x, g.y, true);
+    let diff_lhs = o_sub - g;
+    let diff_rhs = g - o_sub;
+    assert(!diff_lhs.is_infinity & !diff_rhs.is_infinity);
+    assert(diff_lhs == -g);
+    assert(diff_rhs == g);
+    // Two infinity inputs still give the canonical point at infinity.
+    let both = o_add + o_sub;
+    assert(both.is_infinity);
+    assert(both.x == BN254_Fq::zero());
+    assert(both.y == BN254_Fq::zero());
+}
+
+#[test]
+unconstrained fn test_unconstrained_add_infinity_and_point_with_zero_x() {
+    let q = p256_point_with_zero_x();
+    let o = Secp256r1::point_at_infinity();
+    let lhs = o + q;
+    let rhs = q + o;
+    assert(!lhs.is_infinity);
+    assert(lhs == q);
+    assert(!rhs.is_infinity);
+    assert(rhs == q);
+}
+
+#[test]
+unconstrained fn test_unconstrained_sub_infinity_and_point_with_zero_x() {
+    let q = p256_point_with_zero_x();
+    let o = Secp256r1::point_at_infinity();
+    assert((o - q) == -q);
+    assert((q - o) == q);
+}
+
+#[test]
+unconstrained fn test_unconstrained_add_sub_non_canonical_infinity() {
+    let g = BN254::one();
+    // (g.x, -g.y): x equal and y different, the add inverse-point pattern.
+    let o_add = BN254::from_coordinates(g.x, -g.y, true);
+    let sum_lhs = o_add + g;
+    let sum_rhs = g + o_add;
+    assert(!sum_lhs.is_infinity & !sum_rhs.is_infinity);
+    assert(sum_lhs == g);
+    assert(sum_rhs == g);
+    // (g.x, g.y): x and y equal, the sub inverse-point pattern.
+    let o_sub = BN254::from_coordinates(g.x, g.y, true);
+    let diff_lhs = o_sub - g;
+    let diff_rhs = g - o_sub;
+    assert(!diff_lhs.is_infinity & !diff_rhs.is_infinity);
+    assert(diff_lhs == -g);
+    assert(diff_rhs == g);
+    // Two infinity inputs still give the canonical point at infinity.
+    let both = o_add + o_sub;
+    assert(both.is_infinity);
+    assert(both.x == BN254_Fq::zero());
+    assert(both.y == BN254_Fq::zero());
+}

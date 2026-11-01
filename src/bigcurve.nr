@@ -385,7 +385,8 @@ pub comptime fn derive_curve_impl(
                 fn neg(self) -> Self {
                     Self { 
                         x: self.x, 
-                        y: std::ops::Neg::neg(self.y), 
+                        // Multiplication admits every bounded coordinate; BigNum negation requires canonical input.
+                        y: self.y * (-$field_type::one()),
                         is_infinity: self.is_infinity 
                     }
                 }

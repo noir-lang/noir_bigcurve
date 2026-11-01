@@ -139,8 +139,10 @@ where
             x_equal_predicate & y_equal_predicate & !lhs_infinity & !rhs_infinity;
 
         let add_predicate: bool = !x_equal_predicate & !lhs_infinity & !rhs_infinity;
-        let infinity_predicate: bool =
-            (x_equal_predicate & !y_equal_predicate) | (lhs_infinity & rhs_infinity);
+        let infinity_predicate: bool = (
+            x_equal_predicate & !y_equal_predicate & !lhs_infinity & !rhs_infinity
+        )
+            | (lhs_infinity & rhs_infinity);
 
         let mut result: (Self, JTranscript<BN>) = (CurveJ::new(), JTranscript::new());
 

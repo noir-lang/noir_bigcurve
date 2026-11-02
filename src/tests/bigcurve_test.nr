@@ -947,3 +947,37 @@ fn test_validate_in_subgroup_invalid_point() {
     let P: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
     P.validate_in_subgroup();
 }
+
+#[test]
+fn test_curvej_eq_constrained() {
+    let g = std::hint::black_box(BN254::one());
+    let gj = BN254J::from(g);
+    let neg_gj = BN254J::from(-g);
+    // Safety: test code; the doubled point is only an input to the constrained Eq.
+    let two_gj = unsafe { gj.dbl().0 };
+    let two_g_affine = BN254J::from(g + g);
+    let o = BN254J::from(BN254::point_at_infinity());
+    assert(gj == gj);
+    assert(!(gj == neg_gj));
+    // Same point with Z != 1 against Z = 1.
+    assert(two_gj == two_g_affine);
+    assert(!(two_gj == gj));
+    assert(o == o);
+    assert(!(o == gj));
+    assert(!(gj == o));
+}
+
+#[test]
+fn test_curvej_eq_ignores_tagged_infinity_payload() {
+    let junk = std::hint::black_box(BN254_Fq::from_limbs_unsafe(
+        [0xffffffffffffffffffffffffffffffff; 3],
+    ));
+    // The checked affine constructor deliberately ignores infinity coordinates.
+    let tagged = BN254J::from(BN254::from_coordinates(junk, junk, true));
+    let zero = BN254J::from(BN254::point_at_infinity());
+    let g = BN254J::from(std::hint::black_box(BN254::one()));
+    assert(tagged == zero);
+    assert(zero == tagged);
+    assert(!(tagged == g));
+    assert(!(g == tagged));
+}

@@ -212,3 +212,34 @@ A: To minimize witness generation time (currently the bottleneck due to Brillig 
 
 - Parametrize and test with a degree-2 extension field instead of `BigNum`
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)
+
+## Selecting an MSM offset
+
+`bigcurve::internal::evaluate_linear_expression_preserving_selected_offset`
+accepts an explicit finite, checked origin `O` and returns
+`[16^(S-1)]O + sum(s_i P_i) + sum(Q_j)`, for `S > 0` windows and at least
+one multiplication term. It is generic over `BigCurve` and `BigNum`, with
+no BN254, GLV, fixed-key or Groth16 constants embedded in the API.
+Final additions use the complete formulas of `Add`, admitting cancellation,
+equality and infinity within their supported domain (for example, a correction applied
+through `add_points` may cancel the accumulator). They retain
+the existing rejection of doubling a finite point with y=0 (2-torsion).
+Intermediate table, doubling and addition restrictions also remain those of the
+existing MSM. Odd prime-order subgroup inputs avoid that 2-torsion case.
+Input points must be valid; a protocol requiring subgroup membership must
+establish it separately.
+
+`bigcurve::internal::find_safe_msm_offset` is an **unconstrained witness
+helper**. Given valid points in an odd prime-order subgroup and a finite list
+of valid candidate origins,
+it finds the first candidate accepted by the incomplete schedule or fails when
+none works. It makes no universal success or candidate-count guarantee. Use its
+index in a constrained array lookup and replay the MSM; never trust the helper
+as evidence of correctness.
+
+The retained offset is deliberate. To obtain the ordinary MSM, constrain or
+precompute its exact correction for the selected origin and window count.
+An unrelated correction, an unconstrained claimed correction, or reuse of a
+correction from another schedule is not safe. For varying origins, retain the
+binding between the selected origin and its correction. This API does not
+perform that application-specific binding.

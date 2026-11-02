@@ -1,7 +1,7 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use crate::ops::affine::{
-    conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
+    add_with_hint, conditional_incomplete_add_with_hint, conditional_incomplete_subtract_with_hint,
     double_with_hint, incomplete_add_with_hint, sub_with_hint,
 };
 use crate::ops::point_table::PointTable;
@@ -105,14 +105,66 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
 ) -> Curve {
+    evaluate_linear_expression_impl(
+        mul_points,
+        mul_scalars,
+        add_points,
+        false,
+        true,
+        Curve::offset_generator(),
+    )
+}
+
+/// Returns [16^(NScalarSlices-1)]initial_offset + sum(s_i P_i) + sum(add_points).
+/// Requires NScalarSlices > 0 and NMuls > 0. The selected offset is checked
+/// finite and on-curve. Other points must be valid, as for the standard MSM.
+/// Incomplete intermediate formulas can reject exceptional offsets; the
+/// witness-only search helper does not replace constrained replay.
+/// Final additions use the complete formulas of `add_with_hint` (as `Add`
+/// does), so an add point may cancel or equal the accumulator (e.g. a
+/// correction applied through `add_points`); doubling a finite point with
+/// y = 0 is still rejected.
+/// The caller must bind any final correction to this exact offset and schedule.
+pub fn evaluate_linear_expression_preserving_selected_offset<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    initial_offset: Curve,
+) -> Curve {
+    assert((NScalarSlices > 0) & (NMuls > 0), "MSM needs windows and multiplication terms");
+    initial_offset.validate_on_curve();
+    assert(!initial_offset.is_infinity(), "MSM initial offset must be finite");
+    evaluate_linear_expression_impl(
+        mul_points,
+        mul_scalars,
+        add_points,
+        true,
+        false,
+        initial_offset,
+    )
+}
+
+// `complete_final_additions` and `remove_offset` are always literals fixed by
+// one of the public wrappers above, never caller-controlled values, so each
+// wrapper compiles to a single formula and offset handling.
+fn evaluate_linear_expression_impl<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    complete_final_additions: bool,
+    remove_offset: bool,
+    initial_offset: Curve,
+) -> Curve {
     // Safety: transcript is verified step-by-step in the constrained replay loop below
     let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
-        CurveJ::<BN, Curve>::compute_linear_expression_transcript(
+        get_linear_expression_transcript(
             mul_points,
             mul_scalars,
             add_points,
+            complete_final_additions,
+            remove_offset,
+            initial_offset,
         )
-            .1
     };
 
     // Replace infinity inputs with the generator (scalar zeroed to produce identity)
@@ -140,7 +192,7 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     }
 
     // Initialize accumulator: offset_generator + T_0[slice_0[0]] + T_1[slice_1[0]] + ...
-    let mut accumulator: Curve = BigCurve::offset_generator();
+    let mut accumulator: Curve = initial_offset;
     let mut accumulator: Curve = incomplete_add_with_hint::<BN, Curve>(
         accumulator,
         tables[0].get::<Curve>(scalars[0].base4_slices[0] as u32),
@@ -191,22 +243,66 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
         );
     }
 
-    // Add the additive points (skipping infinity)
+    // Add the additive points: complete formulas (infinity, equality and
+    // cancellation accepted; doubling a finite y = 0 point still rejected), or
+    // incomplete formulas skipping infinity.
     for i in 0..NAdds {
-        accumulator = conditional_incomplete_add_with_hint::<BN, Curve>(
+        let add_transcript = transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i];
+        accumulator = if complete_final_additions {
+            add_with_hint::<BN, Curve>(accumulator, add_points[i], add_transcript)
+        } else {
+            conditional_incomplete_add_with_hint::<BN, Curve>(
+                accumulator,
+                add_points[i],
+                !add_points[i].is_infinity(),
+                add_transcript,
+            )
+        };
+    }
+
+    // Each public wrapper passes a fixed constant; only the selected-offset API keeps F.
+    if remove_offset {
+        accumulator = sub_with_hint::<BN, Curve>(
             accumulator,
-            add_points[i],
-            !add_points[i].is_infinity(),
-            transcript[10 * NMuls + (4 + NMuls) * (NScalarSlices - 1) + i],
+            BigCurve::offset_generator_final(),
+            transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
         );
     }
 
-    // Remove the offset generator
-    accumulator = sub_with_hint::<BN, Curve>(
-        accumulator,
-        BigCurve::offset_generator_final(),
-        transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
-    );
-
     accumulator
+}
+
+/// Untrusted deterministic search for an offset accepted by the incomplete MSM.
+/// Inputs and candidates must be valid points in an odd prime-order subgroup;
+/// infinity multiplication inputs are replaced by the generator with scalar zero.
+/// Returns the first admissible candidate, or fails if the finite list is exhausted.
+/// No universal candidate-count or success guarantee is made. The caller must
+/// constrain the selected array lookup and replay the MSM with the chosen offset.
+pub unconstrained fn find_safe_msm_offset<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NCandidates: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    offsets: [Curve; NCandidates],
+) -> u32 {
+    CurveJ::<BN, Curve>::find_safe_msm_offset(mul_points, mul_scalars, offsets)
+}
+
+// Expose only the transcript as witnesses; the unused Jacobian result is
+// not part of the constrained replay interface.
+unconstrained fn get_linear_expression_transcript<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    complete_final_additions: bool,
+    remove_offset: bool,
+    initial_offset: Curve,
+) -> [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] {
+    CurveJ::<BN, Curve>::compute_linear_expression_transcript(
+        mul_points,
+        mul_scalars,
+        add_points,
+        complete_final_additions,
+        remove_offset,
+        initial_offset,
+    )
+        .1
 }

@@ -19,6 +19,8 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
     let validate_on_curve_bench_name = f"validate_on_curve_{module_name}".quoted_contents();
     let evaluate_linear_expression_bench_name =
         f"evaluate_linear_expression_{module_name}".quoted_contents();
+    let selected_offset_bench_name =
+        f"evaluate_linear_expression_selected_offset_{module_name}".quoted_contents();
     let BigCurve = quote { crate::bigcurve::BigCurve };
     let ScalarField = quote { crate::scalar_field::ScalarField };
 
@@ -57,6 +59,11 @@ comptime fn make_bench(m: Module, params: Quoted) -> Quoted {
         #[export]
         fn $evaluate_linear_expression_bench_name(a: [$typ; 3], b: [$ScalarField<64>; 3], c: [$typ; 2]) -> $typ {
             $BigCurve::evaluate_linear_expression(a, b, c)
+        }
+
+        #[export]
+        fn $selected_offset_bench_name(a: [$typ; 3], b: [$ScalarField<64>; 3], c: [$typ; 2], o: $typ) -> $typ {
+            crate::ops::msm::evaluate_linear_expression_preserving_selected_offset(a, b, c, o)
         }
 
     }

@@ -441,24 +441,102 @@ where
         (accumulator, affine_transcript)
     }
 
+    unconstrained fn has_distinct_finite_x(self, other: Self) -> bool {
+        let z1sq = self.z.__mul(&self.z);
+        let z2sq = other.z.__mul(&other.z);
+        let lhs = self.x.__mul(&z2sq);
+        let rhs = other.x.__mul(&z1sq);
+        !self.is_infinity
+            & !other.is_infinity
+            & !self.z.__eq(&BN::zero())
+            & !other.z.__eq(&BN::zero())
+            & !lhs.__eq(&rhs)
+    }
+
+    pub(crate) unconstrained fn find_safe_msm_offset<let Size: u32, let NScalarSlices: u32, let NCandidates: u32>(
+        affine_points: [Curve; Size],
+        input_scalars: [ScalarField<NScalarSlices>; Size],
+        offsets: [Curve; NCandidates],
+    ) -> u32 {
+        assert(Size > 0 & NScalarSlices > 0 & NCandidates > 0);
+        let mut points = [Self::one(); Size];
+        let mut scalars = [ScalarField::zero(); Size];
+        let mut tables = [PointTable::empty(); Size];
+        for i in 0..Size {
+            if !affine_points[i].is_infinity() {
+                points[i] = Self::from(affine_points[i]);
+                scalars[i] = input_scalars[i];
+            }
+            tables[i] = PointTable::new(points[i]);
+        }
+        let mut index: u32 = 0;
+        let mut chosen: u32 = 0;
+        let mut found = false;
+        while (index < NCandidates) & !found {
+            let mut accumulator: Self = Self::from(offsets[index]);
+            let mut valid: bool = !accumulator.is_infinity & !accumulator.z.__eq(&BN::zero());
+            let mut window: u32 = 0;
+            while (window < NScalarSlices) & valid {
+                if window != 0 {
+                    // Successful preceding guards retain a finite point in the
+                    // odd prime-order group, so every doubling is well-defined.
+                    for _ in 0..4 {
+                        accumulator = accumulator.dbl().0;
+                    }
+                }
+                let mut i: u32 = 0;
+                while (i < Size) & valid {
+                    let operand = tables[i].get(scalars[i].base4_slices[window] as u32);
+                    valid = accumulator.has_distinct_finite_x(operand);
+                    if valid {
+                        accumulator = accumulator.incomplete_add(operand).0;
+                    }
+                    i += 1;
+                }
+                window += 1;
+            }
+            let mut i: u32 = 0;
+            while (i < Size) & valid {
+                let operand = points[i].neg();
+                valid = accumulator.has_distinct_finite_x(operand);
+                // The false-predicate skew candidate is still guarded. Once its
+                // guard passes its unused result need not be computed here.
+                if valid & scalars[i].skew {
+                    accumulator = accumulator.incomplete_add(operand).0;
+                }
+                i += 1;
+            }
+            if valid {
+                chosen = index;
+                found = true;
+            }
+            index += 1;
+        }
+        assert(found, "No admissible trusted MSM offset");
+        chosen
+    }
+
     /// Perform the inner loop of a multi-scalar multiplication (unconstrained)
     ///
-    /// Computes `sum_i(scalars[i] * points[i]) + offset_generator` without the final
-    /// offset subtraction (that is done by `msm` or `compute_linear_expression_transcript`).
+    /// Computes `sum_i(scalars[i] * points[i]) + [16^(NScalarSlices-1)]initial_offset`
+    /// without the final offset subtraction (that is done by `msm` or
+    /// `compute_linear_expression_transcript`). `msm_partial` starts from
+    /// `offset_generator`.
     ///
     /// ## Algorithm
     ///
     /// Interleaved wNAF MSM:
     ///
     ///   1. Build a `PointTable` for each input point
-    ///   2. `acc = offset_generator + T_0[slice_0[0]] + T_1[slice_1[0]] + ...`
+    ///   2. `acc = initial_offset + T_0[slice_0[0]] + T_1[slice_1[0]] + ...`
     ///   3. For each subsequent slice index `i`:
     ///      - Four doublings: `acc = 16 * acc`
     ///      - Add each point's contribution: `acc += T_j[slice_j[i]]` for all `j`
     ///   4. Apply skew corrections: conditionally subtract each `points[i]`
-    pub(crate) unconstrained fn msm_partial<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
+    pub(crate) unconstrained fn msm_partial_with_initial_offset<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
         points: [Self; Size],
         scalars: [ScalarField<NScalarSlices>; Size],
+        initial_offset: Self,
     ) -> (Self, [JTranscript<BN>; TranscriptEntries]) {
         let mut transcript: [JTranscript<BN>; TranscriptEntries] =
             [JTranscript::new(); TranscriptEntries];
@@ -486,7 +564,7 @@ where
             }
         }
 
-        let mut accumulator: Self = CurveJ::offset_generator();
+        let mut accumulator: Self = initial_offset;
         let op = accumulator.incomplete_add(tables[0].get(scalars[0].base4_slices[0] as u32));
         transcript[ptr] = op.1;
         ptr += 1;
@@ -524,6 +602,13 @@ where
         (accumulator, transcript)
     }
 
+    pub(crate) unconstrained fn msm_partial<let Size: u32, let NScalarSlices: u32, let TranscriptEntries: u32>(
+        points: [Self; Size],
+        scalars: [ScalarField<NScalarSlices>; Size],
+    ) -> (Self, [JTranscript<BN>; TranscriptEntries]) {
+        Self::msm_partial_with_initial_offset(points, scalars, Self::offset_generator())
+    }
+
     /// Perform a multi-scalar multiplication and output the generated AffineTranscript
     /// (unconstrained)
     ///
@@ -548,12 +633,17 @@ where
     /// Compute `sum_i(scalars[i] * mul_points[i]) + sum_j(add_points[j])` (unconstrained)
     ///
     /// Combines MSM with plain additions: runs `msm_partial` on the scalar-point pairs,
-    /// then conditionally adds each `add_points[j]` (skipping infinity points),
-    /// and finally subtracts `offset_generator_final`.
+    /// then adds each `add_points[j]` and, when `remove_offset`, subtracts
+    /// `offset_generator_final`.
+    /// The additions are incomplete (skipping infinity points) unless
+    /// `complete_final_additions` selects the complete `add`.
     pub(crate) unconstrained fn compute_linear_expression_transcript<let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
         mul_points: [Curve; NMuls],
         scalars: [ScalarField<NScalarSlices>; NMuls],
         add_points: [Curve; NAdds],
+        complete_final_additions: bool,
+        remove_offset: bool,
+        initial_offset: Curve,
     ) -> (Self, [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) {
         let mut mul_j: [CurveJ<BN, Curve>; NMuls] = [CurveJ::new(); NMuls];
         let mut add_j: [CurveJ<BN, Curve>; NAdds] = [CurveJ::new(); NAdds];
@@ -566,18 +656,24 @@ where
 
         let mut (accumulator, transcript)
             : (Self, [JTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3]) =
-            CurveJ::msm_partial(mul_j, scalars);
+            CurveJ::msm_partial_with_initial_offset(mul_j, scalars, CurveJ::from(initial_offset));
         let mut transcript_ptr: u32 = NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 - 4;
         for i in 0..NAdds {
-            let op = accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity);
+            let op = if complete_final_additions {
+                accumulator.add(add_j[i])
+            } else {
+                accumulator.conditional_incomplete_add(add_j[i], !add_j[i].is_infinity)
+            };
             transcript[transcript_ptr] = op.1;
             accumulator = op.0;
             transcript_ptr += 1;
         }
 
-        let op = accumulator.sub(CurveJ::offset_generator_final());
-        transcript[transcript_ptr] = op.1;
-        accumulator = op.0;
+        if remove_offset {
+            let op = accumulator.sub(CurveJ::offset_generator_final());
+            transcript[transcript_ptr] = op.1;
+            accumulator = op.0;
+        }
         let affine_transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] =
             AffineTranscript::from_jacobian_transcript(transcript);
 

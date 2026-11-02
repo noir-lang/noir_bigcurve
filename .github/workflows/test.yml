@@ -53,6 +53,11 @@ jobs:
         env:
           RAYON_NUM_THREADS: 1
 
+      - name: Run external derive tests
+        run: ./scripts/run-external-derive-tests.sh
+        env:
+          RAYON_NUM_THREADS: 1
+
   format:
     runs-on: ubuntu-latest
     steps:

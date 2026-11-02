@@ -1,5 +1,5 @@
 use crate::bigcurve::BigCurve;
-use crate::curve_jac::types::AffineTranscript;
+use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use bignum::BigNum;
 use bignum::bignum::evaluate_quadratic_expression;
 
@@ -530,4 +530,32 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     };
 
     P::from_coordinates_unsafe(x_out, y_out, infinity_out)
+}
+
+/// Witness generator for `add_with_hint` (unconstrained)
+///
+/// Computes `point + other` in Jacobian coordinates and returns the affine
+/// transcript that `add_with_hint` consumes, together with whether the result
+/// is the point at infinity. Nothing returned here is trusted until
+/// `add_with_hint` constrains it. Used by `derive_curve_impl`'s `Add`.
+pub unconstrained fn __add_transcript<BN: BigNum, P: BigCurve<BN>>(
+    point: P,
+    other: P,
+) -> (AffineTranscript<BN>, bool) {
+    let (result, transcript) = CurveJ::<BN, P>::from(point).add(CurveJ::from(other));
+    (AffineTranscript::from_j(transcript), result.is_infinity)
+}
+
+/// Witness generator for `sub_with_hint` (unconstrained)
+///
+/// Computes `point - other` in Jacobian coordinates and returns the affine
+/// transcript that `sub_with_hint` consumes, together with whether the result
+/// is the point at infinity. Nothing returned here is trusted until
+/// `sub_with_hint` constrains it. Used by `derive_curve_impl`'s `Sub`.
+pub unconstrained fn __sub_transcript<BN: BigNum, P: BigCurve<BN>>(
+    point: P,
+    other: P,
+) -> (AffineTranscript<BN>, bool) {
+    let (result, transcript) = CurveJ::<BN, P>::from(point).sub(CurveJ::from(other));
+    (AffineTranscript::from_j(transcript), result.is_infinity)
 }

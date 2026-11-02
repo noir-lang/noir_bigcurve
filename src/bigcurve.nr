@@ -380,7 +380,13 @@ pub comptime fn derive_curve_impl(
                 fn neg(self) -> Self {
                     Self { 
                         x: self.x, 
-                        y: std::ops::Neg::neg(self.y), 
+                        // BigNum negation requires canonical input. The constrained `sub` admits
+                        // every bounded coordinate (the result may be the alias `2 * MOD - y`), but
+                        // does not range-check its right operand, so `y` is checked here.
+                        y: {
+                            self.y.validate_in_range();
+                            $field_type::modulus() - self.y
+                        },
                         is_infinity: self.is_infinity 
                     }
                 }

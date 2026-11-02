@@ -27,6 +27,9 @@ pub mod internal {
 
     pub use crate::ops::affine::add_with_hint;
     pub use crate::ops::affine::sub_with_hint;
+
+    pub use crate::curve_jac::types::AffineTranscript;
+    pub use crate::ops::affine::{__add_transcript, __sub_transcript};
 }
 
 // Re-export the main structs so that users don't have to specify the paths

@@ -291,10 +291,10 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     //   double: lambda * (y1 + y1) + x1 * (-x1 - x1 - x1) - a = 0
     //   add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0
     let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2 };
-    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1.neg() };
+    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1 };
     let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
     let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
-    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1.neg() };
+    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1 };
     let product_2_rhs_t2: BN = if double_predicate { x1 } else { BN::zero() };
 
     // Constraint 1: lambda is correct (unified double/add)
@@ -314,7 +314,8 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
             [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
-        [[false, false, false], [true, true, true]],
+        // Sign flags preserve bounded aliases without canonical-only negation.
+        [[false, !double_predicate, false], [true, double_predicate, true]],
         [a_term],
         [true],
     );
@@ -436,7 +437,7 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     // Select operands for a unified lambda constraint:
     //   double: -lambda * (y1 + y1) + x1 * (x1 + x1 + x1) + a = 0
     //   sub:    -lambda * (-x2 + x1) + 1 * (y2 + y1) = 0
-    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2.neg() };
+    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2 };
     let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1 };
     let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
     let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
@@ -460,7 +461,8 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
             [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
-        [[false, false, false], [false, false, false]],
+        // Keep -x2 as a signed term; a bounded alias need not be canonical.
+        [[!double_predicate, false, false], [false, false, false]],
         [a_term],
         [false],
     );
@@ -514,7 +516,8 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     };
     y_out = if output_is_lhs { point.y() } else { y_out };
     y_out = if output_is_rhs {
-        other.y().neg()
+        // Constrained `sub` admits bounded aliases; BigNum negation is canonical-only.
+        BN::modulus() - other.y()
     } else {
         y_out
     };

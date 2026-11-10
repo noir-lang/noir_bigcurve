@@ -1,0 +1,8 @@
+[package]
+name = "external_derive"
+type = "bin"
+authors = []
+
+[dependencies]
+bigcurve = { path = "../.." }
+bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.11.0" }

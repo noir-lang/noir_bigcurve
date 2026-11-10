@@ -27,6 +27,10 @@ where
 ///     X1 * Z2^2 == X2 * Z1^2   AND   Y1 * Z2^3 == Y2 * Z1^3
 ///
 /// Points at infinity are handled separately: `O == O`, and `O != P` for any finite `P`.
+/// A point is at infinity if its tag says so or if `Z == 0 (mod p)`, the Jacobian
+/// encoding of infinity: with `Z == 0` both cross-products vanish, so the
+/// coordinate comparison alone would accept every pairing with `X == Y == 0`
+/// or with another `Z == 0` point.
 ///
 /// The products and comparisons use constrained BigNum `mul` and `eq`, so the
 /// returned bool is bound to the coordinates. No Brillig hint decides it.
@@ -66,8 +70,9 @@ where
         let y_lhs: BN = y1 * z2z2z2;
         let y_rhs: BN = y2 * z1z1z1;
 
-        let lhs_infinity: bool = self.is_infinity;
-        let rhs_infinity: bool = other.is_infinity;
+        // `z1`/`z2` are one for tagged infinities, so these only add the Z == 0 case.
+        let lhs_infinity: bool = self.is_infinity | (z1 == BN::zero());
+        let rhs_infinity: bool = other.is_infinity | (z2 == BN::zero());
 
         let neither_infinity: bool = !lhs_infinity & !rhs_infinity;
         let both_infinity: bool = lhs_infinity & rhs_infinity;

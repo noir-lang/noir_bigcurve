@@ -1036,3 +1036,47 @@ fn test_curvej_eq_range_checks_rhs_y() {
 fn test_curvej_eq_range_checks_rhs_z() {
     let _ = curvej_eq_with_out_of_range_limb(2, false);
 }
+
+/// A point tagged finite with Z = 0 is the Jacobian encoding of infinity: it
+/// equals `O` and other Z = 0 points, and no finite point.
+#[test]
+fn test_curvej_eq_zero_z_is_infinity() {
+    let zero = std::hint::black_box(BN254_Fq::zero());
+    let one = std::hint::black_box(BN254_Fq::one());
+    let g = BN254J::from(std::hint::black_box(BN254::one()));
+    let o = BN254J::from(BN254::point_at_infinity());
+    // The all-zero placeholder returned by `CurveJ::new()`.
+    let placeholder: BN254J = CurveJ { x: zero, y: zero, z: zero, is_infinity: false };
+    let zero_z: BN254J = CurveJ { x: one, y: one, z: zero, is_infinity: false };
+
+    assert(!(placeholder == g));
+    assert(!(g == placeholder));
+    assert(!(zero_z == g));
+    assert(!(g == zero_z));
+
+    assert(placeholder == o);
+    assert(o == placeholder);
+    assert(zero_z == o);
+    assert(o == zero_z);
+    assert(placeholder == zero_z);
+    assert(zero_z == placeholder);
+}
+
+/// Doubling a point of order two gives Z3 = 2*Y*Z = 0 with the finite tag.
+#[test]
+fn test_curvej_eq_doubled_two_torsion_is_infinity() {
+    let s = std::hint::black_box(BLS12_377::from_coordinates(
+        -BLS12_377_Fq::one(),
+        BLS12_377_Fq::zero(),
+        false,
+    ));
+    let sj: CurveJ<BLS12_377_Fq, BLS12_377> = CurveJ::from(s);
+    // Safety: test code; the doubled point is only an input to the constrained Eq.
+    let doubled = unsafe { sj.dbl().0 };
+    let o: CurveJ<BLS12_377_Fq, BLS12_377> = CurveJ::from(BLS12_377::point_at_infinity());
+    assert(!doubled.is_infinity);
+    assert(doubled == o);
+    assert(o == doubled);
+    assert(!(doubled == sj));
+    assert(!(sj == doubled));
+}

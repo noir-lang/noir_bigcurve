@@ -22,45 +22,63 @@ where
 
 /// Are two Jacobian points equal?
 ///
-/// Two Jacobian points `(X1, Y1, Z1)` and `(X2, Y2, Z2)` represent the same affine point iff:
+/// Two finite Jacobian points `(X1, Y1, Z1)` and `(X2, Y2, Z2)` represent the same affine point iff:
 ///
 ///     X1 * Z2^2 == X2 * Z1^2   AND   Y1 * Z2^3 == Y2 * Z1^3
 ///
-/// Points at infinity are handled separately: `O == O`, and `O != P` for any finite `P`.
+/// A point is at infinity if its tag says so or if `Z == 0 (mod p)`, the Jacobian
+/// encoding of infinity. Points at infinity are handled separately: `O == O`, and
+/// `O != P` for any finite `P`. Without the `Z == 0` case the cross-products would
+/// vanish on one side, making `(0, 0, 0)` equal to every finite point, and
+/// `Z == 0` points unequal to `O`.
+///
+/// The products and comparisons use constrained BigNum `mul` and `eq`, so the
+/// returned bool is bound to the coordinates. No Brillig hint decides it.
 impl<BN, Curve> std::cmp::Eq for CurveJ<BN, Curve>
 where
     BN: BigNum,
     Curve: BigCurve<BN>,
 {
     fn eq(self, other: Self) -> bool {
-        let mut points_equal: bool = false;
+        // Infinity is identified by its tag; its coordinate payload is ignored,
+        // including payloads not in the finite-coordinate limb domain.
+        let z1: BN = if self.is_infinity { BN::one() } else { self.z };
+        let z2: BN = if other.is_infinity {
+            BN::one()
+        } else {
+            other.z
+        };
+        let x1: BN = if self.is_infinity { BN::zero() } else { self.x };
+        let x2: BN = if other.is_infinity {
+            BN::zero()
+        } else {
+            other.x
+        };
+        let y1: BN = if self.is_infinity { BN::zero() } else { self.y };
+        let y2: BN = if other.is_infinity {
+            BN::zero()
+        } else {
+            other.y
+        };
+        let z1z1: BN = z1 * z1;
+        let z1z1z1: BN = z1z1 * z1;
+        let z2z2: BN = z2 * z2;
+        let z2z2z2: BN = z2z2 * z2;
 
-        // Safety: unconstrained equality check, used only in tests
-        unsafe {
-            let z1: BN = self.z;
-            let z2: BN = other.z;
-            let z1z1: BN = z1.__mul(&z1);
-            let z1z1z1: BN = z1z1.__mul(&z1);
-            let z2z2: BN = z2.__mul(&z2);
-            let z2z2z2: BN = z2z2.__mul(&z2);
+        let x_lhs: BN = x1 * z2z2;
+        let x_rhs: BN = x2 * z1z1;
+        let y_lhs: BN = y1 * z2z2z2;
+        let y_rhs: BN = y2 * z1z1z1;
 
-            let x_lhs: BN = self.x.__mul(&z2z2);
-            let x_rhs: BN = other.x.__mul(&z1z1);
+        // `z1`/`z2` are one for tagged infinities, so these only add the Z == 0 case.
+        let lhs_infinity: bool = self.is_infinity | z1.is_zero();
+        let rhs_infinity: bool = other.is_infinity | z2.is_zero();
 
-            let y_lhs: BN = self.y.__mul(&z2z2z2);
-            let y_rhs: BN = other.y.__mul(&z1z1z1);
+        let neither_infinity: bool = !lhs_infinity & !rhs_infinity;
+        let both_infinity: bool = lhs_infinity & rhs_infinity;
 
-            let lhs_infinity: bool = self.is_infinity;
-            let rhs_infinity: bool = other.is_infinity;
-
-            let neither_infinity: bool = !lhs_infinity & !rhs_infinity;
-            let both_infinity: bool = lhs_infinity & rhs_infinity;
-
-            // Coordinates only meaningful when both points are finite
-            points_equal = (x_lhs.__eq(&x_rhs) & y_lhs.__eq(&y_rhs)) & neither_infinity;
-            points_equal = points_equal | both_infinity;
-        }
-        points_equal
+        // Coordinates only meaningful when both points are finite
+        ((x_lhs == x_rhs) & (y_lhs == y_rhs) & neither_infinity) | both_infinity
     }
 }
 

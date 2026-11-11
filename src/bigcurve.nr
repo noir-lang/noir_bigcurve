@@ -78,13 +78,11 @@ pub struct BigCurveParams<BN> {
 /// On prime-order curves (e.g. BN254, secp256k1) this is not a concern because
 /// every point on the curve is in the prime-order group.
 ///
-/// This only matters when the prover supplies curve points as private inputs.
-/// Public/hardcoded points (generators, protocol parameters) and points derived
-/// inside the circuit from such points are not affected.
-///
-/// If your circuit accepts private curve points on a non-prime-order curve,
-/// you **must** validate that they belong to G1 before using them in scalar
-/// multiplication. Use `validate_in_subgroup` for this.
+/// Public visibility alone does not establish subgroup membership. If the
+/// protocol requires G1 inputs, validate untrusted public and private points
+/// before scalar multiplication using `validate_in_subgroup`. Trusted generators
+/// and protocol parameters already established to lie in G1, and points derived
+/// from them by group operations, do not need this check repeated.
 ///
 /// # Implementing a new curve
 ///
@@ -150,8 +148,9 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     /// `r_minus_one` argument of `derive_curve_impl`.
     ///
     /// Only needed on curves with non-prime order (e.g. BLS12-377, BLS12-381)
-    /// when accepting private point inputs from an untrusted prover. Not needed
-    /// for public/hardcoded points or points derived inside the circuit from them.
+    /// when accepting untrusted point inputs and the protocol requires G1.
+    /// Public visibility is not a subgroup check. Trusted G1 constants and points
+    /// derived from them by group operations need no repeated membership check.
     /// On prime-order curves this check is redundant.
     ///
     /// **Warning:** this is expensive - it performs a full scalar multiplication.

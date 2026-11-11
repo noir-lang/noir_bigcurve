@@ -305,10 +305,10 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
     //   double: lambda * (y1 + y1) + x1 * (-x1 - x1 - x1) - a = 0
     //   add:    lambda * (x2 - x1) + 1 * (-y2 + y1) = 0
     let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2 };
-    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1.neg() };
+    let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1 };
     let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
     let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
-    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1.neg() };
+    let product_2_rhs_t1: BN = if double_predicate { x1 } else { y1 };
     let product_2_rhs_t2: BN = if double_predicate { x1 } else { BN::zero() };
 
     // Constraint 1: lambda is correct (unified double/add)
@@ -328,7 +328,8 @@ pub fn add_with_hint<BN: BigNum, P: BigCurve<BN>>(
             [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
-        [[false, false, false], [true, true, true]],
+        // Sign flags preserve bounded aliases without canonical-only negation.
+        [[false, !double_predicate, false], [true, double_predicate, true]],
         [a_term],
         [true],
     );
@@ -450,7 +451,7 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     // Select operands for a unified lambda constraint:
     //   double: -lambda * (y1 + y1) + x1 * (x1 + x1 + x1) + a = 0
     //   sub:    -lambda * (-x2 + x1) + 1 * (y2 + y1) = 0
-    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2.neg() };
+    let product_1_rhs_t0: BN = if double_predicate { y1 } else { x2 };
     let product_1_rhs_t1: BN = if double_predicate { y1 } else { x1 };
     let product_2_lhs_t0: BN = if double_predicate { x1 } else { BN::one() };
     let product_2_rhs_t0: BN = if double_predicate { x1 } else { y2 };
@@ -474,7 +475,8 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
             [product_1_rhs_t0, product_1_rhs_t1, BN::zero()],
             [product_2_rhs_t0, product_2_rhs_t1, product_2_rhs_t2],
         ],
-        [[false, false, false], [false, false, false]],
+        // Keep -x2 as a signed term; a bounded alias need not be canonical.
+        [[!double_predicate, false, false], [false, false, false]],
         [a_term],
         [false],
     );
@@ -502,6 +504,14 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
     // Select output based on edge cases
     let output_is_lhs: bool = other.is_infinity() & !point.is_infinity();
     let output_is_rhs: bool = point.is_infinity() & !other.is_infinity();
+    // `-other.y()` for the `O - Q` output, accepting a bounded alias. Its range
+    // check is enforced only when that output is selected. The integer zero stays
+    // zero: `MOD - 0` would be `MOD`, which `validate_in_field` rejects.
+    let neg_other_y: BN = if output_is_rhs & !other.y().unsafe_is_zero_integer() {
+        neg_coordinate(other.y())
+    } else {
+        BN::zero()
+    };
     let mut x_out: BN = if evaluate_group_operation_predicate {
         x3
     } else {
@@ -527,11 +537,7 @@ pub fn sub_with_hint<BN: BigNum, P: BigCurve<BN>>(
         y_out
     };
     y_out = if output_is_lhs { point.y() } else { y_out };
-    y_out = if output_is_rhs {
-        other.y().neg()
-    } else {
-        y_out
-    };
+    y_out = if output_is_rhs { neg_other_y } else { y_out };
 
     let mut infinity_out: bool = !evaluate_group_operation_predicate;
     infinity_out = if infinity_predicate {

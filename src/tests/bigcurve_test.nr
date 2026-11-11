@@ -1372,3 +1372,79 @@ fn test_sub_accepts_bounded_alias() {
     let g = generator_with_bounded_alias_y();
     assert(p - g == negative_double_generator());
 }
+
+#[test]
+fn test_sub_distinct_x_accepts_bounded_alias() {
+    let two = -negative_double_generator();
+    let x = BN254_Fq::from_limbs([
+        0xf9813a7ef8e7360fe294d84604cd1a,
+        0x935a0f44ba2c53d54a11e9996de370,
+        0x336a,
+    ]);
+    let q = BN254::from_coordinates(x, two.y(), false);
+    assert(BN254::one() - q == negative_generator());
+}
+
+/// `p - g` for -G and an admitted alias of G, which takes the doubling
+/// branch of `sub_with_hint`. Uses the honest transcript, or an all-zero one.
+fn sub_alias_doubling_with_transcript(zero_transcript: bool) -> BN254 {
+    let p = negative_generator();
+    let g = generator_with_bounded_alias_y();
+    // Safety: the transcript is checked by `sub_with_hint` below.
+    let (honest, _) = unsafe { crate::ops::affine::__sub_transcript::<BN254_Fq, BN254>(p, g) };
+    let transcript = if zero_transcript {
+        AffineTranscript { lambda: BN254_Fq::zero(), x3: BN254_Fq::zero(), y3: BN254_Fq::zero() }
+    } else {
+        honest
+    };
+    crate::ops::affine::sub_with_hint(p, g, std::hint::black_box(transcript))
+}
+
+/// Control for the test below: the honest transcript is accepted.
+#[test]
+fn test_sub_alias_doubling_accepts_honest_transcript() {
+    assert(sub_alias_doubling_with_transcript(false) == negative_double_generator());
+}
+
+/// A zero slope leaves tangent residual 3, so the zero transcript has no
+/// witness for the tangent-slope relation. This fails in witness generation,
+/// not at a constraint: BigNum's quotient hint asserts the relation is
+/// divisible by the modulus before any constraint is evaluated.
+#[test(should_fail_with = "Failed to solve brillig function")]
+fn test_sub_alias_doubling_zero_transcript_has_no_witness() {
+    let _ = sub_alias_doubling_with_transcript(true);
+}
+
+/// `O - S` returns `-S`. For the BLS12-377 point of order two, y = 0 and the
+/// negated coordinate must stay the zero limbs, not `MOD`.
+#[test]
+fn test_sub_from_infinity_keeps_zero_y_canonical() {
+    let s = std::hint::black_box(bls12_377_two_torsion_point());
+    let o = std::hint::black_box(BLS12_377::point_at_infinity());
+    let negated = o - s;
+    assert(!negated.is_infinity());
+    assert_eq(negated.x().get_limbs(), s.x().get_limbs());
+    assert_eq(negated.y().get_limbs(), [0, 0, 0, 0]);
+    negated.y().validate_in_field();
+}
+
+#[test]
+fn test_sub_from_infinity_negates_bounded_alias() {
+    let a = generator_with_bounded_alias_y();
+    let o = std::hint::black_box(BN254::point_at_infinity());
+    let r = o - a;
+    assert(!r.is_infinity());
+    assert(r == negative_generator());
+}
+
+/// `G - O` for a tagged infinity whose y has a limb above the 120-bit limb
+/// range. The checked affine constructor ignores infinity coordinates, and the
+/// negation for the `O - Q` output must not range-check `O`'s y when that
+/// output is not selected.
+#[test]
+fn test_sub_ignores_tagged_infinity_payload() {
+    let g = BN254::one();
+    let junk = std::hint::black_box(BN254_Fq::from_limbs_unsafe([1 << 120, 0, 0]));
+    let tagged = BN254::from_coordinates(BN254_Fq::zero(), junk, true);
+    assert(g - tagged == g);
+}

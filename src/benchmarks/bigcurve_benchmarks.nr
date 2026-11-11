@@ -91,3 +91,25 @@ mod Secp384r1_Bench {}
 
 #[make_bench(quote { Vesta })]
 mod Vesta_Bench {}
+
+// One three-limb and one four-limb curve are enough to track this function's cost
+// relative to `evaluate_linear_expression`.
+#[export]
+fn evaluate_linear_expression_selected_offset_BN254_Bench(
+    a: [BN254; 3],
+    b: [crate::scalar_field::ScalarField<64>; 3],
+    c: [BN254; 2],
+    o: BN254,
+) -> BN254 {
+    crate::ops::msm::evaluate_linear_expression_preserving_selected_offset(a, b, c, o)
+}
+
+#[export]
+fn evaluate_linear_expression_selected_offset_BLS12_381_Bench(
+    a: [BLS12_381; 3],
+    b: [crate::scalar_field::ScalarField<64>; 3],
+    c: [BLS12_381; 2],
+    o: BLS12_381,
+) -> BLS12_381 {
+    crate::ops::msm::evaluate_linear_expression_preserving_selected_offset(a, b, c, o)
+}

@@ -105,9 +105,67 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
 ) -> Curve {
+    evaluate_linear_expression_impl(
+        mul_points,
+        mul_scalars,
+        add_points,
+        Curve::offset_generator(),
+        true,
+    )
+}
+
+/// Evaluate `[16^(NScalarSlices-1)]initial_offset + sum_i(mul_scalars[i] * mul_points[i])
+/// + sum_j(add_points[j])` (constrained)
+///
+/// The same replay as `evaluate_linear_expression`, except that the accumulator starts
+/// from the caller's `initial_offset` instead of `offset_generator()`, and the result
+/// keeps the offset (no final subtraction of `offset_generator_final()`).
+/// Requires `NScalarSlices > 0` and `NMuls > 0`. `initial_offset` must be a validly
+/// constructed point like the other inputs (range-checked coordinates); the function
+/// additionally checks that it is on the curve and not the point at infinity. The additions
+/// use the same incomplete formulas as `evaluate_linear_expression`, so an initial offset
+/// that makes one of them add equal or opposite points leaves the circuit unsatisfiable.
+/// Choose the initial offset independently of the input points, e.g. a fixed
+/// nothing-up-my-sleeve point with no known discrete-log relation to them, as the
+/// library's offset generator is; then a collision has negligible probability for inputs
+/// chosen without knowledge of it. An offset the prover picks freely affects only whether
+/// a proof exists.
+///
+/// To get the plain linear expression, subtract `[16^(NScalarSlices-1)]initial_offset`
+/// from the result with `-` (complete, so a result that cancels to infinity is fine).
+/// The caller must derive that correction from the same `initial_offset` and
+/// `NScalarSlices`, as a constant or in constrained code; see the README.
+pub fn evaluate_linear_expression_preserving_selected_offset<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    initial_offset: Curve,
+) -> Curve {
+    assert((NScalarSlices > 0) & (NMuls > 0), "MSM needs windows and multiplication terms");
+    initial_offset.validate_on_curve();
+    assert(!initial_offset.is_infinity(), "MSM initial offset must be finite");
+    evaluate_linear_expression_impl(mul_points, mul_scalars, add_points, initial_offset, false)
+}
+
+// `remove_offset` is always a literal fixed by one of the public wrappers above,
+// never a caller-controlled value.
+fn evaluate_linear_expression_impl<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    initial_offset: Curve,
+    remove_offset: bool,
+) -> Curve {
     // Safety: transcript is verified step-by-step in the constrained replay loop below
-    let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] =
-        unsafe { get_linear_expression_transcript(mul_points, mul_scalars, add_points) };
+    let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
+        get_linear_expression_transcript(
+            mul_points,
+            mul_scalars,
+            add_points,
+            initial_offset,
+            remove_offset,
+        )
+    };
 
     // Replace infinity inputs with the generator (scalar zeroed to produce identity)
     let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
@@ -133,8 +191,8 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
         tables[i] = PointTable::<BN>::new_with_hint::<Curve>(msm_points[i], table_transcript);
     }
 
-    // Initialize accumulator: offset_generator + T_0[slice_0[0]] + T_1[slice_1[0]] + ...
-    let mut accumulator: Curve = BigCurve::offset_generator();
+    // Initialize accumulator: initial_offset + T_0[slice_0[0]] + T_1[slice_1[0]] + ...
+    let mut accumulator: Curve = initial_offset;
     let mut accumulator: Curve = incomplete_add_with_hint::<BN, Curve>(
         accumulator,
         tables[0].get::<Curve>(scalars[0].base4_slices[0] as u32),
@@ -195,12 +253,14 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
         );
     }
 
-    // Remove the offset generator
-    accumulator = sub_with_hint::<BN, Curve>(
-        accumulator,
-        BigCurve::offset_generator_final(),
-        transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
-    );
+    // Remove the offset generator (`evaluate_linear_expression` only)
+    if remove_offset {
+        accumulator = sub_with_hint::<BN, Curve>(
+            accumulator,
+            BigCurve::offset_generator_final(),
+            transcript[NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 4],
+        );
+    }
 
     accumulator
 }
@@ -211,6 +271,15 @@ unconstrained fn get_linear_expression_transcript<BN: BigNum, Curve: BigCurve<BN
     mul_points: [Curve; NMuls],
     mul_scalars: [ScalarField<NScalarSlices>; NMuls],
     add_points: [Curve; NAdds],
+    initial_offset: Curve,
+    remove_offset: bool,
 ) -> [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] {
-    CurveJ::<BN, Curve>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
+    CurveJ::<BN, Curve>::compute_linear_expression_transcript(
+        mul_points,
+        mul_scalars,
+        add_points,
+        initial_offset,
+        remove_offset,
+    )
+        .1
 }

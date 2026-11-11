@@ -106,14 +106,8 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     add_points: [Curve; NAdds],
 ) -> Curve {
     // Safety: transcript is verified step-by-step in the constrained replay loop below
-    let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] = unsafe {
-        CurveJ::<BN, Curve>::compute_linear_expression_transcript(
-            mul_points,
-            mul_scalars,
-            add_points,
-        )
-            .1
-    };
+    let transcript: [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] =
+        unsafe { get_linear_expression_transcript(mul_points, mul_scalars, add_points) };
 
     // Replace infinity inputs with the generator (scalar zeroed to produce identity)
     let mut _inputs: [Curve; NMuls] = [BigCurve::one(); NMuls];
@@ -209,4 +203,14 @@ pub fn evaluate_linear_expression<BN: BigNum, Curve: BigCurve<BN>, let NScalarSl
     );
 
     accumulator
+}
+
+// Expose only the transcript as witnesses; the unused Jacobian result is
+// not part of the constrained replay interface.
+unconstrained fn get_linear_expression_transcript<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+) -> [AffineTranscript<BN>; NScalarSlices * NMuls + NScalarSlices * 4 + NMuls * 9 + NAdds - 3] {
+    CurveJ::<BN, Curve>::compute_linear_expression_transcript(mul_points, mul_scalars, add_points).1
 }

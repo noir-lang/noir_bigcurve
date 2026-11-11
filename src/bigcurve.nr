@@ -164,9 +164,11 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     ///
     /// Uses wNAF with a 4-bit window. The scalar must be encoded as a `ScalarField`.
     ///
-    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
-    /// Using the wrong value will produce an unprovable circuit. Prefer the
-    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    /// `NScalarSlices` must equal the curve's slice count `K` (e.g. `BN254_SCALAR_SLICES`),
+    /// which `offset_generator_final` is derived for. Any other value does NOT fail: the
+    /// circuit stays satisfiable and returns a wrong point,
+    /// `scalar * self + (16^(NScalarSlices-1) - 16^(K-1)) * offset_generator`.
+    /// Use the pre-defined scalar aliases (e.g. `BN254Scalar`).
     ///
     /// # Incompleteness
     ///
@@ -186,9 +188,11 @@ pub trait BigCurve<BN: BigNum>: Eq + Add + Sub + Neg {
     ///
     /// The most general operation: combines MSM with plain point additions.
     ///
-    /// `NScalarSlices` must match the value used to derive `offset_generator_final`.
-    /// Using the wrong value will produce an unprovable circuit. Prefer the
-    /// pre-defined scalar type aliases (e.g. `BN254Scalar`) to avoid mismatch.
+    /// `NScalarSlices` must equal the curve's slice count `K` (e.g. `BN254_SCALAR_SLICES`),
+    /// which `offset_generator_final` is derived for. Any other value does NOT fail: the
+    /// circuit stays satisfiable and returns a wrong point, the correct sum plus
+    /// `(16^(NScalarSlices-1) - 16^(K-1)) * offset_generator`.
+    /// Use the pre-defined scalar aliases (e.g. `BN254Scalar`).
     ///
     /// # Incompleteness
     ///

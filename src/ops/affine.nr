@@ -3,6 +3,20 @@ use crate::curve_jac::types::{AffineTranscript, CurveJ};
 use bignum::BigNum;
 use bignum::bignum::evaluate_quadratic_expression;
 
+/// `-y` for a coordinate that may be a bounded alias (limbs in range, value at
+/// or above the modulus), computed as `MOD - y` with BigNum's constrained `sub`.
+///
+/// BigNum `neg` requires `y < MOD`; `MOD - y` accepts every `y < 2^MOD_BITS`.
+/// `sub`'s underflow flag is a prover-chosen witness, so for `y != 0` the result
+/// is `MOD - y` or `2 * MOD - y` (either one that is in range), and `y = 0` gives
+/// `MOD`. Use it only where any range-checked encoding of `-y` is acceptable;
+/// the public `Neg` keeps BigNum `neg`. `sub` does not range-check its right
+/// operand, so `y` is checked here.
+pub(crate) fn neg_coordinate<BN: BigNum>(y: BN) -> BN {
+    y.validate_in_range();
+    BN::modulus() - y
+}
+
 /// Double a point using an `AffineTranscript` witness (constrained)
 ///
 /// Assumes the input point lies on the curve.

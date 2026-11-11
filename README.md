@@ -245,3 +245,15 @@ the library's offset generator is; then a collision has negligible probability
 for inputs chosen without knowledge of it. An offset the prover picks freely
 affects only whether a proof exists. Input points must be valid; a protocol
 requiring subgroup membership must establish it separately.
+
+`bigcurve::internal::find_safe_msm_offset(mul_points, mul_scalars, add_points, offsets)`
+helps a prover pick the initial offset when the input points may have been
+chosen to collide with it. This unconstrained helper runs the MSM's steps and
+the additions of `add_points` from each candidate in `offsets` in turn, and
+returns the index of the first candidate for which no step adds equal or
+opposite points, or fails if none qualifies; nothing guarantees that one does.
+Inputs and candidates must be valid points in an odd prime-order group. Use the
+index to select both the candidate and its matching correction from fixed
+arrays in constrained code, then call
+`evaluate_linear_expression_preserving_selected_offset` with the same inputs.
+The constrained replay, not the helper, is what makes the result correct.

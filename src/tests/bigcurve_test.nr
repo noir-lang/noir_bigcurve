@@ -1232,3 +1232,143 @@ unconstrained fn test_unconstrained_add_sub_non_canonical_infinity() {
     assert(both.x == BN254_Fq::zero());
     assert(both.y == BN254_Fq::zero());
 }
+
+// -G = (1, q - 2), canonical.
+fn negative_generator() -> BN254 {
+    BN254::from_coordinates(
+        BN254_Fq::one(),
+        BN254_Fq::from_limbs([
+            671967750576550571863734675757137221,
+            407329191355489184324853464957476247,
+            12388,
+        ]),
+        false,
+    )
+}
+
+// The BN254 generator with y = q + 2: a bounded alias of (1, 2) admitted by
+// checked construction, since the curve equation is checked modulo q.
+fn generator_with_bounded_alias_y() -> BN254 {
+    let mut y = BN254_Fq::modulus().get_limbs();
+    y[0] += 2;
+    BN254::from_coordinates(BN254_Fq::one(), BN254_Fq::from_limbs(y), false)
+}
+
+#[test]
+fn test_negation_hint_accepts_bounded_alias() {
+    let g = std::hint::black_box(generator_with_bounded_alias_y());
+    // Safety: exercise witness generation only, then compare with a checked reference.
+    let hinted = unsafe { BN254J::from(g).neg() };
+    assert_eq(hinted.x.get_limbs(), g.x().get_limbs());
+    assert(hinted.y == negative_generator().y());
+    assert(!hinted.is_infinity);
+    // Safety: exercise the infinity hint only, then check its coordinates and tag.
+    let infinity = unsafe { BN254J::from(BN254::point_at_infinity()).neg() };
+    assert(infinity.is_infinity);
+    assert(infinity.y == BN254_Fq::zero());
+}
+
+#[test]
+fn test_point_table_hint_accepts_bounded_alias() {
+    let p = BN254J::from(generator_with_bounded_alias_y());
+    // Safety: the checked alias is on curve; verify the returned hint below.
+    let t = unsafe { crate::curve_jac::point_table::PointTable::new(p) };
+    // Safety: table lookup is a hint; checked modular equality follows.
+    let neg: BN254J = unsafe { t.get(7) };
+    assert(neg == BN254J::from(-BN254::one()));
+}
+
+#[test]
+fn test_point_table_accepts_bounded_alias() {
+    let p = generator_with_bounded_alias_y();
+    // Safety: independently generate the canonical control transcript.
+    let t = unsafe { crate::curve_jac::point_table::PointTable::new(BN254J::from(BN254::one())) };
+    // Safety: the constrained table validates the transcript.
+    let transcript = unsafe { AffineTranscript::from_jacobian_transcript(t.transcript) };
+    let table = PointTable::new_with_hint(p, transcript);
+    assert(table.get::<BN254>(7) == -BN254::one());
+}
+
+#[test]
+fn test_point_table_accepts_bounded_alias_hints() {
+    let g = std::hint::black_box(BN254::one());
+    // Safety: a canonical independent transcript for the fixed generator.
+    let t = unsafe { crate::curve_jac::point_table::PointTable::new(BN254J::from(g)) };
+    // Safety: hint values are validated by the constrained table below.
+    let mut transcript = unsafe { AffineTranscript::from_jacobian_transcript(t.transcript) };
+    let expected_y = -transcript[2].y3;
+    let mut limbs = transcript[2].y3.get_limbs();
+    let q = BN254_Fq::modulus().get_limbs();
+    let mut carry: u128 = 0;
+    for i in 0..3 {
+        let sum = limbs[i] + q[i] + carry;
+        limbs[i] = sum & ((1 << 120) - 1);
+        carry = sum >> 120;
+    }
+    let alias = BN254_Fq::from_limbs(limbs);
+    alias.validate_in_range();
+    assert(alias == transcript[2].y3);
+    transcript[2].y3 = alias;
+    let table = PointTable::new_with_hint(g, transcript);
+    assert(table.get::<BN254>(5).y() == expected_y);
+}
+
+/// Builds the constrained generator table from an honest transcript with
+/// `lambda_offset` added to one slope.
+fn generator_point_table_with_lambda_offset(lambda_offset: BN254_Fq) -> PointTable<BN254_Fq> {
+    let g = std::hint::black_box(BN254::one());
+    // Safety: independently generated canonical transcript.
+    let t = unsafe { crate::curve_jac::point_table::PointTable::new(BN254J::from(g)) };
+    // Safety: the constrained table validates the transcript.
+    let mut transcript = unsafe { AffineTranscript::from_jacobian_transcript(t.transcript) };
+    transcript[2].lambda = transcript[2].lambda + lambda_offset;
+    PointTable::new_with_hint(g, transcript)
+}
+
+/// Control for the test below: the unmodified transcript is accepted.
+#[test]
+fn test_point_table_accepts_honest_transcript() {
+    let table = generator_point_table_with_lambda_offset(BN254_Fq::zero());
+    assert(table.get::<BN254>(8) == BN254::one());
+    assert(table.get::<BN254>(7) == -BN254::one());
+}
+
+/// With one slope off by one the table's addition relation has no witness.
+/// This fails in witness generation, not at a constraint: BigNum's quotient
+/// hint asserts the relation is divisible by the modulus before any constraint
+/// is evaluated. It differs from the control above only in the offset.
+#[test(should_fail_with = "Failed to solve brillig function")]
+fn test_point_table_corrupted_lambda_has_no_witness() {
+    let _ = generator_point_table_with_lambda_offset(BN254_Fq::one());
+}
+
+#[test]
+fn test_mul_accepts_bounded_alias() {
+    let g = std::hint::black_box(generator_with_bounded_alias_y());
+    let s: ScalarField<64> = ScalarField::from(1 as Field);
+    assert(g.mul(s) == BN254::one());
+}
+
+// -2G, canonical.
+fn negative_double_generator() -> BN254 {
+    BN254::from_coordinates(
+        BN254_Fq::from_limbs([
+            623535232566935105136899006107471827,
+            357765073405947042246255106629928409,
+            774,
+        ]),
+        BN254_Fq::from_limbs([
+            1135942298659705583010493357529258627,
+            1136602398624662810299021592591356718,
+            6774,
+        ]),
+        false,
+    )
+}
+
+#[test]
+fn test_sub_accepts_bounded_alias() {
+    let p = negative_generator();
+    let g = generator_with_bounded_alias_y();
+    assert(p - g == negative_double_generator());
+}

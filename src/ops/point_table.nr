@@ -1,6 +1,6 @@
 use crate::bigcurve::BigCurve;
 use crate::curve_jac::types::AffineTranscript;
-use crate::ops::affine::{double_with_hint, incomplete_add_with_hint};
+use crate::ops::affine::{double_with_hint, incomplete_add_with_hint, neg_coordinate};
 use ::bignum::BigNum;
 
 /// Affine-coordinate lookup table for wNAF scalar multiplication (constrained side).
@@ -40,7 +40,9 @@ impl<BN: BigNum> PointTable<BN> {
         result.x[8] = point.x();
         result.y[8] = point.y();
         result.x[7] = point.x();
-        result.y[7] = point.y().neg();
+        // A y = 0 entry negates to `MOD`, not zero: a bounded coordinate that the
+        // incomplete addition formulas accept, and table entries are never returned.
+        result.y[7] = neg_coordinate(point.y());
 
         let mut A: P = point;
         for i in 1..8 {
@@ -48,7 +50,7 @@ impl<BN: BigNum> PointTable<BN> {
             result.x[8 + i] = A.x();
             result.y[8 + i] = A.y();
             result.x[7 - i] = A.x();
-            result.y[7 - i] = A.y().neg();
+            result.y[7 - i] = neg_coordinate(A.y());
         }
         result
     }

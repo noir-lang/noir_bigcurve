@@ -9,7 +9,7 @@ use crate::curve_jac;
 use crate::curve_jac::types::AffineTranscript;
 use crate::curve_jac::types::CurveJ;
 use crate::curve_jac::types::JTranscript;
-use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq, BLS12_377Scalar};
+use crate::curves::bls12_377::{BLS12_377, BLS12_377_Fq};
 use crate::curves::bn254::{BN254, BN254J, BN254Scalar};
 use crate::curves::mnt6_753::MNT6_753;
 use crate::curves::secp256r1::{Secp256r1, Secp256r1J};
@@ -844,31 +844,83 @@ fn test_mul_edgecase_2() {
     let _: BN254 = P.mul(scalar);
 }
 
-/// Incomplete doubling: a 2-torsion point (y == 0) on a curve with even
-/// cofactor causes the tangent-slope formula to degenerate in mul.
-#[test(should_fail)]
-fn test_double_with_hint_edgecase() {
-    // Safety: test code
-    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
-    let y: BLS12_377_Fq = BLS12_377_Fq::zero();
+// Two-torsion points (y == 0) exist on BLS12-377 because its cofactor is even.
+// The tangent-slope relation `lambda * 2*y - 3*x^2 - a = 0` used for doubling has
+// no solution there, so `double_with_hint` and the doubling branch of
+// `add_with_hint` cannot be satisfied for such a point.
+//
+// The two `has_no_witness` tests below fail in witness generation, not at a
+// constraint: BigNum's `evaluate_quadratic_expression` first calls an
+// unconstrained hint for the quotient, and that hint asserts the relation is
+// divisible by the modulus before any constraint is evaluated. They show an
+// honest prover has no witness; `test_two_torsion_tangent_is_degenerate` states
+// why none exists. Each is paired with a generator control that takes the same
+// path with y != 0 and passes.
 
-    let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
-    let P: BLS12_377 = S.sub(BLS12_377::offset_generator());
-
-    let scalar: BLS12_377Scalar = BLS12_377Scalar::from(1);
-    let _: BLS12_377 = P.mul(scalar);
+fn bls12_377_two_torsion_point() -> BLS12_377 {
+    BLS12_377::from_coordinates(-BLS12_377_Fq::one(), BLS12_377_Fq::zero(), false)
 }
 
-/// Incomplete doubling: adding a 2-torsion point (y == 0) to itself
-/// uses the same degenerate tangent-slope formula via add_with_hint.
-#[test(should_fail)]
-fn test_add_edgecase() {
-    // Safety: test code
-    let x: BLS12_377_Fq = unsafe { -BLS12_377_Fq::one().__neg() };
-    let y: BLS12_377_Fq = BLS12_377_Fq::zero();
-    let S: BLS12_377 = BLS12_377::from_coordinates(x, y, false);
+/// A doubling transcript for `point` with slope `lambda`: `x3 = lambda^2 - 2*x`
+/// and `y3 = lambda * (x - x3) - y`. These satisfy the two output relations of
+/// `double_with_hint` for any `lambda`, leaving only the tangent-slope relation
+/// to decide.
+fn tangent_transcript(point: BLS12_377, lambda: BLS12_377_Fq) -> AffineTranscript<BLS12_377_Fq> {
+    let x3 = lambda * lambda - point.x() - point.x();
+    let y3 = lambda * (point.x() - x3) - point.y();
+    AffineTranscript { lambda, x3, y3 }
+}
 
-    let _: BLS12_377 = S.add(S);
+#[test]
+fn test_two_torsion_input_is_on_curve() {
+    let point = bls12_377_two_torsion_point();
+    assert(!point.is_infinity());
+    assert(point.y() == BLS12_377_Fq::zero());
+}
+
+/// At y == 0 the tangent-slope relation reads `lambda * 0 == 3*x^2 + a`, and the
+/// right-hand side is non-zero, so no `lambda` satisfies it.
+#[test]
+fn test_two_torsion_tangent_is_degenerate() {
+    let s = bls12_377_two_torsion_point();
+    assert(s.y() + s.y() == BLS12_377_Fq::zero());
+    let rhs = s.x() * s.x() * BLS12_377_Fq::from(3) + BLS12_377::a();
+    assert(!(rhs == BLS12_377_Fq::zero()));
+}
+
+/// Control: with y != 0 the slope `(3*x^2 + a) / (2*y)` exists, and both
+/// `double_with_hint` and `add` of a point with itself accept it.
+#[test]
+fn test_doubling_generator_control() {
+    let g = std::hint::black_box(BLS12_377::one());
+    let numerator = g.x() * g.x() * BLS12_377_Fq::from(3) + BLS12_377::a();
+    let lambda = numerator / (g.y() + g.y());
+    let doubled = crate::ops::affine::double_with_hint::<BLS12_377_Fq, BLS12_377>(
+        g,
+        tangent_transcript(g, lambda),
+    );
+    assert(!doubled.is_infinity());
+    assert(doubled == g.add(g));
+}
+
+/// `double_with_hint` on a two-torsion point. The transcript's outputs are
+/// consistent with its slope, so only the tangent-slope relation is
+/// unsatisfied; the slope value is arbitrary because none works.
+#[test(should_fail_with = "Failed to solve brillig function")]
+fn test_double_with_hint_two_torsion_has_no_witness() {
+    let s = std::hint::black_box(bls12_377_two_torsion_point());
+    let _ = crate::ops::affine::double_with_hint::<BLS12_377_Fq, BLS12_377>(
+        s,
+        tangent_transcript(s, BLS12_377_Fq::one()),
+    );
+}
+
+/// Adding a two-torsion point to itself takes the doubling branch of
+/// `add_with_hint`, with the same unsatisfiable tangent-slope relation.
+#[test(should_fail_with = "Failed to solve brillig function")]
+fn test_add_two_torsion_to_itself_has_no_witness() {
+    let s = std::hint::black_box(bls12_377_two_torsion_point());
+    let _ = s.add(s);
 }
 
 // ------------------------------ SUBGROUP MEMBERSHIP TESTS ------------------------------

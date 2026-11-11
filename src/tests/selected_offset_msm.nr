@@ -1,5 +1,5 @@
 use crate::{BigCurve, ScalarField};
-use crate::internal::evaluate_linear_expression_preserving_selected_offset;
+use crate::internal::{evaluate_linear_expression_preserving_selected_offset, find_safe_msm_offset};
 use bignum::BigNum;
 
 // The library's offset generator serves as a known-good initial offset. With two
@@ -134,4 +134,89 @@ fn test_zero_coordinate_finite_offset_has_no_witness() {
         [],
         std::hint::black_box(bad),
     );
+}
+
+#[test]
+fn test_find_safe_msm_offset_skips_colliding_candidate() {
+    let p = crate::BN254::one();
+    let scalar = ScalarField::<1>::from(std::hint::black_box(1 as Field));
+    // From the initial offset `G` the first addition would add `G` to itself.
+    let offsets = [p, crate::BN254::offset_generator()];
+    // Safety: the index only selects an entry of `offsets`, and the MSM is
+    // then replayed in constrained code from that entry.
+    let index = unsafe { find_safe_msm_offset([p], [scalar], [], offsets) };
+    assert_eq(index, 1);
+    let result =
+        evaluate_linear_expression_preserving_selected_offset([p], [scalar], [], offsets[index]);
+    assert(result == offsets[index] + p);
+}
+
+/// The candidate `-2G` collides only at the skew step that scalar 1 does not
+/// apply (see `test_selected_offset_rejects_offset_colliding_at_unused_skew_step`);
+/// the search checks that step too.
+#[test]
+fn test_find_safe_msm_offset_skips_collision_at_unused_skew_step() {
+    let p = crate::BN254::one();
+    let bad = -(p + p);
+    let offsets = [bad, crate::BN254::offset_generator()];
+    let scalar = ScalarField::<1>::from(std::hint::black_box(1 as Field));
+    // Safety: the index only selects an entry of `offsets`, and the MSM is
+    // then replayed in constrained code from that entry.
+    let index = unsafe { find_safe_msm_offset([p], [scalar], [], offsets) };
+    assert_eq(index, 1);
+    let result =
+        evaluate_linear_expression_preserving_selected_offset([p], [scalar], [], offsets[index]);
+    assert(result == offsets[index] + p);
+}
+
+#[test(should_fail_with = "No candidate initial offset avoids equal or opposite points in the MSM")]
+fn test_find_safe_msm_offset_fails_when_every_candidate_collides() {
+    let p = crate::BN254::one();
+    let scalar = ScalarField::<1>::from(1);
+    // Safety: this tests only the search's failure; nothing is replayed.
+    let _ = unsafe { find_safe_msm_offset([p], [scalar], [], [p]) };
+}
+
+#[test]
+fn test_find_safe_msm_offset_checks_add_points() {
+    let p = crate::BN254::one();
+    let scalar = ScalarField::<1>::from(std::hint::black_box(1 as Field));
+    // From `2G` the MSM steps pass, but the accumulator is then `3G`, equal to the add point.
+    let add_points = [p + p + p];
+    let offsets = [p + p, crate::BN254::offset_generator()];
+    // Safety: the index only selects an entry of `offsets`, and the MSM is
+    // then replayed in constrained code from that entry.
+    let index = unsafe { find_safe_msm_offset([p], [scalar], add_points, offsets) };
+    assert_eq(index, 1);
+    let result = evaluate_linear_expression_preserving_selected_offset(
+        [p],
+        [scalar],
+        add_points,
+        offsets[index],
+    );
+    assert(result == offsets[index] + p + add_points[0]);
+}
+
+/// Two windows and two points. The first candidate `O = (1/16 - 3)G` passes the first
+/// window (`O + G + 2G`) and collides only after the four doublings, when the
+/// accumulator `16(O + 3G) = G` meets the second window's first addend `G`.
+#[test]
+fn test_find_safe_msm_offset_follows_the_doubling_schedule() {
+    let p = crate::BN254::one();
+    let points = [p, p + p];
+    // 17 = 1 * 16 + 1: both windows have digit 1 and the skew bit is false.
+    let scalar = ScalarField::<2>::from(std::hint::black_box(17 as Field));
+    let scalars = [scalar, scalar];
+    let c: Field = 1 / 16 - 3;
+    let colliding = p.mul(crate::BN254Scalar::from(c));
+    let offsets = [colliding, crate::BN254::offset_generator()];
+    // Safety: the index only selects an entry of `offsets`, and the MSM is
+    // then replayed in constrained code from that entry.
+    let index = unsafe { find_safe_msm_offset(points, scalars, [], offsets) };
+    assert_eq(index, 1);
+    let result =
+        evaluate_linear_expression_preserving_selected_offset(points, scalars, [], offsets[index]);
+    // 17 * G + 17 * 2G = 51G = 16 * 3G + 3G.
+    let three = p + p + p;
+    assert(result - sixteen_times(offsets[index]) == sixteen_times(three) + three);
 }

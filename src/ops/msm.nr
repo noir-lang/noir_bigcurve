@@ -265,6 +265,26 @@ fn evaluate_linear_expression_impl<BN: BigNum, Curve: BigCurve<BN>, let NScalarS
     accumulator
 }
 
+/// Pick an initial offset for `evaluate_linear_expression_preserving_selected_offset`
+/// (unconstrained)
+///
+/// Returns the index of the first entry of `offsets` from which
+/// `evaluate_linear_expression_preserving_selected_offset(mul_points, mul_scalars,
+/// add_points, offset)` never adds equal or opposite points (in the MSM steps or the
+/// additions of `add_points`), and fails if there is none.
+/// Points and candidates must be valid points in an odd prime-order group; infinity
+/// inputs are replaced by the generator with scalar zero, as in the replay. Nothing
+/// guarantees that some candidate works. The result is a hint: use it to select from
+/// `offsets` in constrained code, then run the constrained replay from that entry.
+pub unconstrained fn find_safe_msm_offset<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32, let NCandidates: u32>(
+    mul_points: [Curve; NMuls],
+    mul_scalars: [ScalarField<NScalarSlices>; NMuls],
+    add_points: [Curve; NAdds],
+    offsets: [Curve; NCandidates],
+) -> u32 {
+    CurveJ::<BN, Curve>::find_safe_msm_offset(mul_points, mul_scalars, add_points, offsets)
+}
+
 // Expose only the transcript as witnesses; the unused Jacobian result is
 // not part of the constrained replay interface.
 unconstrained fn get_linear_expression_transcript<BN: BigNum, Curve: BigCurve<BN>, let NScalarSlices: u32, let NMuls: u32, let NAdds: u32>(

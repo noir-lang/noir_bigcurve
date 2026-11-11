@@ -446,6 +446,102 @@ where
         (accumulator, affine_transcript)
     }
 
+    unconstrained fn has_distinct_finite_x(self, other: Self) -> bool {
+        let z1sq = self.z.__mul(&self.z);
+        let z2sq = other.z.__mul(&other.z);
+        let lhs = self.x.__mul(&z2sq);
+        let rhs = other.x.__mul(&z1sq);
+        !self.is_infinity
+            & !other.is_infinity
+            & !self.z.__eq(&BN::zero())
+            & !other.z.__eq(&BN::zero())
+            & !lhs.__eq(&rhs)
+    }
+
+    /// See `crate::ops::msm::find_safe_msm_offset`. Repeats the accumulation schedule of
+    /// `compute_linear_expression_transcript` (without the final offset removal) without its
+    /// transcript, checking before each addition the condition the constrained replay
+    /// asserts (distinct x-coordinates).
+    pub(crate) unconstrained fn find_safe_msm_offset<let Size: u32, let NScalarSlices: u32, let NAdds: u32, let NCandidates: u32>(
+        affine_points: [Curve; Size],
+        input_scalars: [ScalarField<NScalarSlices>; Size],
+        add_points: [Curve; NAdds],
+        offsets: [Curve; NCandidates],
+    ) -> u32 {
+        assert((Size > 0) & (NScalarSlices > 0) & (NCandidates > 0));
+        let mut points = [Self::one(); Size];
+        let mut scalars = [ScalarField::zero(); Size];
+        let mut tables = [PointTable::empty(); Size];
+        for i in 0..Size {
+            if !affine_points[i].is_infinity() {
+                points[i] = Self::from(affine_points[i]);
+                scalars[i] = input_scalars[i];
+            }
+            tables[i] = PointTable::new(points[i]);
+        }
+        let mut index: u32 = 0;
+        let mut chosen: u32 = 0;
+        let mut found = false;
+        while (index < NCandidates) & !found {
+            let mut accumulator: Self = Self::from(offsets[index]);
+            let mut valid: bool = !accumulator.is_infinity & !accumulator.z.__eq(&BN::zero());
+            let mut window: u32 = 0;
+            while (window < NScalarSlices) & valid {
+                if window != 0 {
+                    // Successful preceding guards retain a finite point in the
+                    // odd prime-order group, so every doubling is well-defined.
+                    for _ in 0..4 {
+                        accumulator = accumulator.dbl().0;
+                    }
+                }
+                let mut i: u32 = 0;
+                while (i < Size) & valid {
+                    let operand = tables[i].get(scalars[i].base4_slices[window] as u32);
+                    valid = accumulator.has_distinct_finite_x(operand);
+                    if valid {
+                        accumulator = accumulator.incomplete_add(operand).0;
+                    }
+                    i += 1;
+                }
+                window += 1;
+            }
+            let mut i: u32 = 0;
+            while (i < Size) & valid {
+                let operand = points[i].neg();
+                valid = accumulator.has_distinct_finite_x(operand);
+                // The replay checks the skew subtraction even when the skew bit is
+                // false and the subtraction is not applied, so check it here too.
+                if valid & scalars[i].skew {
+                    accumulator = accumulator.incomplete_add(operand).0;
+                }
+                i += 1;
+            }
+            let mut i: u32 = 0;
+            while (i < NAdds) & valid {
+                // The replay checks distinct x even for an infinity add point, on its
+                // stored coordinates, and then skips adding it.
+                let stored = CurveJ {
+                    x: add_points[i].x(),
+                    y: add_points[i].y(),
+                    z: BN::one(),
+                    is_infinity: false,
+                };
+                valid = accumulator.has_distinct_finite_x(stored);
+                if valid & !add_points[i].is_infinity() {
+                    accumulator = accumulator.incomplete_add(stored).0;
+                }
+                i += 1;
+            }
+            if valid {
+                chosen = index;
+                found = true;
+            }
+            index += 1;
+        }
+        assert(found, "No candidate initial offset avoids equal or opposite points in the MSM");
+        chosen
+    }
+
     /// Perform the inner loop of a multi-scalar multiplication (unconstrained)
     ///
     /// Computes `sum_i(scalars[i] * points[i]) + [16^(NScalarSlices-1)]initial_offset`

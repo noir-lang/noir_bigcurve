@@ -22,6 +22,8 @@ pub mod internal {
     pub use ::bignum::bignum::evaluate_quadratic_expression;
 
     pub use crate::ops::msm::evaluate_linear_expression;
+    // The caller must remove the initial offset itself; see the README.
+    pub use crate::ops::msm::evaluate_linear_expression_preserving_selected_offset;
     pub use crate::ops::msm::get_mul_transcript;
     pub use crate::ops::msm::mul_with_hint;
 

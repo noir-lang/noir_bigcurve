@@ -212,3 +212,36 @@ A: To minimize witness generation time (currently the bottleneck due to Brillig 
 
 - Parametrize and test with a degree-2 extension field instead of `BigNum`
 - Add support for curve endomorphisms where applicable (if base field and scalar field both contain cube roots of unity, we can reduce the number of point doublings required for an MSM in half)
+
+## MSM with a caller-selected initial offset
+
+`mul` and `evaluate_linear_expression` start their accumulator from a fixed
+point, the curve's offset generator, and subtract a fixed correction at the end.
+That correction is precomputed for the curve's full scalar width (`NScalarSlices`
+4-bit windows, e.g. 64 for BN254), so short scalars (e.g. 128-bit) must still be
+encoded at full width and pay for every window's doublings.
+
+`bigcurve::internal::evaluate_linear_expression_preserving_selected_offset(mul_points, mul_scalars, add_points, initial_offset)`
+runs the same MSM but starts from the caller's `initial_offset` and does not
+remove it. For `S = NScalarSlices` windows it returns
+
+`[16^(S-1)]initial_offset + sum(s_i P_i) + sum(Q_j)`
+
+To get the plain result, subtract the correction `[16^(S-1)]initial_offset`
+with the ordinary `-`. The correction must belong to the same initial offset
+and the same `S`: a constant precomputed for a fixed initial offset, or a value
+computed in constrained code. A correction the prover supplies without
+constraints would let the prover choose the result.
+
+Requirements: `S > 0` and at least one multiplication term. `initial_offset`
+must be a validly constructed point like the other inputs (range-checked
+coordinates); the function additionally checks that it is on the curve and not
+the point at infinity. The MSM steps and the additions of `add_points` use the
+same incomplete formulas as `evaluate_linear_expression`: an initial offset that
+makes one of them add equal or opposite points makes the circuit unsatisfiable,
+never wrong. Choose the initial offset independently of the input points, e.g. a
+fixed nothing-up-my-sleeve point with no known discrete-log relation to them, as
+the library's offset generator is; then a collision has negligible probability
+for inputs chosen without knowledge of it. An offset the prover picks freely
+affects only whether a proof exists. Input points must be valid; a protocol
+requiring subgroup membership must establish it separately.

@@ -154,3 +154,41 @@ where
     let (x, y): (BN, BN) = hash_to_curve::<BN, SeedBytes>(seed, Curve::a(), Curve::b());
     Curve::from_coordinates_unsafe(x, y, false)
 }
+
+mod test {
+    use crate::BigCurve;
+    use crate::curves::bn254::BN254;
+    use super::{hash_to_curve, poseidon_hash_bytes};
+    use ::bignum::BN254_Fq;
+
+    // Regression tests for https://github.com/noir-lang/noir_bigcurve/issues/111 (fixed in #130):
+    // `poseidon_hash_bytes` used to discard the packed seed (immutable `packed_seed`) and read the
+    // wrong byte index, so every seed hashed to the same value. `test_hash_to_curve_regression`
+    // only covers seeds shorter than one 31-byte chunk, so these also cover same-length seeds and
+    // bytes beyond the first chunk.
+
+    #[test]
+    fn test_poseidon_hash_bytes_distinct_seeds() {
+        assert(poseidon_hash_bytes("hello".as_bytes()) != poseidon_hash_bytes("world".as_bytes()));
+    }
+
+    #[test]
+    fn test_poseidon_hash_bytes_uses_every_byte_of_every_chunk() {
+        // 40 bytes span two 31-byte chunks. Flipping one byte at a time, including bytes past the
+        // first chunk, must change the hash.
+        let base: [u8; 40] = [7; 40];
+        let base_hash = poseidon_hash_bytes(base);
+        for i in [0, 1, 30, 31, 32, 39] {
+            let mut seed = base;
+            seed[i] = 8;
+            assert(poseidon_hash_bytes(seed) != base_hash);
+        }
+    }
+
+    #[test]
+    fn test_hash_to_curve_distinct_seeds_give_distinct_points() {
+        let (x_a, _) = hash_to_curve::<BN254_Fq, 5>("hello".as_bytes(), BN254::a(), BN254::b());
+        let (x_b, _) = hash_to_curve::<BN254_Fq, 5>("world".as_bytes(), BN254::a(), BN254::b());
+        assert(x_a != x_b);
+    }
+}

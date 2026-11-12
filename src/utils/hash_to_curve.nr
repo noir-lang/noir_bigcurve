@@ -96,7 +96,10 @@ fn poseidon_hash_bytes<let SeedBytes: u32>(seed: [u8; SeedBytes]) -> Field {
 ///
 /// **Soundness warning:** the `salt` (nonce) is not constrained to be the
 /// lowest valid value - a malicious prover can choose alternative nonces to
-/// influence the output. See `BigCurve::hash_to_curve` docs for details.
+/// influence the output. Any salt whose derived `x` lies on the curve is
+/// accepted, so the same seed can map to several different points. Only call
+/// this from unconstrained code, or where any point on the curve is acceptable
+/// (see #124).
 ///
 /// ## Algorithm
 ///
